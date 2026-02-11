@@ -3,7 +3,11 @@ import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/cofit_avatar.dart';
+import '../../../app/routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
+import 'help_support_screen.dart';
+import 'about_screen.dart';
 
 class ProfileScreen extends GetView<ProfileController> {
   const ProfileScreen({super.key});
@@ -17,7 +21,7 @@ class ProfileScreen extends GetView<ProfileController> {
         actions: [
           IconButton(
             icon: const Icon(Iconsax.setting_2),
-            onPressed: () {},
+            onPressed: () => Get.toNamed(AppRoutes.settings),
           ),
         ],
       ),
@@ -33,6 +37,13 @@ class ProfileScreen extends GetView<ProfileController> {
             _buildMenuSection(context),
             const SizedBox(height: 24),
             _buildSettingsSection(context),
+            // Admin section — only visible for admin users
+            Obx(() => controller.isAdmin.value
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 24),
+                    child: _buildAdminSection(context),
+                  )
+                : const SizedBox.shrink()),
             const SizedBox(height: 24),
             _buildSignOutButton(context),
             const SizedBox(height: 32),
@@ -52,48 +63,39 @@ class ProfileScreen extends GetView<ProfileController> {
       ),
       child: Column(
         children: [
-          // Avatar
-          Stack(
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: AppColors.primaryGradient,
-                ),
-                child: Center(
-                  child: Obx(() => Text(
-                        controller.userName.value.isNotEmpty
-                            ? controller.userName.value[0].toUpperCase()
-                            : 'U',
-                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                            ),
-                      )),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: AppShadows.subtle,
+          // Avatar with upload
+          Obx(() => Stack(
+                alignment: Alignment.center,
+                children: [
+                  CofitAvatar(
+                    imageUrl: controller.userAvatar.value,
+                    userId: controller.userId.value,
+                    userName: controller.userName.value,
+                    radius: 50,
+                    showEditIcon: true,
+                    onTap: () => controller.uploadProfileImage(),
                   ),
-                  child: IconButton(
-                    icon: const Icon(Iconsax.edit, size: 16),
-                    onPressed: () {},
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-            ],
-          ),
+                  if (controller.isUploadingImage.value)
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              )),
           const SizedBox(height: 16),
           // Name
           Obx(() => Text(
@@ -108,55 +110,59 @@ class ProfileScreen extends GetView<ProfileController> {
                     ),
               )),
           const SizedBox(height: 8),
-          Obx(() => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.bgBlush,
-                  borderRadius: AppRadius.pill,
-                ),
-                child: Text(
-                  'Member since ${controller.memberSince.value}',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.primary,
-                      ),
-                ),
-              )),
+          Obx(() => controller.memberSince.value.isNotEmpty
+              ? Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgBlush,
+                    borderRadius: AppRadius.pill,
+                  ),
+                  child: Text(
+                    'Member since ${controller.memberSince.value}',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.primary,
+                        ),
+                  ),
+                )
+              : const SizedBox.shrink()),
         ],
       ),
     );
   }
 
   Widget _buildStatsRow(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatItem(
-            context,
-            value: '${controller.totalWorkouts.value}',
-            label: 'Workouts',
-          ),
-        ),
-        Container(width: 1, height: 40, color: AppColors.borderLight),
-        Expanded(
-          child: _buildStatItem(
-            context,
-            value: '${controller.currentStreak.value}',
-            label: 'Day Streak',
-          ),
-        ),
-        Container(width: 1, height: 40, color: AppColors.borderLight),
-        Expanded(
-          child: _buildStatItem(
-            context,
-            value: '${controller.badgesEarned.value}',
-            label: 'Badges',
-          ),
-        ),
-      ],
-    );
+    return Obx(() => Row(
+          children: [
+            Expanded(
+              child: _buildStatItem(
+                context,
+                value: '${controller.totalWorkouts.value}',
+                label: 'Workouts',
+              ),
+            ),
+            Container(width: 1, height: 40, color: AppColors.borderLight),
+            Expanded(
+              child: _buildStatItem(
+                context,
+                value: '${controller.currentStreak.value}',
+                label: 'Day Streak',
+              ),
+            ),
+            Container(width: 1, height: 40, color: AppColors.borderLight),
+            Expanded(
+              child: _buildStatItem(
+                context,
+                value: '${controller.totalMinutes.value}',
+                label: 'Minutes',
+              ),
+            ),
+          ],
+        ));
   }
 
-  Widget _buildStatItem(BuildContext context, {required String value, required String label}) {
+  Widget _buildStatItem(BuildContext context,
+      {required String value, required String label}) {
     return Column(
       children: [
         Text(
@@ -185,29 +191,22 @@ class ProfileScreen extends GetView<ProfileController> {
         children: [
           _buildMenuItem(
             context,
-            icon: Iconsax.book_1,
-            title: 'Journal Entries',
-            onTap: () {},
-          ),
-          _buildDivider(),
-          _buildMenuItem(
-            context,
-            icon: Iconsax.heart,
-            title: 'Saved Workouts',
-            onTap: () {},
-          ),
-          _buildDivider(),
-          _buildMenuItem(
-            context,
-            icon: Iconsax.bookmark,
-            title: 'Saved Recipes',
-            onTap: () {},
+            icon: Iconsax.edit_2,
+            title: 'Edit Profile',
+            onTap: () => Get.toNamed(AppRoutes.editProfile),
           ),
           _buildDivider(),
           _buildMenuItem(
             context,
             icon: Iconsax.document,
             title: 'My Posts',
+            onTap: () {},
+          ),
+          _buildDivider(),
+          _buildMenuItem(
+            context,
+            icon: Iconsax.bookmark,
+            title: 'Saved Posts',
             onTap: () {},
           ),
         ],
@@ -228,26 +227,31 @@ class ProfileScreen extends GetView<ProfileController> {
             context,
             icon: Iconsax.setting_2,
             title: 'Settings',
-            onTap: () {},
+            onTap: () => Get.toNamed(AppRoutes.settings),
           ),
           _buildDivider(),
           _buildMenuItem(
             context,
             icon: Iconsax.card,
             title: 'Subscription',
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.successLight,
-                borderRadius: AppRadius.small,
-              ),
-              child: Text(
-                'Active',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.success,
-                    ),
-              ),
-            ),
+            trailing: Obx(() => Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: controller.hasActiveSub.value
+                        ? AppColors.successLight
+                        : AppColors.bgBlush,
+                    borderRadius: AppRadius.small,
+                  ),
+                  child: Text(
+                    controller.hasActiveSub.value ? 'Active' : 'Free',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: controller.hasActiveSub.value
+                              ? AppColors.success
+                              : AppColors.textMuted,
+                        ),
+                  ),
+                )),
             onTap: () {},
           ),
           _buildDivider(),
@@ -255,16 +259,46 @@ class ProfileScreen extends GetView<ProfileController> {
             context,
             icon: Iconsax.message_question,
             title: 'Help & Support',
-            onTap: () {},
+            onTap: () => Get.to(() => const HelpSupportScreen()),
           ),
           _buildDivider(),
           _buildMenuItem(
             context,
             icon: Iconsax.info_circle,
             title: 'About',
-            onTap: () {},
+            onTap: () => Get.to(() => const AboutScreen()),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAdminSection(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: AppRadius.large,
+        boxShadow: AppShadows.subtle,
+      ),
+      child: _buildMenuItem(
+        context,
+        icon: Iconsax.shield_tick,
+        title: 'Enter Admin Mode',
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.12),
+            borderRadius: AppRadius.small,
+          ),
+          child: Text(
+            'Admin',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ),
+        onTap: () => Get.toNamed(AppRoutes.adminHome),
       ),
     );
   }
@@ -291,7 +325,8 @@ class ProfileScreen extends GetView<ProfileController> {
         style: Theme.of(context).textTheme.titleSmall,
       ),
       trailing: trailing ??
-          const Icon(Iconsax.arrow_right_3, size: 20, color: AppColors.textMuted),
+          const Icon(Iconsax.arrow_right_3,
+              size: 20, color: AppColors.textMuted),
       onTap: onTap,
     );
   }

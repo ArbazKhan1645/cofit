@@ -72,7 +72,9 @@ class CommunityController extends BaseController {
   // Challenge winning post fields
   final RxList<UserChallengeModel> wonChallenges = <UserChallengeModel>[].obs;
   final RxBool isLoadingWonChallenges = false.obs;
-  final Rx<UserChallengeModel?> selectedWonChallenge = Rx<UserChallengeModel?>(null);
+  final Rx<UserChallengeModel?> selectedWonChallenge = Rx<UserChallengeModel?>(
+    null,
+  );
   final challengeMessageController = TextEditingController();
 
   // Workout recipe structured fields
@@ -81,7 +83,8 @@ class CommunityController extends BaseController {
   final recipeDurationController = TextEditingController();
   final RxString recipeGoal = 'fat_loss'.obs;
   final RxString recipeDifficulty = 'beginner'.obs;
-  final RxList<WorkoutRecipeExercise> recipeExercises = <WorkoutRecipeExercise>[].obs;
+  final RxList<WorkoutRecipeExercise> recipeExercises =
+      <WorkoutRecipeExercise>[].obs;
 
   // Comments
   final RxList<CommentModel> postComments = <CommentModel>[].obs;
@@ -113,10 +116,12 @@ class CommunityController extends BaseController {
   /// Check internet connectivity
   Future<bool> _hasInternet() async {
     final result = await Connectivity().checkConnectivity();
-    return result.any((r) =>
-        r == ConnectivityResult.mobile ||
-        r == ConnectivityResult.wifi ||
-        r == ConnectivityResult.ethernet);
+    return result.any(
+      (r) =>
+          r == ConnectivityResult.mobile ||
+          r == ConnectivityResult.wifi ||
+          r == ConnectivityResult.ethernet,
+    );
   }
 
   // ============================================
@@ -162,7 +167,9 @@ class CommunityController extends BaseController {
       } else {
         // Filter out duplicates before adding
         final existingIds = posts.map((p) => p.id).toSet();
-        final uniqueNewPosts = newPosts.where((p) => !existingIds.contains(p.id)).toList();
+        final uniqueNewPosts = newPosts
+            .where((p) => !existingIds.contains(p.id))
+            .toList();
         posts.addAll(uniqueNewPosts);
       }
 
@@ -200,7 +207,11 @@ class CommunityController extends BaseController {
     int originalLikesCount = 0;
 
     // Helper to update post in a list (does NOT modify wasLiked/originalLikesCount)
-    void updateInList(RxList<PostModel> list, bool newLikedState, int newLikesCount) {
+    void updateInList(
+      RxList<PostModel> list,
+      bool newLikedState,
+      int newLikesCount,
+    ) {
       final idx = list.indexWhere((p) => p.id == postId);
       if (idx != -1) {
         list[idx] = list[idx].copyWith(
@@ -236,7 +247,9 @@ class CommunityController extends BaseController {
             originalLikesCount = myPosts[myIdx].likesCount;
             originalPost = myPosts[myIdx];
           } else {
-            final profileIdx = userProfilePosts.indexWhere((p) => p.id == postId);
+            final profileIdx = userProfilePosts.indexWhere(
+              (p) => p.id == postId,
+            );
             if (profileIdx != -1) {
               wasLiked = userProfilePosts[profileIdx].isLikedByMe;
               originalLikesCount = userProfilePosts[profileIdx].likesCount;
@@ -250,7 +263,9 @@ class CommunityController extends BaseController {
     if (originalPost == null) return;
 
     final newLikedState = !wasLiked;
-    final newLikesCount = wasLiked ? originalLikesCount - 1 : originalLikesCount + 1;
+    final newLikesCount = wasLiked
+        ? originalLikesCount - 1
+        : originalLikesCount + 1;
 
     // Optimistic update - update all lists
     updateInList(posts, newLikedState, newLikesCount);
@@ -333,7 +348,9 @@ class CommunityController extends BaseController {
             wasSaved = myPosts[myIdx].isSavedByMe;
             originalPost = myPosts[myIdx];
           } else {
-            final profileIdx = userProfilePosts.indexWhere((p) => p.id == postId);
+            final profileIdx = userProfilePosts.indexWhere(
+              (p) => p.id == postId,
+            );
             if (profileIdx != -1) {
               wasSaved = userProfilePosts[profileIdx].isSavedByMe;
               originalPost = userProfilePosts[profileIdx];
@@ -356,7 +373,9 @@ class CommunityController extends BaseController {
 
     // Update current post if viewing detail
     if (currentPost.value?.id == postId) {
-      currentPost.value = currentPost.value!.copyWith(isSavedByMe: newSavedState);
+      currentPost.value = currentPost.value!.copyWith(
+        isSavedByMe: newSavedState,
+      );
     }
 
     // Make API call
@@ -513,14 +532,20 @@ class CommunityController extends BaseController {
 
       if (title.isEmpty) {
         if (Get.context != null) {
-          AppSnackbar.warning(Get.context!, message: 'Please enter a workout title');
+          AppSnackbar.warning(
+            Get.context!,
+            message: 'Please enter a workout title',
+          );
         }
         return false;
       }
 
       if (recipeExercises.isEmpty) {
         if (Get.context != null) {
-          AppSnackbar.warning(Get.context!, message: 'Please add at least one exercise');
+          AppSnackbar.warning(
+            Get.context!,
+            message: 'Please add at least one exercise',
+          );
         }
         return false;
       }
@@ -546,7 +571,10 @@ class CommunityController extends BaseController {
 
       if (challenge == null) {
         if (Get.context != null) {
-          AppSnackbar.warning(Get.context!, message: 'Please select a challenge');
+          AppSnackbar.warning(
+            Get.context!,
+            message: 'Please select a challenge',
+          );
         }
         return false;
       }
@@ -685,10 +713,7 @@ class CommunityController extends BaseController {
       await _cacheService.removePostFromCache(postId);
 
       if (Get.context != null) {
-        AppSnackbar.success(
-          Get.context!,
-          message: 'Post deleted',
-        );
+        AppSnackbar.success(Get.context!, message: 'Post deleted');
       }
     } else {
       if (Get.context != null) {
@@ -722,9 +747,11 @@ class CommunityController extends BaseController {
       // Search in cached posts only
       final cached = _cacheService.getCachedFeedPosts() ?? [];
       searchPosts.value = cached
-          .where((p) =>
-              p.content.toLowerCase().contains(query.toLowerCase()) ||
-              p.authorName.toLowerCase().contains(query.toLowerCase()))
+          .where(
+            (p) =>
+                p.content.toLowerCase().contains(query.toLowerCase()) ||
+                p.authorName.toLowerCase().contains(query.toLowerCase()),
+          )
           .toList();
       isSearching.value = false;
       return;
@@ -784,10 +811,7 @@ class CommunityController extends BaseController {
 
     isLoadingMyPosts.value = true;
 
-    final result = await _repository.getUserPosts(
-      _supabase.userId!,
-      limit: 50,
-    );
+    final result = await _repository.getUserPosts(_supabase.userId!, limit: 50);
 
     if (result.isSuccess) {
       myPosts.value = result.data!;

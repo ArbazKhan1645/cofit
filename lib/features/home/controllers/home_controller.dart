@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../shared/controllers/base_controller.dart';
+import '../../../core/services/auth_service.dart';
 
 class HomeController extends BaseController {
+  final AuthService _authService = AuthService.to;
   final _storage = GetStorage();
 
   // User data
@@ -16,17 +18,24 @@ class HomeController extends BaseController {
     super.onInit();
     loadUserData();
     loadWorkoutStats();
+    // React to user changes from AuthService
+    ever(_authService.currentUserRx, (_) {
+      loadUserData();
+      loadWorkoutStats();
+    });
   }
 
   void loadUserData() {
-    userName.value = _storage.read<String>('userName') ?? 'Fitness Friend';
+    final user = _authService.currentUser;
+    userName.value = user?.displayName ?? 'Fitness Friend';
   }
 
   void loadWorkoutStats() {
-    // Load from storage or API
-    workoutsThisWeek.value = _storage.read<int>('workoutsThisWeek') ?? 3;
-    currentStreak.value = _storage.read<int>('currentStreak') ?? 5;
-    totalWorkoutsThisMonth.value = _storage.read<int>('totalWorkoutsThisMonth') ?? 12;
+    final user = _authService.currentUser;
+    currentStreak.value = user?.currentStreak ?? 0;
+    // These remain from local storage until a dedicated API exists
+    workoutsThisWeek.value = _storage.read<int>('workoutsThisWeek') ?? 0;
+    totalWorkoutsThisMonth.value = _storage.read<int>('totalWorkoutsThisMonth') ?? 0;
   }
 
   String getGreeting() {

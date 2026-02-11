@@ -7,6 +7,9 @@ class MediaConfig {
   // ============================================
   static const String postImagesBucket = 'post-images';
   static const String profileImagesBucket = 'profile-images';
+  static const String trainerImagesBucket = 'trainer-images';
+  static const String workoutMediaBucket = 'workout-media';
+  static const String challengeImagesBucket = 'challenge-images';
 
   // ============================================
   // IMAGE COMPRESSION

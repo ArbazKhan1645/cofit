@@ -119,15 +119,20 @@ class SupabaseService extends GetxService {
     required List<int> fileBytes,
     String? contentType,
   }) async {
-    await _client.storage
-        .from(bucket)
-        .uploadBinary(
-          path,
-          fileBytes as dynamic,
-          fileOptions: FileOptions(contentType: contentType),
-        );
+    try {
+      await _client.storage
+          .from(bucket)
+          .uploadBinary(
+            path,
+            fileBytes as dynamic,
+            fileOptions: FileOptions(contentType: contentType),
+          );
 
-    return _client.storage.from(bucket).getPublicUrl(path);
+      return _client.storage.from(bucket).getPublicUrl(path);
+    } on Exception catch (e) {
+      print(e);
+      rethrow;
+    }
   }
 
   /// Delete file from storage

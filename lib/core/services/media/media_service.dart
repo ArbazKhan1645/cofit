@@ -120,6 +120,48 @@ class MediaService extends GetxService {
     return url;
   }
 
+  /// Upload a trainer avatar image. Returns the public URL.
+  Future<String> uploadTrainerImage(Uint8List bytes) async {
+    return await _uploadService.upload(
+      bytes,
+      bucket: MediaConfig.trainerImagesBucket,
+      compress: true,
+    );
+  }
+
+  /// Upload a challenge cover image. Returns the public URL.
+  Future<String> uploadChallengeImage(Uint8List bytes) async {
+    return await _uploadService.upload(
+      bytes,
+      bucket: MediaConfig.challengeImagesBucket,
+      compress: true,
+    );
+  }
+
+  /// Upload a workout thumbnail image. Returns the public URL.
+  Future<String> uploadWorkoutThumbnail(Uint8List bytes) async {
+    return await _uploadService.upload(
+      bytes,
+      bucket: MediaConfig.workoutMediaBucket,
+      compress: true,
+    );
+  }
+
+  /// Delete a trainer image from storage.
+  Future<void> deleteTrainerImage(String publicUrl) async {
+    await _uploadService.delete(publicUrl, bucket: MediaConfig.trainerImagesBucket);
+  }
+
+  /// Delete a challenge image from storage.
+  Future<void> deleteChallengeImage(String publicUrl) async {
+    await _uploadService.delete(publicUrl, bucket: MediaConfig.challengeImagesBucket);
+  }
+
+  /// Delete a workout thumbnail from storage.
+  Future<void> deleteWorkoutThumbnail(String publicUrl) async {
+    await _uploadService.delete(publicUrl, bucket: MediaConfig.workoutMediaBucket);
+  }
+
   /// Upload multiple post images in parallel. Returns list of public URLs.
   Future<List<String>> uploadMultipleImages(List<Uint8List> imageBytes) async {
     return await _uploadService.uploadMultiple(

@@ -79,7 +79,12 @@ class MediaUploadService {
   }) async {
     // Compress if requested
     final data = compress
-        ? await compressImage(bytes, quality: quality, maxWidth: maxWidth, maxHeight: maxHeight)
+        ? await compressImage(
+            bytes,
+            quality: quality,
+            maxWidth: maxWidth,
+            maxHeight: maxHeight,
+          )
         : bytes;
 
     // Generate unique path
@@ -103,7 +108,8 @@ class MediaUploadService {
     bool compress = true,
   }) async {
     final futures = images.map(
-      (bytes) => upload(bytes, bucket: bucket, folder: folder, compress: compress),
+      (bytes) =>
+          upload(bytes, bucket: bucket, folder: folder, compress: compress),
     );
     return await Future.wait(futures);
   }

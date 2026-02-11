@@ -111,9 +111,11 @@ class CommunityScreen extends GetView<CommunityController> {
               label: 'Challenges',
               onTap: () {
                 controller.loadChallengePosts();
-                Get.to(() => const FilteredPostsScreen(
-                      postType: FilteredPostType.challenges,
-                    ));
+                Get.to(
+                  () => const FilteredPostsScreen(
+                    postType: FilteredPostType.challenges,
+                  ),
+                );
               },
             ),
           ),
@@ -125,9 +127,11 @@ class CommunityScreen extends GetView<CommunityController> {
               label: 'Recipes',
               onTap: () {
                 controller.loadRecipePosts();
-                Get.to(() => const FilteredPostsScreen(
-                      postType: FilteredPostType.recipes,
-                    ));
+                Get.to(
+                  () => const FilteredPostsScreen(
+                    postType: FilteredPostType.recipes,
+                  ),
+                );
               },
             ),
           ),
@@ -203,176 +207,166 @@ class CommunityScreen extends GetView<CommunityController> {
     final isMyPost = post.userId == SupabaseService.to.userId;
 
     return Container(
-          padding: AppPadding.card,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: AppRadius.large,
-            boxShadow: AppShadows.subtle,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Author row
-              GestureDetector(
-                onTap: () {
-                  if (post.author != null) {
-                    controller.loadUserProfile(post.author!);
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => const UserProfileSheet(),
-                    );
-                  }
-                },
-                child: Row(
-                  children: [
-                    CofitAvatar(
-                      imageUrl: post.authorAvatar,
-                      userId: post.author?.id,
-                      userName: post.authorName,
-                      radius: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            post.authorName,
-                            style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          Text(
-                            post.timeAgo,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(color: AppColors.textMuted),
-                          ),
-                        ],
+      padding: AppPadding.card,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: AppRadius.large,
+        boxShadow: AppShadows.subtle,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Author row
+          GestureDetector(
+            onTap: () {
+              if (post.author != null) {
+                controller.loadUserProfile(post.author!);
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => const UserProfileSheet(),
+                );
+              }
+            },
+            child: Row(
+              children: [
+                CofitAvatar(
+                  imageUrl: post.authorAvatar,
+                  userId: post.author?.id,
+                  userName: post.authorName,
+                  radius: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        post.authorName,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    if (isMyPost)
-                      PopupMenuButton<String>(
-                        icon: Icon(
-                          Iconsax.more,
-                          size: 20,
+                      Text(
+                        post.timeAgo,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: AppColors.textMuted,
                         ),
-                        onSelected: (value) {
-                          if (value == 'delete') {
-                            _showDeleteConfirmation(context, post.id);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Iconsax.trash,
-                                  color: Colors.red,
-                                  size: 18,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Delete',
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      )
-                    else
-                      const SizedBox(width: 40),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Approval badge for own non-approved posts
-              if (isMyPost && !post.isApproved)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: ApprovalBadge(
-                    status: post.approvalStatus,
-                    rejectionReason: post.rejectionReason,
+                      ),
+                    ],
                   ),
                 ),
+                if (isMyPost)
+                  PopupMenuButton<String>(
+                    icon: Icon(
+                      Iconsax.more,
+                      size: 20,
+                      color: AppColors.textMuted,
+                    ),
+                    onSelected: (value) {
+                      if (value == 'delete') {
+                        _showDeleteConfirmation(context, post.id);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Iconsax.trash, color: Colors.red, size: 18),
+                            SizedBox(width: 8),
+                            Text('Delete', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  const SizedBox(width: 40),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
 
-              // Content - dispatch by post type
-              GestureDetector(
+          // Approval badge for own non-approved posts
+          if (isMyPost && !post.isApproved)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: ApprovalBadge(
+                status: post.approvalStatus,
+                rejectionReason: post.rejectionReason,
+              ),
+            ),
+
+          // Content - dispatch by post type
+          GestureDetector(
+            onTap: () {
+              controller.setCurrentPost(post);
+              Get.to(() => const PostDetailScreen());
+            },
+            child: _buildPostContent(context, post),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Actions
+          Row(
+            children: [
+              _buildActionButton(
+                context,
+                icon: post.isLikedByMe ? Iconsax.heart5 : Iconsax.heart,
+                label: '${post.likesCount}',
+                color: post.isLikedByMe ? AppColors.primary : null,
+                onTap: () => controller.toggleLikePost(post.id),
+              ),
+              const SizedBox(width: 24),
+              _buildActionButton(
+                context,
+                icon: Iconsax.message,
+                label: '${post.commentsCount}',
                 onTap: () {
                   controller.setCurrentPost(post);
                   Get.to(() => const PostDetailScreen());
                 },
-                child: _buildPostContent(context, post),
               ),
-
-              const SizedBox(height: 12),
-
-              // Actions
-              Row(
-                children: [
-                  _buildActionButton(
-                    context,
-                    icon: post.isLikedByMe ? Iconsax.heart5 : Iconsax.heart,
-                    label: '${post.likesCount}',
-                    color: post.isLikedByMe ? AppColors.primary : null,
-                    onTap: () => controller.toggleLikePost(post.id),
-                  ),
-                  const SizedBox(width: 24),
-                  _buildActionButton(
-                    context,
-                    icon: Iconsax.message,
-                    label: '${post.commentsCount}',
-                    onTap: () {
-                      controller.setCurrentPost(post);
-                      Get.to(() => const PostDetailScreen());
-                    },
-                  ),
-                  const Spacer(),
-                  _buildActionButton(
-                    context,
-                    icon: post.isSavedByMe
-                        ? Iconsax.bookmark5
-                        : Iconsax.bookmark,
-                    label: '',
-                    color: post.isSavedByMe ? AppColors.primary : null,
-                    onTap: () => controller.toggleSavePost(post.id),
-                  ),
-                  const SizedBox(width: 16),
-                  _buildActionButton(
-                    context,
-                    icon: Iconsax.send_2,
-                    label: '',
-                    onTap: () => controller.sharePost(post),
-                  ),
-                ],
+              const Spacer(),
+              _buildActionButton(
+                context,
+                icon: post.isSavedByMe ? Iconsax.bookmark5 : Iconsax.bookmark,
+                label: '',
+                color: post.isSavedByMe ? AppColors.primary : null,
+                onTap: () => controller.toggleSavePost(post.id),
               ),
-
-              // View comments link (if has comments)
-              if (post.commentsCount > 0) ...[
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () {
-                    controller.setCurrentPost(post);
-                    Get.to(() => const PostDetailScreen());
-                  },
-                  child: Text(
-                    'View all ${post.commentsCount} comments',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ),
-              ],
+              const SizedBox(width: 16),
+              _buildActionButton(
+                context,
+                icon: Iconsax.send_2,
+                label: '',
+                onTap: () => controller.sharePost(post),
+              ),
             ],
           ),
-        )
-        .animate()
-        .fadeIn(delay: (index * 50).ms, duration: 300.ms)
-        .slideY(begin: 0.05, end: 0, delay: (index * 50).ms, duration: 300.ms);
+
+          // View comments link (if has comments)
+          if (post.commentsCount > 0) ...[
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () {
+                controller.setCurrentPost(post);
+                Get.to(() => const PostDetailScreen());
+              },
+              child: Text(
+                'View all ${post.commentsCount} comments',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(color: AppColors.textMuted),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _buildActionButton(

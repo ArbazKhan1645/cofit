@@ -1,23 +1,39 @@
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:intl/intl.dart';
 import '../../../shared/controllers/base_controller.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/media/media_service.dart';
+import '../../../data/models/user_model.dart';
 import '../../../app/routes/app_routes.dart';
 
 class ProfileController extends BaseController {
+  final AuthService _authService = AuthService.to;
   final _storage = GetStorage();
 
-  // User data
+  // User data (synced from AuthService)
   final RxString userName = ''.obs;
   final RxString userEmail = ''.obs;
   final RxString userAvatar = ''.obs;
+  final RxString userId = ''.obs;
   final RxString memberSince = ''.obs;
 
   // Stats
   final RxInt totalWorkouts = 0.obs;
   final RxInt currentStreak = 0.obs;
-  final RxInt badgesEarned = 0.obs;
+  final RxInt totalMinutes = 0.obs;
 
-  // Settings
+  // Subscription
+  final RxBool hasActiveSub = false.obs;
+  final RxString subscriptionStatus = 'free'.obs;
+
+  // Admin
+  final RxBool isAdmin = false.obs;
+
+  // Profile image upload
+  final RxBool isUploadingImage = false.obs;
+
+  // Settings (local only)
   final RxBool notificationsEnabled = true.obs;
   final RxBool workoutReminders = true.obs;
   final RxString reminderTime = '07:00'.obs;
@@ -25,34 +41,59 @@ class ProfileController extends BaseController {
   @override
   void onInit() {
     super.onInit();
-    loadUserProfile();
-    loadUserStats();
-    loadSettings();
+    _syncFromUser(_authService.currentUser);
+    _loadSettings();
+    // React to user changes from AuthService
+    ever(_authService.currentUserRx, _syncFromUser);
   }
 
-  void loadUserProfile() {
-    userName.value = _storage.read<String>('userName') ?? 'Fitness Friend';
-    userEmail.value = _storage.read<String>('userEmail') ?? 'user@example.com';
-    userAvatar.value = _storage.read<String>('userAvatar') ?? '';
-    memberSince.value = _storage.read<String>('memberSince') ?? 'January 2024';
+  /// Sync all reactive fields from the UserModel
+  void _syncFromUser(UserModel? user) {
+    userName.value = user?.displayName ?? 'Fitness Friend';
+    userEmail.value = user?.email ?? '';
+    userAvatar.value = user?.avatarUrl ?? '';
+    userId.value = user?.id ?? '';
+    totalWorkouts.value = user?.totalWorkoutsCompleted ?? 0;
+    currentStreak.value = user?.currentStreak ?? 0;
+    totalMinutes.value = user?.totalMinutesWorkedOut ?? 0;
+    hasActiveSub.value = user?.hasActiveSubscription ?? false;
+    subscriptionStatus.value = user?.subscriptionStatus ?? 'free';
+    isAdmin.value = user?.isAdmin ?? false;
+    if (user != null) {
+      memberSince.value = DateFormat('MMMM yyyy').format(user.createdAt);
+    }
   }
 
-  void loadUserStats() {
-    totalWorkouts.value = _storage.read<int>('totalWorkouts') ?? 24;
-    currentStreak.value = _storage.read<int>('currentStreak') ?? 5;
-    badgesEarned.value = _storage.read<int>('badgesEarned') ?? 8;
+  void _loadSettings() {
+    notificationsEnabled.value =
+        _storage.read<bool>('notificationsEnabled') ?? true;
+    workoutReminders.value =
+        _storage.read<bool>('workoutReminders') ?? true;
+    reminderTime.value =
+        _storage.read<String>('reminderTime') ?? '07:00';
   }
 
-  void loadSettings() {
-    notificationsEnabled.value = _storage.read<bool>('notificationsEnabled') ?? true;
-    workoutReminders.value = _storage.read<bool>('workoutReminders') ?? true;
-    reminderTime.value = _storage.read<String>('reminderTime') ?? '07:00';
+  // ============================================
+  // PROFILE IMAGE
+  // ============================================
+
+  Future<void> uploadProfileImage() async {
+    final bytes = await MediaService.to.pickImageFromGallery();
+    if (bytes == null) return;
+
+    isUploadingImage.value = true;
+    try {
+      final url = await MediaService.to.uploadProfileImage(bytes);
+      await _authService.updateProfile(avatarUrl: url);
+    } catch (_) {
+      // Upload failed silently — user can retry
+    }
+    isUploadingImage.value = false;
   }
 
-  void updateUserName(String name) {
-    userName.value = name;
-    _storage.write('userName', name);
-  }
+  // ============================================
+  // SETTINGS
+  // ============================================
 
   void toggleNotifications(bool value) {
     notificationsEnabled.value = value;
@@ -69,9 +110,16 @@ class ProfileController extends BaseController {
     _storage.write('reminderTime', time);
   }
 
+  // ============================================
+  // AUTH
+  // ============================================
+
+  Future<void> refreshUser() async {
+    await _authService.refreshUser();
+  }
+
   Future<void> signOut() async {
-    await _storage.write('isLoggedIn', false);
-    await _storage.write('hasCompletedOnboarding', false);
+    await _authService.signOut();
     Get.offAllNamed(AppRoutes.signIn);
   }
 }

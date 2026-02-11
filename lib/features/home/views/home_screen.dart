@@ -3,9 +3,11 @@ import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import '../../../shared/widgets/cofit_image.dart';
+import '../../../shared/widgets/cofit_avatar.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../data/models/workout_model.dart';
 import '../../../data/mock/mock_data.dart';
 import '../../../app/routes/app_routes.dart';
@@ -59,32 +61,15 @@ class HomeScreen extends GetView<HomeController> {
       child: Row(
         children: [
           // Avatar
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Obx(() => Text(
-                    controller.userName.value.isNotEmpty
-                        ? controller.userName.value[0].toUpperCase()
-                        : 'U',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  )),
-            ),
-          ),
+          Obx(() {
+            final user = AuthService.to.currentUser;
+            return CofitAvatar(
+              imageUrl: user?.avatarUrl,
+              userId: user?.id,
+              userName: controller.userName.value,
+              radius: 26,
+            );
+          }),
           const SizedBox(width: 14),
           // Greeting
           Expanded(

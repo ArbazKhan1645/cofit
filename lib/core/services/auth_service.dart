@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/models.dart';
 import 'supabase_service.dart';
@@ -9,6 +11,10 @@ class AuthService extends GetxService {
   static AuthService get to => Get.find();
 
   final SupabaseService _supabase = Get.find<SupabaseService>();
+  final _storage = GetStorage();
+
+  // Cache key for local-first user data
+  static const String _userCacheKey = 'cached_current_user';
 
   // ============================================
   // REACTIVE STATE
@@ -21,6 +27,7 @@ class AuthService extends GetxService {
 
   // Getters
   UserModel? get currentUser => _currentUser.value;
+  Rx<UserModel?> get currentUserRx => _currentUser;
   bool get isAuthenticated => _supabase.isAuthenticated;
   bool get isLoading => _isLoading.value;
   bool get isInitialized => _isInitialized.value;
@@ -40,10 +47,13 @@ class AuthService extends GetxService {
   Future<AuthService> init() async {
     _isLoading.value = true;
 
+    // Load cached user immediately (local-first, no loading spinner)
+    _currentUser.value = _loadCachedUser();
+
     // Listen to auth state changes
     _authSubscription = _supabase.authStateChanges.listen(_onAuthStateChanged);
 
-    // Check current session
+    // Fetch fresh user data from network
     if (_supabase.isAuthenticated) {
       await _fetchCurrentUser();
     }
@@ -69,6 +79,7 @@ class AuthService extends GetxService {
         break;
       case AuthChangeEvent.signedOut:
         _currentUser.value = null;
+        _cacheUser(null);
         break;
       case AuthChangeEvent.passwordRecovery:
       case AuthChangeEvent.mfaChallengeVerified:
@@ -81,6 +92,7 @@ class AuthService extends GetxService {
         // Handle any other events (userDeleted, etc.)
         if (!_supabase.isAuthenticated) {
           _currentUser.value = null;
+          _cacheUser(null);
         }
         break;
     }
@@ -99,10 +111,44 @@ class AuthService extends GetxService {
 
       if (response != null) {
         _currentUser.value = UserModel.fromJson(response);
+        _cacheUser(_currentUser.value);
       }
     } catch (e) {
       _error.value = e.toString();
     }
+  }
+
+  // ============================================
+  // LOCAL CACHE (local-first user data)
+  // ============================================
+
+  /// Save user to GetStorage for instant loading on next app start
+  void _cacheUser(UserModel? user) {
+    try {
+      if (user != null) {
+        _storage.write(_userCacheKey, jsonEncode(user.toJson()));
+      } else {
+        _storage.remove(_userCacheKey);
+      }
+    } catch (_) {
+      // Silently fail - caching is optional
+    }
+  }
+
+  /// Load cached user from GetStorage
+  UserModel? _loadCachedUser() {
+    try {
+      final cached = _storage.read<String>(_userCacheKey);
+      if (cached == null) return null;
+      return UserModel.fromJson(jsonDecode(cached) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Clear the local user cache (used by settings)
+  void clearUserCache() {
+    _storage.remove(_userCacheKey);
   }
 
   // ============================================
@@ -254,6 +300,7 @@ class AuthService extends GetxService {
     try {
       await _supabase.signOut();
       _currentUser.value = null;
+      _cacheUser(null);
     } catch (e) {
       _error.value = e.toString();
     }
@@ -304,6 +351,9 @@ class AuthService extends GetxService {
     String? gender,
     double? heightCm,
     double? weightKg,
+    String? fitnessLevel,
+    int? workoutDaysPerWeek,
+    String? preferredWorkoutTime,
   }) async {
     if (_supabase.userId == null) return false;
 
@@ -320,6 +370,9 @@ class AuthService extends GetxService {
       if (gender != null) updates['gender'] = gender;
       if (heightCm != null) updates['height_cm'] = heightCm;
       if (weightKg != null) updates['weight_kg'] = weightKg;
+      if (fitnessLevel != null) updates['fitness_level'] = fitnessLevel;
+      if (workoutDaysPerWeek != null) updates['workout_days_per_week'] = workoutDaysPerWeek;
+      if (preferredWorkoutTime != null) updates['preferred_workout_time'] = preferredWorkoutTime;
 
       await _supabase.client
           .from('users')

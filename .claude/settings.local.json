@@ -9,7 +9,9 @@
       "Bash(flutter build:*)",
       "Bash(del \"c:\\\\dev\\\\flutter_projects\\\\cofit_collective\\\\lib\\\\data\\\\models\\\\post_model.dart\")",
       "Bash(supabase --version:*)",
-      "Bash(supabase login:*)"
+      "Bash(supabase login:*)",
+      "Bash(xargs:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

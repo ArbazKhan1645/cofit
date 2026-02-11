@@ -36,6 +36,7 @@ class UserModel {
   final bool onboardingCompleted;
   final bool notificationsEnabled;
   final String? fcmToken;
+  final String userType; // user, admin
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -75,6 +76,7 @@ class UserModel {
     this.onboardingCompleted = false,
     this.notificationsEnabled = true,
     this.fcmToken,
+    this.userType = 'user',
     required this.createdAt,
     required this.updatedAt,
   });
@@ -136,6 +138,7 @@ class UserModel {
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
       fcmToken: json['fcm_token'] as String?,
+      userType: json['user_type'] as String? ?? 'user',
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -178,6 +181,7 @@ class UserModel {
       'onboarding_completed': onboardingCompleted,
       'notifications_enabled': notificationsEnabled,
       'fcm_token': fcmToken,
+      'user_type': userType,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -256,6 +260,7 @@ class UserModel {
     bool? onboardingCompleted,
     bool? notificationsEnabled,
     String? fcmToken,
+    String? userType,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -300,6 +305,7 @@ class UserModel {
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       fcmToken: fcmToken ?? this.fcmToken,
+      userType: userType ?? this.userType,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -311,6 +317,9 @@ class UserModel {
     if (subscriptionEndDate == null) return false;
     return subscriptionEndDate!.isAfter(DateTime.now());
   }
+
+  /// Check if user is admin
+  bool get isAdmin => userType == 'admin';
 
   /// Get display name (full name or username or email)
   String get displayName {

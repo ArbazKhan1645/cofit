@@ -45,4 +45,15 @@ abstract class AppRoutes {
   // Other Routes
   static const notifications = '/notifications';
   static const trainer = '/trainer';
+  static const helpSupport = '/help-support';
+  static const about = '/about';
+
+  // Admin Routes
+  static const adminHome = '/admin';
+  static const adminChallangeList = '/admin/challanges';
+  static const adminChallangeForm = '/admin/challanges/form';
+  static const adminTrainerList = '/admin/trainers';
+  static const adminTrainerForm = '/admin/trainers/form';
+  static const adminWorkoutList = '/admin/workouts';
+  static const adminWorkoutForm = '/admin/workouts/form';
 }
