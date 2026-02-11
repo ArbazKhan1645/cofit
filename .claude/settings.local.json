@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:dribbble.com)",
+      "WebFetch(domain:www.jessnadine.com)",
+      "Bash(flutter pub get:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter run:*)",
+      "Bash(flutter build:*)",
+      "Bash(del \"c:\\\\dev\\\\flutter_projects\\\\cofit_collective\\\\lib\\\\data\\\\models\\\\post_model.dart\")",
+      "Bash(supabase --version:*)",
+      "Bash(supabase login:*)"
+    ]
+  }
+}

@@ -1,0 +1,107 @@
+name: cofit_collective
+description: "CoFit Collective - A girlie, fun fitness app"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management & Routing
+  get: ^4.6.6
+
+  # UI Components
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.1.0
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  lottie: ^3.0.0
+  flutter_animate: ^4.3.0
+  iconsax: ^0.0.8
+
+  # Video Player
+  video_player: ^2.8.2
+  chewie: ^1.7.4
+
+  # Charts & Calendar
+  fl_chart: ^0.66.2
+  table_calendar: ^3.0.9
+  percent_indicator: ^4.2.3
+
+  # Storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  get_storage: ^2.1.1
+
+  # Backend - Supabase
+  supabase_flutter: ^2.8.4
+
+  # google_sign_in: ^6.2.1
+
+  # Forms & Validation
+  flutter_form_builder: ^10.2.0
+  form_builder_validators: ^11.0.0
+
+  # Network
+  connectivity_plus: ^6.0.3
+  http: ^1.2.0
+  flutter_cache_manager: ^3.3.1
+
+  # Utilities
+  intl: any
+  image_picker: ^1.0.7
+  share_plus: ^7.2.2
+  url_launcher: ^6.2.4
+  uuid: ^4.3.1
+  path_provider: ^2.1.1
+  flutter_image_compress: ^2.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  hive_generator: ^2.0.1
+  flutter_launcher_icons: ^0.14.3
+  build_runner: ^2.4.8
+
+
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_logo.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icons/app_logo.png"
+  remove_alpha_ios: true
+
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
+  generate: true
+
+  # fonts:
+  #   - family: Poppins
+  #     fonts:
+  #       - asset: assets/fonts/Poppins-Regular.ttf
+  #       - asset: assets/fonts/Poppins-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Poppins-SemiBold.ttf
+  #         weight: 600
+  #       - asset: assets/fonts/Poppins-Bold.ttf
+  #         weight: 700
+  #   - family: Nunito
+  #     fonts:
+  #       - asset: assets/fonts/Nunito-Regular.ttf
+  #       - asset: assets/fonts/Nunito-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Nunito-SemiBold.ttf
+  #         weight: 600
