@@ -100,6 +100,25 @@ class MediaUploadService {
     );
   }
 
+  /// Upload raw file (no compression) — for video, etc.
+  /// Returns the public URL.
+  Future<String> uploadRaw(
+    Uint8List bytes, {
+    required String bucket,
+    String? folder,
+    String extension = MediaConfig.defaultVideoExtension,
+    String contentType = MediaConfig.defaultVideoContentType,
+  }) async {
+    final fileName = _generateFileName(extension);
+    final path = folder != null ? '$folder/$fileName' : fileName;
+    return await _supabase.uploadFile(
+      bucket: bucket,
+      path: path,
+      fileBytes: bytes,
+      contentType: contentType,
+    );
+  }
+
   /// Upload multiple images in parallel. Returns list of public URLs.
   Future<List<String>> uploadMultiple(
     List<Uint8List> images, {

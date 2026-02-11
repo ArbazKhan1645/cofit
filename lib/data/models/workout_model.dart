@@ -62,14 +62,14 @@ class WorkoutModel {
   factory WorkoutModel.fromJson(Map<String, dynamic> json) {
     return WorkoutModel(
       id: json['id'] as String,
-      trainerId: json['trainer_id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String,
-      thumbnailUrl: json['thumbnail_url'] as String,
-      videoUrl: json['video_url'] as String,
-      durationMinutes: json['duration_minutes'] as int,
-      difficulty: json['difficulty'] as String,
-      category: json['category'] as String,
+      trainerId: json['trainer_id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      thumbnailUrl: json['thumbnail_url'] as String? ?? '',
+      videoUrl: json['video_url'] as String? ?? '',
+      durationMinutes: json['duration_minutes'] as int? ?? 0,
+      difficulty: json['difficulty'] as String? ?? 'beginner',
+      category: json['category'] as String? ?? 'full_body',
       caloriesBurned: json['calories_burned'] as int? ?? 0,
       equipment: (json['equipment'] as List<dynamic>?)
               ?.map((e) => e as String)
@@ -88,9 +88,9 @@ class WorkoutModel {
       isActive: json['is_active'] as bool? ?? true,
       totalCompletions: json['total_completions'] as int? ?? 0,
       averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0.0,
-      publishedAt: DateTime.parse(json['published_at'] as String),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      publishedAt: DateTime.tryParse(json['published_at'] as String? ?? '') ?? DateTime.now(),
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now(),
       trainer: json['trainers'] != null
           ? TrainerModel.fromJson(json['trainers'] as Map<String, dynamic>)
           : null,
@@ -251,7 +251,7 @@ class TrainerModel {
   factory TrainerModel.fromJson(Map<String, dynamic> json) {
     return TrainerModel(
       id: json['id'] as String,
-      fullName: json['full_name'] as String,
+      fullName: json['full_name'] as String? ?? '',
       email: json['email'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       bio: json['bio'] as String?,
@@ -269,8 +269,8 @@ class TrainerModel {
       isActive: json['is_active'] as bool? ?? true,
       totalWorkouts: json['total_workouts'] as int? ?? 0,
       averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0.0,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
 
@@ -404,6 +404,8 @@ class WorkoutExerciseModel {
   final int? sets;
   final int? restSeconds;
   final String exerciseType; // timed, reps, rest
+  final String? variantId;
+  final Map<String, dynamic> alternatives;
   final DateTime createdAt;
 
   WorkoutExerciseModel({
@@ -419,6 +421,8 @@ class WorkoutExerciseModel {
     this.sets,
     this.restSeconds,
     required this.exerciseType,
+    this.variantId,
+    this.alternatives = const {},
     required this.createdAt,
   });
 
@@ -436,6 +440,9 @@ class WorkoutExerciseModel {
       sets: json['sets'] as int?,
       restSeconds: json['rest_seconds'] as int?,
       exerciseType: json['exercise_type'] as String,
+      variantId: json['variant_id'] as String?,
+      alternatives:
+          (json['alternatives'] as Map<String, dynamic>?) ?? {},
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
@@ -454,7 +461,78 @@ class WorkoutExerciseModel {
       'sets': sets,
       'rest_seconds': restSeconds,
       'exercise_type': exerciseType,
+      'variant_id': variantId,
+      'alternatives': alternatives,
       'created_at': createdAt.toIso8601String(),
     };
+  }
+}
+
+/// Workout Variant Model - Different versions of a workout for specific conditions
+/// Supabase Table: workout_variants
+class WorkoutVariantModel {
+  final String id;
+  final String workoutId;
+  final String variantTag; // 'knee_safe', 'beginner', 'senior_safe'
+  final String label; // 'Knee Safe Version'
+  final String? description;
+  final DateTime createdAt;
+
+  WorkoutVariantModel({
+    required this.id,
+    required this.workoutId,
+    required this.variantTag,
+    required this.label,
+    this.description,
+    required this.createdAt,
+  });
+
+  factory WorkoutVariantModel.fromJson(Map<String, dynamic> json) {
+    return WorkoutVariantModel(
+      id: json['id'] as String,
+      workoutId: json['workout_id'] as String,
+      variantTag: json['variant_tag'] as String,
+      label: json['label'] as String,
+      description: json['description'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'workout_id': workoutId,
+      'variant_tag': variantTag,
+      'label': label,
+      'description': description,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
+  Map<String, dynamic> toInsertJson() {
+    return {
+      'workout_id': workoutId,
+      'variant_tag': variantTag,
+      'label': label,
+      'description': description,
+    };
+  }
+
+  WorkoutVariantModel copyWith({
+    String? id,
+    String? workoutId,
+    String? variantTag,
+    String? label,
+    String? description,
+    DateTime? createdAt,
+  }) {
+    return WorkoutVariantModel(
+      id: id ?? this.id,
+      workoutId: workoutId ?? this.workoutId,
+      variantTag: variantTag ?? this.variantTag,
+      label: label ?? this.label,
+      description: description ?? this.description,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 }

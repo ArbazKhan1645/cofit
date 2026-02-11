@@ -30,3 +30,12 @@ export 'journal_model.dart';
 
 // Notifications (with types and deep link support)
 export 'notification_model.dart';
+
+// Weekly Schedules
+export 'weekly_schedule_model.dart';
+
+// Daily Plans
+export 'daily_plan_model.dart';
+
+// Support Tickets
+export 'support_ticket_model.dart';

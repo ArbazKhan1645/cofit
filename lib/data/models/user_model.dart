@@ -18,6 +18,7 @@ class UserModel {
   final int? preferredSessionDuration; // in minutes
   final List<String> preferredWorkoutTypes;
   final List<String> physicalLimitations;
+  final List<String> medicalConditions;
   final List<String> availableEquipment;
   final String? biggestChallenge;
   final String? currentFeeling;
@@ -36,6 +37,7 @@ class UserModel {
   final bool onboardingCompleted;
   final bool notificationsEnabled;
   final String? fcmToken;
+  final bool isBanned;
   final String userType; // user, admin
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -58,6 +60,7 @@ class UserModel {
     this.preferredSessionDuration,
     this.preferredWorkoutTypes = const [],
     this.physicalLimitations = const [],
+    this.medicalConditions = const [],
     this.availableEquipment = const [],
     this.biggestChallenge,
     this.currentFeeling,
@@ -76,6 +79,7 @@ class UserModel {
     this.onboardingCompleted = false,
     this.notificationsEnabled = true,
     this.fcmToken,
+    this.isBanned = false,
     this.userType = 'user',
     required this.createdAt,
     required this.updatedAt,
@@ -111,6 +115,10 @@ class UserModel {
               ?.map((e) => e as String)
               .toList() ??
           [],
+      medicalConditions: (json['medical_conditions'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       availableEquipment: (json['available_equipment'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
@@ -138,6 +146,7 @@ class UserModel {
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
       fcmToken: json['fcm_token'] as String?,
+      isBanned: json['is_banned'] as bool? ?? false,
       userType: json['user_type'] as String? ?? 'user',
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
@@ -163,6 +172,7 @@ class UserModel {
       'preferred_session_duration': preferredSessionDuration,
       'preferred_workout_types': preferredWorkoutTypes,
       'physical_limitations': physicalLimitations,
+      'medical_conditions': medicalConditions,
       'available_equipment': availableEquipment,
       'biggest_challenge': biggestChallenge,
       'current_feeling': currentFeeling,
@@ -181,6 +191,7 @@ class UserModel {
       'onboarding_completed': onboardingCompleted,
       'notifications_enabled': notificationsEnabled,
       'fcm_token': fcmToken,
+      'is_banned': isBanned,
       'user_type': userType,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -213,6 +224,7 @@ class UserModel {
       'preferred_session_duration': preferredSessionDuration,
       'preferred_workout_types': preferredWorkoutTypes,
       'physical_limitations': physicalLimitations,
+      'medical_conditions': medicalConditions,
       'available_equipment': availableEquipment,
       'biggest_challenge': biggestChallenge,
       'current_feeling': currentFeeling,
@@ -242,6 +254,7 @@ class UserModel {
     int? preferredSessionDuration,
     List<String>? preferredWorkoutTypes,
     List<String>? physicalLimitations,
+    List<String>? medicalConditions,
     List<String>? availableEquipment,
     String? biggestChallenge,
     String? currentFeeling,
@@ -260,6 +273,7 @@ class UserModel {
     bool? onboardingCompleted,
     bool? notificationsEnabled,
     String? fcmToken,
+    bool? isBanned,
     String? userType,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -284,6 +298,7 @@ class UserModel {
       preferredWorkoutTypes:
           preferredWorkoutTypes ?? this.preferredWorkoutTypes,
       physicalLimitations: physicalLimitations ?? this.physicalLimitations,
+      medicalConditions: medicalConditions ?? this.medicalConditions,
       availableEquipment: availableEquipment ?? this.availableEquipment,
       biggestChallenge: biggestChallenge ?? this.biggestChallenge,
       currentFeeling: currentFeeling ?? this.currentFeeling,
@@ -305,6 +320,7 @@ class UserModel {
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       fcmToken: fcmToken ?? this.fcmToken,
+      isBanned: isBanned ?? this.isBanned,
       userType: userType ?? this.userType,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

@@ -175,6 +175,8 @@ class AuthRepository extends BaseRepository {
     DateTime? dateOfBirth,
     double? heightCm,
     double? weightKg,
+    // Medical conditions
+    List<String>? medicalConditions,
   }) async {
     try {
       if (userId == null) {
@@ -206,6 +208,9 @@ class AuthRepository extends BaseRepository {
       }
       if (heightCm != null) updateData['height_cm'] = heightCm;
       if (weightKg != null) updateData['weight_kg'] = weightKg;
+      if (medicalConditions != null) {
+        updateData['medical_conditions'] = medicalConditions;
+      }
 
       final response = await client
           .from('users')

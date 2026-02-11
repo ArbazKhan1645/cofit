@@ -52,10 +52,14 @@ class TrainerController extends BaseController {
     }
     if (searchQuery.value.isNotEmpty) {
       final q = searchQuery.value.toLowerCase();
-      list = list.where((t) =>
-          t.fullName.toLowerCase().contains(q) ||
-          (t.email?.toLowerCase().contains(q) ?? false) ||
-          t.specialties.any((s) => s.toLowerCase().contains(q))).toList();
+      list = list
+          .where(
+            (t) =>
+                t.fullName.toLowerCase().contains(q) ||
+                (t.email?.toLowerCase().contains(q) ?? false) ||
+                t.specialties.any((s) => s.toLowerCase().contains(q)),
+          )
+          .toList();
     }
     return list;
   }
@@ -104,8 +108,9 @@ class TrainerController extends BaseController {
     fullNameController.text = trainer.fullName;
     emailController.text = trainer.email ?? '';
     bioController.text = trainer.bio ?? '';
-    yearsExperienceController.text =
-        trainer.yearsExperience > 0 ? trainer.yearsExperience.toString() : '';
+    yearsExperienceController.text = trainer.yearsExperience > 0
+        ? trainer.yearsExperience.toString()
+        : '';
     instagramController.text = trainer.instagramHandle ?? '';
     websiteController.text = trainer.websiteUrl ?? '';
     specialties.value = List<String>.from(trainer.specialties);
@@ -146,8 +151,9 @@ class TrainerController extends BaseController {
     try {
       String? imageUrl;
       if (selectedImageBytes.value != null) {
-        imageUrl =
-            await MediaService.to.uploadTrainerImage(selectedImageBytes.value!);
+        imageUrl = await MediaService.to.uploadTrainerImage(
+          selectedImageBytes.value!,
+        );
       }
 
       final data = <String, dynamic>{
@@ -155,15 +161,14 @@ class TrainerController extends BaseController {
         'email': emailController.text.trim().isNotEmpty
             ? emailController.text.trim()
             : null,
-        'avatar_url': imageUrl ??
-            (avatarUrl.value.isNotEmpty ? avatarUrl.value : null),
+        'avatar_url':
+            imageUrl ?? (avatarUrl.value.isNotEmpty ? avatarUrl.value : null),
         'bio': bioController.text.trim().isNotEmpty
             ? bioController.text.trim()
             : null,
         'specialties': specialties.toList(),
         'certifications': certifications.toList(),
-        'years_experience':
-            int.tryParse(yearsExperienceController.text) ?? 0,
+        'years_experience': int.tryParse(yearsExperienceController.text) ?? 0,
         'instagram_handle': instagramController.text.trim().isNotEmpty
             ? instagramController.text.trim()
             : null,
@@ -186,12 +191,18 @@ class TrainerController extends BaseController {
 
       await loadTrainers();
       Get.back();
-      Get.snackbar('Success',
-          editingTrainer.value != null ? 'Trainer updated' : 'Trainer added',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Success',
+        editingTrainer.value != null ? 'Trainer updated' : 'Trainer added',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to save trainer',
-          snackPosition: SnackPosition.BOTTOM);
+      print(e);
+      Get.snackbar(
+        'Error',
+        'Failed to save trainer',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
     isSaving.value = false;
   }
@@ -203,11 +214,13 @@ class TrainerController extends BaseController {
         content: const Text('Are you sure you want to delete this trainer?'),
         actions: [
           TextButton(
-              onPressed: () => Get.back(result: false),
-              child: const Text('Cancel')),
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-              onPressed: () => Get.back(result: true),
-              child: const Text('Delete')),
+            onPressed: () => Get.back(result: true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -216,11 +229,17 @@ class TrainerController extends BaseController {
     try {
       await _supabase.from('trainers').delete().eq('id', id);
       trainers.removeWhere((t) => t.id == id);
-      Get.snackbar('Success', 'Trainer deleted',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Success',
+        'Trainer deleted',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete trainer',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to delete trainer',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 

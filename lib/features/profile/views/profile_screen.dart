@@ -1,3 +1,4 @@
+import 'package:cofit_collective/core/services/support_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
@@ -21,7 +22,10 @@ class ProfileScreen extends GetView<ProfileController> {
         actions: [
           IconButton(
             icon: const Icon(Iconsax.setting_2),
-            onPressed: () => Get.toNamed(AppRoutes.settings),
+            onPressed: () {
+              SupportService.showRaiseTicketSheet(screenReference: 'AnyScreen');
+              // Get.toNamed(AppRoutes.settings);
+            },
           ),
         ],
       ),
@@ -38,12 +42,14 @@ class ProfileScreen extends GetView<ProfileController> {
             const SizedBox(height: 24),
             _buildSettingsSection(context),
             // Admin section — only visible for admin users
-            Obx(() => controller.isAdmin.value
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 24),
-                    child: _buildAdminSection(context),
-                  )
-                : const SizedBox.shrink()),
+            Obx(
+              () => controller.isAdmin.value
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 24),
+                      child: _buildAdminSection(context),
+                    )
+                  : const SizedBox.shrink(),
+            ),
             const SizedBox(height: 24),
             _buildSignOutButton(context),
             const SizedBox(height: 32),
@@ -64,118 +70,130 @@ class ProfileScreen extends GetView<ProfileController> {
       child: Column(
         children: [
           // Avatar with upload
-          Obx(() => Stack(
-                alignment: Alignment.center,
-                children: [
-                  CofitAvatar(
-                    imageUrl: controller.userAvatar.value,
-                    userId: controller.userId.value,
-                    userName: controller.userName.value,
-                    radius: 50,
-                    showEditIcon: true,
-                    onTap: () => controller.uploadProfileImage(),
-                  ),
-                  if (controller.isUploadingImage.value)
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: SizedBox(
-                          width: 28,
-                          height: 28,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
-                          ),
+          Obx(
+            () => Stack(
+              alignment: Alignment.center,
+              children: [
+                CofitAvatar(
+                  imageUrl: controller.userAvatar.value,
+                  userId: controller.userId.value,
+                  userName: controller.userName.value,
+                  radius: 50,
+                  showEditIcon: true,
+                  onTap: () => controller.uploadProfileImage(),
+                ),
+                if (controller.isUploadingImage.value)
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
                         ),
                       ),
                     ),
-                ],
-              )),
+                  ),
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
           // Name
-          Obx(() => Text(
-                controller.userName.value,
-                style: Theme.of(context).textTheme.titleLarge,
-              )),
+          Obx(
+            () => Text(
+              controller.userName.value,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
           const SizedBox(height: 4),
-          Obx(() => Text(
-                controller.userEmail.value,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-              )),
+          Obx(
+            () => Text(
+              controller.userEmail.value,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+            ),
+          ),
           const SizedBox(height: 8),
-          Obx(() => controller.memberSince.value.isNotEmpty
-              ? Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgBlush,
-                    borderRadius: AppRadius.pill,
-                  ),
-                  child: Text(
-                    'Member since ${controller.memberSince.value}',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppColors.primary,
-                        ),
-                  ),
-                )
-              : const SizedBox.shrink()),
+          Obx(
+            () => controller.memberSince.value.isNotEmpty
+                ? Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgBlush,
+                      borderRadius: AppRadius.pill,
+                    ),
+                    child: Text(
+                      'Member since ${controller.memberSince.value}',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildStatsRow(BuildContext context) {
-    return Obx(() => Row(
-          children: [
-            Expanded(
-              child: _buildStatItem(
-                context,
-                value: '${controller.totalWorkouts.value}',
-                label: 'Workouts',
-              ),
+    return Obx(
+      () => Row(
+        children: [
+          Expanded(
+            child: _buildStatItem(
+              context,
+              value: '${controller.totalWorkouts.value}',
+              label: 'Workouts',
             ),
-            Container(width: 1, height: 40, color: AppColors.borderLight),
-            Expanded(
-              child: _buildStatItem(
-                context,
-                value: '${controller.currentStreak.value}',
-                label: 'Day Streak',
-              ),
+          ),
+          Container(width: 1, height: 40, color: AppColors.borderLight),
+          Expanded(
+            child: _buildStatItem(
+              context,
+              value: '${controller.currentStreak.value}',
+              label: 'Day Streak',
             ),
-            Container(width: 1, height: 40, color: AppColors.borderLight),
-            Expanded(
-              child: _buildStatItem(
-                context,
-                value: '${controller.totalMinutes.value}',
-                label: 'Minutes',
-              ),
+          ),
+          Container(width: 1, height: 40, color: AppColors.borderLight),
+          Expanded(
+            child: _buildStatItem(
+              context,
+              value: '${controller.totalMinutes.value}',
+              label: 'Minutes',
             ),
-          ],
-        ));
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildStatItem(BuildContext context,
-      {required String value, required String label}) {
+  Widget _buildStatItem(
+    BuildContext context, {
+    required String value,
+    required String label,
+  }) {
     return Column(
       children: [
         Text(
           value,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
-              ),
+            fontWeight: FontWeight.w700,
+            color: AppColors.primary,
+          ),
         ),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall,
-        ),
+        Text(label, style: Theme.of(context).textTheme.labelSmall),
       ],
     );
   }
@@ -234,24 +252,25 @@ class ProfileScreen extends GetView<ProfileController> {
             context,
             icon: Iconsax.card,
             title: 'Subscription',
-            trailing: Obx(() => Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
+            trailing: Obx(
+              () => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: controller.hasActiveSub.value
+                      ? AppColors.successLight
+                      : AppColors.bgBlush,
+                  borderRadius: AppRadius.small,
+                ),
+                child: Text(
+                  controller.hasActiveSub.value ? 'Active' : 'Free',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: controller.hasActiveSub.value
-                        ? AppColors.successLight
-                        : AppColors.bgBlush,
-                    borderRadius: AppRadius.small,
+                        ? AppColors.success
+                        : AppColors.textMuted,
                   ),
-                  child: Text(
-                    controller.hasActiveSub.value ? 'Active' : 'Free',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: controller.hasActiveSub.value
-                              ? AppColors.success
-                              : AppColors.textMuted,
-                        ),
-                  ),
-                )),
+                ),
+              ),
+            ),
             onTap: () {},
           ),
           _buildDivider(),
@@ -293,9 +312,9 @@ class ProfileScreen extends GetView<ProfileController> {
           child: Text(
             'Admin',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         onTap: () => Get.toNamed(AppRoutes.adminHome),
@@ -320,13 +339,14 @@ class ProfileScreen extends GetView<ProfileController> {
         ),
         child: Icon(icon, color: AppColors.primary, size: 20),
       ),
-      title: Text(
-        title,
-        style: Theme.of(context).textTheme.titleSmall,
-      ),
-      trailing: trailing ??
-          const Icon(Iconsax.arrow_right_3,
-              size: 20, color: AppColors.textMuted),
+      title: Text(title, style: Theme.of(context).textTheme.titleSmall),
+      trailing:
+          trailing ??
+          const Icon(
+            Iconsax.arrow_right_3,
+            size: 20,
+            color: AppColors.textMuted,
+          ),
       onTap: onTap,
     );
   }

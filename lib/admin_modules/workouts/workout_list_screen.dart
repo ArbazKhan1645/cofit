@@ -45,15 +45,17 @@ class WorkoutListScreen extends GetView<AdminWorkoutController> {
           // Filter tabs
           Padding(
             padding: AppPadding.horizontal,
-            child: Obx(() => Row(
-                  children: [
-                    _buildFilterChip(context, 'All', 'all'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(context, 'Active', 'active'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(context, 'Inactive', 'inactive'),
-                  ],
-                )),
+            child: Obx(
+              () => Row(
+                children: [
+                  _buildFilterChip(context, 'All', 'all'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(context, 'Active', 'active'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(context, 'Inactive', 'inactive'),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           // List
@@ -95,9 +97,9 @@ class WorkoutListScreen extends GetView<AdminWorkoutController> {
         child: Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: selected ? Colors.white : AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
+            color: selected ? Colors.white : AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -139,54 +141,122 @@ class WorkoutListScreen extends GetView<AdminWorkoutController> {
                     width: 80,
                     height: 80,
                     color: AppColors.bgBlush,
-                    child: const Icon(Iconsax.video,
-                        color: AppColors.primary, size: 32),
+                    child: const Icon(
+                      Iconsax.video,
+                      color: AppColors.primary,
+                      size: 32,
+                    ),
                   ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
           // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(workout.title,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        workout.title,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+
+                    PopupMenuButton<String>(
+                      onSelected: (val) {
+                        if (val == 'view') {
+                          controller.loadWorkoutForView(workout);
+                          Get.toNamed(AppRoutes.adminWorkoutView);
+                        } else if (val == 'edit') {
+                          controller.initFormForEdit(workout);
+                          Get.toNamed(AppRoutes.adminWorkoutForm);
+                        } else if (val == 'delete') {
+                          controller.deleteWorkout(workout.id);
+                        }
+                      },
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(
+                          value: 'view',
+                          child: Row(
+                            children: [
+                              Icon(Iconsax.eye, size: 18),
+                              SizedBox(width: 8),
+                              Text('View'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Iconsax.edit_2, size: 18),
+                              SizedBox(width: 8),
+                              Text('Edit'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Iconsax.trash,
+                                size: 18,
+                                color: AppColors.error,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Delete',
+                                style: TextStyle(color: AppColors.error),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 4),
-                Text('by ${workout.trainerName}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.primary)),
+                Text(
+                  'by ${workout.trainerName}',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.primary),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Icon(Iconsax.clock, size: 14, color: AppColors.textMuted),
                     const SizedBox(width: 4),
-                    Text('${workout.durationMinutes} min',
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelSmall
-                            ?.copyWith(color: AppColors.textMuted)),
+                    Text(
+                      '${workout.durationMinutes} min',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: _difficultyColor(workout.difficulty)
-                            .withValues(alpha: 0.12),
+                        color: _difficultyColor(
+                          workout.difficulty,
+                        ).withValues(alpha: 0.12),
                         borderRadius: AppRadius.small,
                       ),
                       child: Text(
                         workout.difficultyLabel,
-                        style:
-                            Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color:
-                                      _difficultyColor(workout.difficulty),
-                                  fontWeight: FontWeight.w600,
-                                ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: _difficultyColor(workout.difficulty),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -194,34 +264,8 @@ class WorkoutListScreen extends GetView<AdminWorkoutController> {
               ],
             ),
           ),
+
           // Menu
-          PopupMenuButton<String>(
-            onSelected: (val) {
-              if (val == 'edit') {
-                controller.initFormForEdit(workout);
-                Get.toNamed(AppRoutes.adminWorkoutForm);
-              } else if (val == 'delete') {
-                controller.deleteWorkout(workout.id);
-              }
-            },
-            itemBuilder: (_) => [
-              const PopupMenuItem(
-                  value: 'edit',
-                  child: Row(children: [
-                    Icon(Iconsax.edit_2, size: 18),
-                    SizedBox(width: 8),
-                    Text('Edit')
-                  ])),
-              const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(children: [
-                    Icon(Iconsax.trash, size: 18, color: AppColors.error),
-                    SizedBox(width: 8),
-                    Text('Delete',
-                        style: TextStyle(color: AppColors.error))
-                  ])),
-            ],
-          ),
         ],
       ),
     );
@@ -234,11 +278,12 @@ class WorkoutListScreen extends GetView<AdminWorkoutController> {
         children: [
           const Icon(Iconsax.weight, size: 64, color: AppColors.textMuted),
           const SizedBox(height: 16),
-          Text('No workouts found',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(color: AppColors.textMuted)),
+          Text(
+            'No workouts found',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: AppColors.textMuted),
+          ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () {

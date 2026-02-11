@@ -22,7 +22,7 @@ class JournalController extends BaseController {
   // Personalized plan (calculated)
   final Rx<PersonalizedPlan?> personalizedPlan = Rx<PersonalizedPlan?>(null);
 
-  // 16 Detailed Journal Prompts (including body measurements)
+  // 14 Journal Prompts (including body measurements)
   final List<Map<String, dynamic>> prompts = [
     // 1. Goals
     {
@@ -161,37 +161,7 @@ class JournalController extends BaseController {
         },
       ],
     },
-    // 9. Session Duration
-    {
-      'question': 'How long can you workout each session?',
-      'subtitle': 'Even short workouts make a big difference!',
-      'type': 'singleSelect',
-      'icon': 'duration',
-      'key': 'sessionDuration',
-      'options': [
-        {
-          'title': '15-20 minutes',
-          'description': 'Quick and effective • Perfect for busy days',
-          'emoji': '⚡',
-        },
-        {
-          'title': '25-35 minutes',
-          'description': 'Balanced sessions • Great results',
-          'emoji': '✨',
-        },
-        {
-          'title': '40-50 minutes',
-          'description': 'Full workouts • Maximum benefits',
-          'emoji': '💫',
-        },
-        {
-          'title': '60+ minutes',
-          'description': 'Extended sessions • For dedicated athletes',
-          'emoji': '🏆',
-        },
-      ],
-    },
-    // 10. Workout Types
+    // 9. Workout Types
     {
       'question': 'What types of workouts excite you?',
       'subtitle': 'Select all that interest you',
@@ -210,26 +180,59 @@ class JournalController extends BaseController {
         'Barre',
       ],
     },
-    // 11. Injuries/Limitations
+    // 10. Health Conditions (grouped)
     {
-      'question': 'Any areas we should be mindful of?',
-      'subtitle': 'We\'ll customize workouts to keep you safe',
-      'type': 'multiSelect',
+      'question': 'Any health conditions we should know about?',
+      'subtitle': 'We\'ll adapt your workouts to keep you safe',
+      'type': 'groupedMultiSelect',
       'icon': 'health',
       'allowNone': true,
-      'options': [
-        'None - I\'m good to go!',
-        'Lower back sensitivity',
-        'Knee concerns',
-        'Shoulder issues',
-        'Wrist/hand limitations',
-        'Ankle/foot sensitivity',
-        'Neck concerns',
-        'Hip limitations',
-        'Pregnancy/Postpartum',
+      'groups': [
+        {
+          'title': 'Lower Body',
+          'options': [
+            {'tag': 'knee_issue', 'label': 'Knee Issue'},
+            {'tag': 'ankle_issue', 'label': 'Ankle Issue'},
+            {'tag': 'hip_issue', 'label': 'Hip Issue'},
+            {'tag': 'foot_issue', 'label': 'Foot / Heel Issue'},
+          ],
+        },
+        {
+          'title': 'Spine & Back',
+          'options': [
+            {'tag': 'lower_back_issue', 'label': 'Lower Back Issue'},
+            {'tag': 'upper_back_issue', 'label': 'Upper Back / Posture'},
+            {'tag': 'neck_issue', 'label': 'Neck / Cervical Issue'},
+          ],
+        },
+        {
+          'title': 'Upper Body',
+          'options': [
+            {'tag': 'shoulder_issue', 'label': 'Shoulder Issue'},
+            {'tag': 'elbow_issue', 'label': 'Elbow Issue'},
+            {'tag': 'wrist_issue', 'label': 'Wrist Issue'},
+          ],
+        },
+        {
+          'title': 'General / Systemic',
+          'options': [
+            {'tag': 'cardio_limit', 'label': 'Cardio Limitation'},
+            {'tag': 'balance_issue', 'label': 'Balance Issue'},
+            {'tag': 'overweight_safe', 'label': 'Overweight Modifications'},
+            {'tag': 'pregnancy_safe', 'label': 'Pregnancy / Postpartum'},
+            {'tag': 'senior_safe', 'label': 'Senior (40+/50+)'},
+          ],
+        },
+        {
+          'title': 'Recovery & Special',
+          'options': [
+            {'tag': 'rehab_mode', 'label': 'Rehab / Physiotherapy'},
+            {'tag': 'mobility_only', 'label': 'Mobility / Flexibility Only'},
+          ],
+        },
       ],
     },
-    // 12. Equipment
+    // 11. Equipment
     {
       'question': 'What equipment do you have access to?',
       'subtitle': 'No equipment? No problem! We have options for everyone',
@@ -241,14 +244,12 @@ class JournalController extends BaseController {
         'Dumbbells',
         'Resistance bands',
         'Kettlebell',
-        'Jump rope',
         'Foam roller',
         'Stability ball',
-        'Pull-up bar',
         'Full gym access',
       ],
     },
-    // 13. Biggest Challenge
+    // 12. Biggest Challenge
     {
       'question': 'What\'s your biggest fitness challenge?',
       'subtitle': 'Understanding this helps us support you better',
@@ -288,7 +289,7 @@ class JournalController extends BaseController {
         },
       ],
     },
-    // 14. How you feel
+    // 13. How you feel
     {
       'question': 'How do you feel about your body right now?',
       'subtitle': 'This is a safe space - your feelings are valid',
@@ -323,42 +324,7 @@ class JournalController extends BaseController {
         },
       ],
     },
-    // 15. Timeline
-    {
-      'question': 'What\'s your ideal timeline for results?',
-      'subtitle': 'Remember: sustainable progress beats quick fixes',
-      'type': 'singleSelect',
-      'icon': 'timeline',
-      'key': 'timeline',
-      'options': [
-        {
-          'title': '2-4 weeks',
-          'description': 'Quick wins and energy boost',
-          'emoji': '⚡',
-        },
-        {
-          'title': '1-2 months',
-          'description': 'Building habits and seeing changes',
-          'emoji': '📈',
-        },
-        {
-          'title': '3-6 months',
-          'description': 'Significant transformation',
-          'emoji': '🦋',
-        },
-        {
-          'title': '6+ months',
-          'description': 'Long-term lifestyle change',
-          'emoji': '🌟',
-        },
-        {
-          'title': 'No rush',
-          'description': 'Focusing on the journey, not the destination',
-          'emoji': '🧘',
-        },
-      ],
-    },
-    // 16. Motivation
+    // 14. Motivation
     {
       'question': 'Why is getting fit important to you?',
       'subtitle': 'Your "why" will keep you going on tough days',
@@ -382,6 +348,7 @@ class JournalController extends BaseController {
   final RxString sessionDuration = ''.obs;
   final RxList<String> workoutTypes = <String>[].obs;
   final RxList<String> limitations = <String>[].obs;
+  final RxList<String> medicalConditions = <String>[].obs;
   final RxList<String> equipment = <String>[].obs;
   final RxString biggestChallenge = ''.obs;
   final RxString currentFeeling = ''.obs;
@@ -409,27 +376,21 @@ class JournalController extends BaseController {
       case 0: // Goals
         toggleGoal(option);
         break;
-      case 9: // Workout types (was 5)
+      case 8: // Workout types
         if (workoutTypes.contains(option)) {
           workoutTypes.remove(option);
         } else {
           workoutTypes.add(option);
         }
         break;
-      case 10: // Limitations (was 6)
-        if (option.contains('None')) {
-          limitations.clear();
-          limitations.add(option);
+      case 9: // Medical conditions (grouped)
+        if (medicalConditions.contains(option)) {
+          medicalConditions.remove(option);
         } else {
-          limitations.remove('None - I\'m good to go!');
-          if (limitations.contains(option)) {
-            limitations.remove(option);
-          } else {
-            limitations.add(option);
-          }
+          medicalConditions.add(option);
         }
         break;
-      case 11: // Equipment (was 7)
+      case 10: // Equipment
         if (equipment.contains(option)) {
           equipment.remove(option);
         } else {
@@ -459,9 +420,6 @@ class JournalController extends BaseController {
       case 'currentFeeling':
         currentFeeling.value = value;
         break;
-      case 'timeline':
-        timeline.value = value;
-        break;
     }
   }
 
@@ -489,11 +447,11 @@ class JournalController extends BaseController {
     switch (pageIndex) {
       case 0:
         return selectedGoals;
-      case 9: // Workout types
+      case 8: // Workout types
         return workoutTypes;
-      case 10: // Limitations
-        return limitations;
-      case 11: // Equipment
+      case 9: // Medical conditions
+        return medicalConditions;
+      case 10: // Equipment
         return equipment;
       default:
         return <String>[].obs;
@@ -514,8 +472,6 @@ class JournalController extends BaseController {
         return biggestChallenge.value;
       case 'currentFeeling':
         return currentFeeling.value;
-      case 'timeline':
-        return timeline.value;
       default:
         return '';
     }
@@ -539,21 +495,17 @@ class JournalController extends BaseController {
         return true;
       case 7: // Preferred time
         return preferredTime.value.isNotEmpty;
-      case 8: // Session duration
-        return sessionDuration.value.isNotEmpty;
-      case 9: // Workout types
+      case 8: // Workout types
         return workoutTypes.isNotEmpty;
-      case 10: // Limitations
-        return limitations.isNotEmpty;
-      case 11: // Equipment
+      case 9: // Medical conditions (optional)
+        return true;
+      case 10: // Equipment
         return equipment.isNotEmpty;
-      case 12: // Biggest challenge
+      case 11: // Biggest challenge
         return biggestChallenge.value.isNotEmpty;
-      case 13: // Current feeling
+      case 12: // Current feeling
         return currentFeeling.value.isNotEmpty;
-      case 14: // Timeline
-        return timeline.value.isNotEmpty;
-      case 15: // Motivation (optional)
+      case 13: // Motivation (optional)
         return true;
       default:
         return true;
@@ -568,9 +520,8 @@ class JournalController extends BaseController {
       );
       currentPage.value++;
     } else {
-      // Generate personalized plan and show results
-      _generatePersonalizedPlan();
-      showResults.value = true;
+      // Complete onboarding directly (no plan page)
+      completeOnboarding();
     }
   }
 
@@ -721,6 +672,8 @@ class JournalController extends BaseController {
         dateOfBirth: dateOfBirth.value,
         heightCm: heightCm.value,
         weightKg: weightKg.value,
+        // Medical conditions
+        medicalConditions: medicalConditions.toList(),
       );
 
       if (result.isSuccess) {

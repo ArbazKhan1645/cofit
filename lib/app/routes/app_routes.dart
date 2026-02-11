@@ -56,4 +56,17 @@ abstract class AppRoutes {
   static const adminTrainerForm = '/admin/trainers/form';
   static const adminWorkoutList = '/admin/workouts';
   static const adminWorkoutForm = '/admin/workouts/form';
+  static const adminWorkoutView = '/admin/workouts/view';
+  static const adminWeeklySchedule = '/admin/weekly-schedule';
+  static const adminDailyPlan = '/admin/daily-plan';
+  static const adminUserList = '/admin/users';
+  static const adminUserDetail = '/admin/users/detail';
+  static const adminCommunity = '/admin/community';
+  static const adminPostsList = '/admin/community/posts';
+  static const adminSupport = '/admin/support';
+  static const adminTicketChat = '/admin/support/chat';
+
+  // Support (User)
+  static const supportTickets = '/support';
+  static const supportChat = '/support/chat';
 }

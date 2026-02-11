@@ -31,6 +31,7 @@ import '../../features/profile/controllers/settings_controller.dart';
 
 // Admin Modules
 import '../../admin_modules/admin_home_screen.dart';
+import '../../admin_modules/dashboard/admin_dashboard_controller.dart';
 import '../../admin_modules/trainers/trainer_controller.dart';
 import '../../admin_modules/trainers/trainer_list_screen.dart';
 import '../../admin_modules/trainers/trainer_form_screen.dart';
@@ -40,6 +41,23 @@ import '../../admin_modules/challanges/challange_form_screen.dart';
 import '../../admin_modules/workouts/workout_controller.dart';
 import '../../admin_modules/workouts/workout_list_screen.dart';
 import '../../admin_modules/workouts/workout_form_screen.dart';
+import '../../admin_modules/workouts/workout_view_screen.dart';
+import '../../admin_modules/weekly_schedule/weekly_schedule_controller.dart';
+import '../../admin_modules/weekly_schedule/weekly_schedule_screen.dart';
+import '../../admin_modules/daily_plan/daily_plan_controller.dart';
+import '../../admin_modules/daily_plan/daily_plan_screen.dart';
+import '../../admin_modules/users/users_controller.dart';
+import '../../admin_modules/users/user_list_screen.dart';
+import '../../admin_modules/users/user_detail_screen.dart';
+import '../../admin_modules/community/community_controller.dart';
+import '../../admin_modules/community/community_dashboard_screen.dart';
+import '../../admin_modules/community/admin_posts_screen.dart';
+import '../../admin_modules/support/admin_support_controller.dart';
+import '../../admin_modules/support/admin_ticket_list_screen.dart';
+import '../../admin_modules/support/admin_ticket_chat_screen.dart';
+import '../../features/support/support_controller.dart';
+import '../../features/support/ticket_list_screen.dart';
+import '../../features/support/ticket_chat_screen.dart';
 
 class AppPages {
   AppPages._();
@@ -143,6 +161,9 @@ class AppPages {
     GetPage(
       name: AppRoutes.adminHome,
       page: () => const AdminHomeScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => AdminDashboardController());
+      }),
       transition: Transition.rightToLeft,
     ),
     GetPage(
@@ -182,6 +203,81 @@ class AppPages {
     GetPage(
       name: AppRoutes.adminWorkoutForm,
       page: () => const WorkoutFormScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminWorkoutView,
+      page: () => const WorkoutViewScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminWeeklySchedule,
+      page: () => const WeeklyScheduleScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => WeeklyScheduleController());
+      }),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminDailyPlan,
+      page: () => const DailyPlanScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => DailyPlanController());
+      }),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminUserList,
+      page: () => const UserListScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => AdminUsersController());
+      }),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminUserDetail,
+      page: () => const UserDetailScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminCommunity,
+      page: () => const CommunityDashboardScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => AdminCommunityController());
+      }),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminPostsList,
+      page: () => const AdminPostsScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminSupport,
+      page: () => const AdminTicketListScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => AdminSupportController());
+      }),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminTicketChat,
+      page: () => const AdminTicketChatScreen(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // User Support
+    GetPage(
+      name: AppRoutes.supportTickets,
+      page: () => const TicketListScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => SupportController());
+      }),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.supportChat,
+      page: () => const TicketChatScreen(),
       transition: Transition.rightToLeft,
     ),
   ];

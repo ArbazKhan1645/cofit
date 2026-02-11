@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/services/fitness_calculation_service.dart';
 import '../controllers/journal_controller.dart';
 
 class JournalPromptsScreen extends GetView<JournalController> {
@@ -18,7 +16,7 @@ class JournalPromptsScreen extends GetView<JournalController> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         leading: Obx(
-          () => controller.currentPage.value > 0 || controller.showResults.value
+          () => controller.currentPage.value > 0
               ? IconButton(
                   icon: const Icon(Icons.arrow_back),
                   onPressed: controller.previousPage,
@@ -26,34 +24,24 @@ class JournalPromptsScreen extends GetView<JournalController> {
               : const SizedBox.shrink(),
         ),
         title: Obx(
-          () => controller.showResults.value
-              ? const Text('Your Plan')
-              : Text(
-                  'Question ${controller.currentPage.value + 1} of ${controller.totalPages}',
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
+          () => Text(
+            'Question ${controller.currentPage.value + 1} of ${controller.totalPages}',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
         ),
         actions: [
-          Obx(
-            () => !controller.showResults.value
-                ? TextButton(
-                    onPressed: controller.skipOnboarding,
-                    child: Text(
-                      'Skip',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  )
-                : const SizedBox.shrink(),
+          TextButton(
+            onPressed: controller.skipOnboarding,
+            child: Text(
+              'Skip',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: AppColors.textMuted,
+              ),
+            ),
           ),
         ],
       ),
-      body: Obx(
-        () => controller.showResults.value
-            ? _buildResultsPage(context)
-            : _buildQuestionsPage(context),
-      ),
+      body: _buildQuestionsPage(context),
     );
   }
 
@@ -106,10 +94,22 @@ class JournalPromptsScreen extends GetView<JournalController> {
                     onPressed: controller.canProceed()
                         ? controller.nextPage
                         : null,
-                    child: Text(
-                      controller.currentPage.value == controller.totalPages - 1
-                          ? 'See My Plan'
-                          : 'Continue',
+                    child: Obx(
+                      () => controller.isLoading.value
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              controller.currentPage.value ==
+                                      controller.totalPages - 1
+                                  ? 'Complete Setup'
+                                  : 'Continue',
+                            ),
                     ),
                   ),
                 ),
@@ -241,6 +241,8 @@ class JournalPromptsScreen extends GetView<JournalController> {
         return _buildHeightPicker(context);
       case 'weightPicker':
         return _buildWeightPicker(context);
+      case 'groupedMultiSelect':
+        return _buildGroupedMultiSelect(context, prompt, index);
       default:
         return const SizedBox.shrink();
     }
@@ -563,6 +565,180 @@ class JournalPromptsScreen extends GetView<JournalController> {
     });
   }
 
+  Widget _buildGroupedMultiSelect(
+    BuildContext context,
+    Map<String, dynamic> prompt,
+    int index,
+  ) {
+    final groups = prompt['groups'] as List;
+    return Obx(() {
+      final selectedList = controller.getMultiSelectList(index);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // "None" chip at top
+          GestureDetector(
+            onTap: () {
+              if (selectedList.isNotEmpty) {
+                selectedList.clear();
+              }
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: selectedList.isEmpty
+                    ? AppColors.primary
+                    : Colors.white,
+                borderRadius: AppRadius.large,
+                border: Border.all(
+                  color: selectedList.isEmpty
+                      ? AppColors.primary
+                      : AppColors.borderLight,
+                  width: selectedList.isEmpty ? 2 : 1,
+                ),
+                boxShadow: selectedList.isEmpty
+                    ? AppShadows.primaryGlow
+                    : AppShadows.subtle,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Iconsax.tick_circle,
+                    size: 20,
+                    color: selectedList.isEmpty
+                        ? Colors.white
+                        : AppColors.textMuted,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'None - I\'m good to go!',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: selectedList.isEmpty
+                              ? Colors.white
+                              : AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Grouped ExpansionTiles
+          ...groups.map((group) {
+            final title = group['title'] as String;
+            final options = group['options'] as List;
+            final hasSelection = options.any(
+              (o) => selectedList.contains(o['tag']),
+            );
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: AppRadius.medium,
+                border: Border.all(
+                  color: hasSelection
+                      ? AppColors.primary.withValues(alpha: 0.4)
+                      : AppColors.borderLight,
+                ),
+              ),
+              child: Theme(
+                data: Theme.of(context)
+                    .copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  initiallyExpanded: hasSelection,
+                  tilePadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                  title: Row(
+                    children: [
+                      Text(
+                        title,
+                        style:
+                            Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                      if (hasSelection) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: AppRadius.pill,
+                          ),
+                          child: Text(
+                            '${options.where((o) => selectedList.contains(o['tag'])).length}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: options.map((option) {
+                          final tag = option['tag'] as String;
+                          final label = option['label'] as String;
+                          final isSelected = selectedList.contains(tag);
+                          return GestureDetector(
+                            onTap: () => controller.toggleMultiSelect(
+                                index, tag),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.bgCream,
+                                borderRadius: AppRadius.pill,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : AppColors.borderLight,
+                                ),
+                              ),
+                              child: Text(
+                                label,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : AppColors.textPrimary,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                    ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      );
+    });
+  }
+
   Widget _buildSlider(BuildContext context, Map<String, dynamic> prompt) {
     return Obx(
       () => Column(
@@ -834,605 +1010,5 @@ class JournalPromptsScreen extends GetView<JournalController> {
     );
   }
 
-  // RESULTS PAGE
-  Widget _buildResultsPage(BuildContext context) {
-    final plan = controller.getPersonalizedPlan();
-    if (plan == null) return const Center(child: CircularProgressIndicator());
-
-    return SingleChildScrollView(
-      padding: AppPadding.screenAll,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Celebration header
-          _buildCelebrationHeader(
-            context,
-          ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.1, end: 0),
-          const SizedBox(height: 32),
-
-          // Your plan summary
-          _buildPlanSummary(
-            context,
-            plan,
-          ).animate().fadeIn(delay: 200.ms, duration: 500.ms),
-          const SizedBox(height: 24),
-
-          // Progress prediction graph
-          _buildProgressGraph(
-            context,
-            plan,
-          ).animate().fadeIn(delay: 400.ms, duration: 500.ms),
-          const SizedBox(height: 24),
-
-          // Weekly schedule
-          _buildWeeklySchedule(
-            context,
-            plan,
-          ).animate().fadeIn(delay: 600.ms, duration: 500.ms),
-          const SizedBox(height: 24),
-
-          // Personalized tips
-          if (plan.personalizedTips.isNotEmpty)
-            _buildPersonalizedTips(
-              context,
-              plan,
-            ).animate().fadeIn(delay: 700.ms, duration: 500.ms),
-          if (plan.personalizedTips.isNotEmpty) const SizedBox(height: 24),
-
-          // Motivational message
-          _buildMotivationalMessage(
-            context,
-          ).animate().fadeIn(delay: 800.ms, duration: 500.ms),
-          const SizedBox(height: 32),
-
-          // Start button
-          Obx(
-            () => SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: controller.isLoading.value
-                        ? null
-                        : controller.completeOnboarding,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                    ),
-                    child: controller.isLoading.value
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Iconsax.play_circle),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Start My Journey',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ],
-                          ),
-                  ),
-                )
-                .animate()
-                .fadeIn(delay: 1000.ms, duration: 500.ms)
-                .slideY(begin: 0.2, end: 0),
-          ),
-          const SizedBox(height: 32),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCelebrationHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: AppRadius.extraLarge,
-        boxShadow: AppShadows.primaryGlow,
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Iconsax.medal_star,
-              color: Colors.white,
-              size: 40,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Your Personalized Plan is Ready!',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Based on your answers, we\'ve created the perfect fitness journey for you.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlanSummary(BuildContext context, PersonalizedPlan plan) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: AppRadius.large,
-        boxShadow: AppShadows.subtle,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Your Weekly Plan',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildPlanStatItem(
-                  context,
-                  icon: Iconsax.calendar,
-                  value: '${plan.weeklyWorkouts}',
-                  label: 'Workouts/Week',
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildPlanStatItem(
-                  context,
-                  icon: Iconsax.timer_1,
-                  value: '${plan.minutesPerSession}',
-                  label: 'Min/Session',
-                  color: AppColors.lavender,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildPlanStatItem(
-                  context,
-                  icon: Iconsax.flash_1,
-                  value: '${plan.weeklyCalories}',
-                  label: 'Est. Cal/Week',
-                  color: AppColors.sunnyYellow,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildPlanStatItem(
-                  context,
-                  icon: Iconsax.cup,
-                  value: '${plan.weeksToGoal}',
-                  label: 'Weeks to Goal',
-                  color: AppColors.mintFresh,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlanStatItem(
-    BuildContext context, {
-    required IconData icon,
-    required String value,
-    required String label,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: AppRadius.medium,
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-          Text(
-            label,
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.copyWith(color: AppColors.textMuted),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressGraph(BuildContext context, PersonalizedPlan plan) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: AppRadius.large,
-        boxShadow: AppShadows.subtle,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Iconsax.chart_2, color: AppColors.primary),
-              const SizedBox(width: 12),
-              Text(
-                'Your Progress Prediction',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Expected fitness improvement over ${plan.weeksToGoal} weeks',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 200,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 25,
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(color: AppColors.borderLight, strokeWidth: 1);
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40,
-                      getTitlesWidget: (value, meta) {
-                        return Text(
-                          '${value.toInt()}%',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(color: AppColors.textMuted),
-                        );
-                      },
-                    ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                      getTitlesWidget: (value, meta) {
-                        final weekLabels = ['Now', 'W4', 'W8', 'W12', 'W16'];
-                        final index = value.toInt();
-                        if (index >= 0 && index < weekLabels.length) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              weekLabels[index],
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(color: AppColors.textMuted),
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                minX: 0,
-                maxX: 4,
-                minY: 0,
-                maxY: 100,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: plan.progressCurve,
-                    isCurved: true,
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primary, AppColors.peach],
-                    ),
-                    barWidth: 4,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        return FlDotCirclePainter(
-                          radius: 6,
-                          color: Colors.white,
-                          strokeWidth: 3,
-                          strokeColor: AppColors.primary,
-                        );
-                      },
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary.withValues(alpha: 0.3),
-                          AppColors.primary.withValues(alpha: 0.05),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Legend
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.successLight,
-                  borderRadius: AppRadius.pill,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Iconsax.trend_up,
-                      size: 16,
-                      color: AppColors.success,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Projected ${plan.expectedImprovement}% improvement',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWeeklySchedule(BuildContext context, PersonalizedPlan plan) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: AppRadius.large,
-        boxShadow: AppShadows.subtle,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Iconsax.calendar_1, color: AppColors.lavender),
-              const SizedBox(width: 12),
-              Text(
-                'Suggested Weekly Schedule',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: plan.schedule.map((day) {
-              return Tooltip(
-                message: day.workoutType,
-                child: Column(
-                  children: [
-                    Text(
-                      day.day,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: day.isWorkoutDay
-                            ? AppColors.primary
-                            : AppColors.bgBlush,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        day.isWorkoutDay ? Iconsax.activity : Iconsax.moon,
-                        color: day.isWorkoutDay
-                            ? Colors.white
-                            : AppColors.textMuted,
-                        size: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLegendItem(context, AppColors.primary, 'Workout'),
-              const SizedBox(width: 24),
-              _buildLegendItem(context, AppColors.bgBlush, 'Rest'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPersonalizedTips(BuildContext context, PersonalizedPlan plan) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: AppRadius.large,
-        boxShadow: AppShadows.subtle,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Iconsax.lamp_on, color: AppColors.sunnyYellow),
-              const SizedBox(width: 12),
-              Text(
-                'Personalized Tips',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ...plan.personalizedTips.map((tip) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: AppColors.bgBlush,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.check,
-                        size: 14,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        tip,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLegendItem(BuildContext context, Color color, String label) {
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.labelSmall?.copyWith(color: AppColors.textMuted),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMotivationalMessage(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: AppColors.mintGradient,
-        borderRadius: AppRadius.large,
-      ),
-      child: Column(
-        children: [
-          const Icon(Iconsax.heart, color: Colors.white, size: 32),
-          const SizedBox(height: 12),
-          Text(
-            '"The journey of a thousand miles begins with a single step."',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.white,
-              fontStyle: FontStyle.italic,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'We believe in you! Let\'s make this your most transformative fitness journey yet.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
 }
+

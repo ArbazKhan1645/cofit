@@ -83,6 +83,16 @@ class MediaService extends GetxService {
     return await Future.wait(futures);
   }
 
+  /// Pick a video from gallery. Returns bytes or null if cancelled.
+  Future<Uint8List?> pickVideoFromGallery({Duration? maxDuration}) async {
+    final picked = await _picker.pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: maxDuration ?? const Duration(minutes: 30),
+    );
+    if (picked == null) return null;
+    return await picked.readAsBytes();
+  }
+
   // ============================================
   // UPLOAD API (give file, get URL)
   // ============================================
@@ -93,7 +103,7 @@ class MediaService extends GetxService {
     return await _uploadService.upload(
       bytes,
       bucket: MediaConfig.postImagesBucket,
-      compress: true,
+      compress: false,
     );
   }
 
@@ -147,19 +157,36 @@ class MediaService extends GetxService {
     );
   }
 
+  /// Upload a workout video. Returns the public URL.
+  Future<String> uploadWorkoutVideo(Uint8List bytes) async {
+    return await _uploadService.uploadRaw(
+      bytes,
+      bucket: MediaConfig.workoutMediaBucket,
+    );
+  }
+
   /// Delete a trainer image from storage.
   Future<void> deleteTrainerImage(String publicUrl) async {
-    await _uploadService.delete(publicUrl, bucket: MediaConfig.trainerImagesBucket);
+    await _uploadService.delete(
+      publicUrl,
+      bucket: MediaConfig.trainerImagesBucket,
+    );
   }
 
   /// Delete a challenge image from storage.
   Future<void> deleteChallengeImage(String publicUrl) async {
-    await _uploadService.delete(publicUrl, bucket: MediaConfig.challengeImagesBucket);
+    await _uploadService.delete(
+      publicUrl,
+      bucket: MediaConfig.challengeImagesBucket,
+    );
   }
 
   /// Delete a workout thumbnail from storage.
   Future<void> deleteWorkoutThumbnail(String publicUrl) async {
-    await _uploadService.delete(publicUrl, bucket: MediaConfig.workoutMediaBucket);
+    await _uploadService.delete(
+      publicUrl,
+      bucket: MediaConfig.workoutMediaBucket,
+    );
   }
 
   /// Upload multiple post images in parallel. Returns list of public URLs.
@@ -269,12 +296,11 @@ class MediaService extends GetxService {
   }) {
     // Supabase image transform format:
     // /storage/v1/render/image/public/bucket/path?width=200&height=200&resize=cover
-    return originalUrl.replaceFirst(
-      '/storage/v1/object/public/',
-      '/storage/v1/render/image/public/',
-    ).replaceFirst(
-      RegExp(r'\?.*$'),
-      '',
-    );
+    return originalUrl
+        .replaceFirst(
+          '/storage/v1/object/public/',
+          '/storage/v1/render/image/public/',
+        )
+        .replaceFirst(RegExp(r'\?.*$'), '');
   }
 }

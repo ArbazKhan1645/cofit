@@ -36,17 +36,89 @@ class SubscriptionScreen extends GetView<SubscriptionController> {
                 ).textTheme.bodyLarge?.copyWith(color: AppColors.textMuted),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+
+              // PC / Non-PC Member Toggle
+              Obx(
+                () => Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgBlush,
+                    borderRadius: AppRadius.pill,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => controller.toggleMemberType(true),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: controller.isPCMember.value
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                              borderRadius: AppRadius.pill,
+                            ),
+                            child: Text(
+                              'PC Member',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                    color: controller.isPCMember.value
+                                        ? Colors.white
+                                        : AppColors.textMuted,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => controller.toggleMemberType(false),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: !controller.isPCMember.value
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                              borderRadius: AppRadius.pill,
+                            ),
+                            child: Text(
+                              'Non-PC Member',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                    color: !controller.isPCMember.value
+                                        ? Colors.white
+                                        : AppColors.textMuted,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
 
               // Plans
               Expanded(
-                child: ListView.separated(
-                  itemCount: controller.plans.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final plan = controller.plans[index];
-                    return Obx(() {
+                child: Obx(
+                  () => ListView.separated(
+                    itemCount: controller.plans.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      final plan = controller.plans[index];
                       final isSelected =
                           controller.selectedPlanIndex.value == index;
 
@@ -55,8 +127,8 @@ class SubscriptionScreen extends GetView<SubscriptionController> {
                         isSelected: isSelected,
                         onTap: () => controller.selectPlan(index),
                       );
-                    });
-                  },
+                    },
+                  ),
                 ),
               ),
 

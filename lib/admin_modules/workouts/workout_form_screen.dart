@@ -50,6 +50,8 @@ class WorkoutFormScreen extends GetView<AdminWorkoutController> {
               const SizedBox(height: 24),
               _buildSettingsSection(context),
               const SizedBox(height: 24),
+              _buildVariantsSection(context),
+              const SizedBox(height: 24),
               _buildExercisesSection(context),
               const SizedBox(height: 32),
             ],
@@ -172,17 +174,138 @@ class WorkoutFormScreen extends GetView<AdminWorkoutController> {
                 : null,
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: controller.videoUrlController,
-            decoration: const InputDecoration(
-              labelText: 'Video URL',
-              prefixIcon: Icon(Iconsax.video),
-              hintText: 'Paste video URL',
-            ),
-          ),
+          _buildVideoField(context),
         ],
       ),
     );
+  }
+
+  Widget _buildVideoField(BuildContext context) {
+    return Obx(() {
+      final isUrl = controller.videoSource.value == 'url';
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Toggle
+          Row(
+            children: [
+              const Icon(Iconsax.video, size: 20, color: AppColors.textMuted),
+              const SizedBox(width: 8),
+              Text('Video',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w500)),
+              const Spacer(),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'url', label: Text('URL')),
+                  ButtonSegment(value: 'upload', label: Text('Upload')),
+                ],
+                selected: {controller.videoSource.value},
+                onSelectionChanged: (s) =>
+                    controller.videoSource.value = s.first,
+                style: ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  textStyle: WidgetStatePropertyAll(
+                      Theme.of(context).textTheme.labelSmall),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // URL mode
+          if (isUrl)
+            TextFormField(
+              controller: controller.videoUrlController,
+              decoration: const InputDecoration(
+                labelText: 'Video URL (optional)',
+                prefixIcon: Icon(Iconsax.link),
+                hintText: 'YouTube, Vimeo, etc.',
+              ),
+              keyboardType: TextInputType.url,
+              validator: AdminWorkoutController.validateVideoUrl,
+            ),
+          // Upload mode
+          if (!isUrl) ...[
+            if (controller.isUploadingVideo.value)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                decoration: BoxDecoration(
+                  color: AppColors.bgBlush,
+                  borderRadius: AppRadius.medium,
+                ),
+                child: const Column(
+                  children: [
+                    SizedBox(
+                        width: 24,
+                        height: 24,
+                        child:
+                            CircularProgressIndicator(strokeWidth: 2.5)),
+                    SizedBox(height: 8),
+                    Text('Uploading video...'),
+                  ],
+                ),
+              )
+            else if (controller.uploadedVideoUrl.value.isNotEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.successLight,
+                  borderRadius: AppRadius.medium,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Iconsax.tick_circle,
+                        color: AppColors.success, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text('Video uploaded',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: AppColors.success)),
+                    ),
+                    GestureDetector(
+                      onTap: controller.removeVideo,
+                      child: const Icon(Icons.close,
+                          size: 18, color: AppColors.textMuted),
+                    ),
+                  ],
+                ),
+              )
+            else
+              GestureDetector(
+                onTap: controller.pickVideo,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgBlush,
+                    borderRadius: AppRadius.medium,
+                    border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Iconsax.video_add,
+                          color: AppColors.primary, size: 32),
+                      const SizedBox(height: 8),
+                      Text('Pick Video',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: AppColors.primary)),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ],
+      );
+    });
   }
 
   Widget _buildTrainerSection(BuildContext context) {
@@ -402,6 +525,114 @@ class WorkoutFormScreen extends GetView<AdminWorkoutController> {
     );
   }
 
+  Widget _buildVariantsSection(BuildContext context) {
+    return Container(
+      padding: AppPadding.cardLarge,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: AppRadius.large,
+        boxShadow: AppShadows.subtle,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Variants',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600)),
+              TextButton.icon(
+                onPressed: () => controller.showVariantDialog(),
+                icon: const Icon(Iconsax.add, size: 18),
+                label: const Text('Add'),
+              ),
+            ],
+          ),
+          Obx(() {
+            if (controller.variants.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'No variants. Exercises below are the default set.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.textMuted),
+                ),
+              );
+            }
+            return Column(
+              children: controller.variants.map((v) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgCream,
+                    borderRadius: AppRadius.small,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: AppRadius.pill,
+                        ),
+                        child: Text(
+                          v.variantTag,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(v.label,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w500)),
+                            if (v.description != null &&
+                                v.description!.isNotEmpty)
+                              Text(v.description!,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(color: AppColors.textMuted)),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Iconsax.edit_2, size: 18),
+                        onPressed: () =>
+                            controller.showVariantDialog(editing: v),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close,
+                            size: 18, color: AppColors.error),
+                        onPressed: () => controller.removeVariant(v),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   Widget _buildExercisesSection(BuildContext context) {
     return Container(
       padding: AppPadding.cardLarge,
@@ -428,8 +659,55 @@ class WorkoutFormScreen extends GetView<AdminWorkoutController> {
               ),
             ],
           ),
+          // Variant selector chips
           Obx(() {
-            if (controller.exercises.isEmpty) {
+            if (controller.variants.isEmpty) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: const Text('Default'),
+                        selected: controller.selectedVariant.value == null,
+                        onSelected: (_) => controller.selectVariant(null),
+                        selectedColor: AppColors.primary,
+                        labelStyle: TextStyle(
+                          color: controller.selectedVariant.value == null
+                              ? Colors.white
+                              : AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    ...controller.variants.map((v) {
+                      final isSelected =
+                          controller.selectedVariant.value?.id == v.id;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(v.label),
+                          selected: isSelected,
+                          onSelected: (_) => controller.selectVariant(v),
+                          selectedColor: AppColors.primary,
+                          labelStyle: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            );
+          }),
+          Obx(() {
+            final variantExercises = controller.currentVariantExercises;
+            if (variantExercises.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(
@@ -444,10 +722,12 @@ class WorkoutFormScreen extends GetView<AdminWorkoutController> {
             return ReorderableListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: controller.exercises.length,
+              itemCount: variantExercises.length,
               onReorder: controller.reorderExercises,
               itemBuilder: (context, index) {
-                final ex = controller.exercises[index];
+                final ex = variantExercises[index];
+                // Find actual index in the full exercises list
+                final actualIndex = controller.exercises.indexOf(ex);
                 return Container(
                   key: ValueKey(ex.id),
                   margin: const EdgeInsets.only(bottom: 8),
@@ -490,15 +770,46 @@ class WorkoutFormScreen extends GetView<AdminWorkoutController> {
                           ],
                         ),
                       ),
+                      // Alternatives button
+                      Stack(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Iconsax.document_filter, size: 18),
+                            onPressed: () => controller
+                                .showAlternativesDialog(actualIndex),
+                          ),
+                          if (ex.alternatives.isNotEmpty)
+                            Positioned(
+                              right: 4,
+                              top: 4,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  '${ex.alternatives.length}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                       IconButton(
                         icon: const Icon(Iconsax.edit_2, size: 18),
-                        onPressed: () =>
-                            controller.showExerciseDialog(editIndex: index),
+                        onPressed: () => controller.showExerciseDialog(
+                            editIndex: actualIndex),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close,
                             size: 18, color: AppColors.error),
-                        onPressed: () => controller.removeExercise(index),
+                        onPressed: () =>
+                            controller.removeExercise(actualIndex),
                       ),
                     ],
                   ),

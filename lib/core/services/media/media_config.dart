@@ -36,4 +36,25 @@ class MediaConfig {
   // ============================================
   static const String defaultImageExtension = 'jpg';
   static const String defaultContentType = 'image/jpeg';
+  static const String defaultVideoExtension = 'mp4';
+  static const String defaultVideoContentType = 'video/mp4';
+
+  // ============================================
+  // VIDEO URL VALIDATION
+  // ============================================
+  static const List<String> allowedVideoHosts = [
+    'youtube.com',
+    'www.youtube.com',
+    'm.youtube.com',
+    'youtu.be',
+    'vimeo.com',
+    'player.vimeo.com',
+    'dailymotion.com',
+    'www.dailymotion.com',
+    'dai.ly',
+    'streamable.com',
+    'drive.google.com',
+    'loom.com',
+    'www.loom.com',
+  ];
 }

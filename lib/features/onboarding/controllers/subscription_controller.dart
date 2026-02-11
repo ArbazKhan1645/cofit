@@ -10,20 +10,14 @@ class SubscriptionController extends BaseController {
   // Observables
   final RxInt selectedPlanIndex = 1.obs; // Default to annual (better value)
   final RxBool isProcessing = false.obs;
+  final RxBool isPCMember = true.obs; // Default to PC Member
 
-  // Plan details
-  final List<Map<String, dynamic>> plans = [
+  // PC Member pricing
+  final List<Map<String, dynamic>> pcPlans = [
     {
       'name': 'Monthly',
       'price': 14.99,
       'period': 'month',
-      'features': [
-        'Access to all workouts',
-        '8 new workouts weekly',
-        'Progress tracking',
-        'Community access',
-        'Recipe sharing',
-      ],
       'isBestValue': false,
     },
     {
@@ -32,16 +26,35 @@ class SubscriptionController extends BaseController {
       'period': 'year',
       'monthlyPrice': 8.33,
       'savings': '44%',
-      'features': [
-        'Everything in Monthly',
-        'Priority support',
-        'Exclusive challenges',
-        'Early access to features',
-        'Offline downloads',
-      ],
       'isBestValue': true,
     },
   ];
+
+  // Non-PC Member pricing
+  final List<Map<String, dynamic>> nonPcPlans = [
+    {
+      'name': 'Monthly',
+      'price': 17.99,
+      'period': 'month',
+      'isBestValue': false,
+    },
+    {
+      'name': 'Annual',
+      'price': 119.99,
+      'period': 'year',
+      'monthlyPrice': 10.00,
+      'savings': '44%',
+      'isBestValue': true,
+    },
+  ];
+
+  List<Map<String, dynamic>> get plans =>
+      isPCMember.value ? pcPlans : nonPcPlans;
+
+  void toggleMemberType(bool pcMember) {
+    isPCMember.value = pcMember;
+    selectedPlanIndex.value = 1; // Reset to annual
+  }
 
   void selectPlan(int index) {
     selectedPlanIndex.value = index;
