@@ -1,1 +1,1 @@
-# coit
+# CoFit Collective
