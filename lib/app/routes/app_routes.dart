@@ -20,11 +20,13 @@ abstract class AppRoutes {
   static const workoutDetail = '/workout-detail';
   static const workoutPlayer = '/workout-player';
   static const workoutLibrary = '/workout-library';
+  static const savedWorkouts = '/saved-workouts';
   static const trainerProfile = '/trainer-profile';
 
   // Progress Routes
   static const progress = '/progress';
   static const badges = '/badges';
+  static const achievements = '/achievements';
   static const workoutHistory = '/workout-history';
 
   // Community Routes
@@ -66,6 +68,9 @@ abstract class AppRoutes {
   static const adminPostsList = '/admin/community/posts';
   static const adminSupport = '/admin/support';
   static const adminTicketChat = '/admin/support/chat';
+  static const adminAchievementList = '/admin/achievements';
+  static const adminAchievementForm = '/admin/achievements/form';
+  static const adminAchievementDetail = '/admin/achievements/detail';
 
   // Support (User)
   static const supportTickets = '/support';

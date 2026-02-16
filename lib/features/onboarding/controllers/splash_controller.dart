@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/services/auth_service.dart';
+import '../../home/controllers/home_controller.dart';
 
 class SplashController extends GetxController {
   final _storage = GetStorage();
@@ -54,7 +55,10 @@ class SplashController extends GetxController {
       return;
     }
 
-    // Everything complete - go to main app
+    // Everything complete - pre-load home data then go to main app
+    if (!Get.isRegistered<HomeController>()) {
+      Get.put<HomeController>(HomeController(), permanent: true);
+    }
     Get.offAllNamed(AppRoutes.main);
   }
 }

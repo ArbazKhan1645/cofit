@@ -48,6 +48,13 @@ class AdminDrawer extends StatelessWidget {
                   ),
                   _buildDrawerItem(
                     context,
+                    title: 'Achievements',
+                    icon: Iconsax.medal_star,
+                    color: AppColors.mintFresh,
+                    route: AppRoutes.adminAchievementList,
+                  ),
+                  _buildDrawerItem(
+                    context,
                     title: 'Trainers',
                     icon: Iconsax.personalcard,
                     color: AppColors.lavender,

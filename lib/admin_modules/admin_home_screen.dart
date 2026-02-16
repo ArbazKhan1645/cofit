@@ -66,6 +66,8 @@ class AdminHomeScreen extends GetView<AdminDashboardController> {
                 const SizedBox(height: 12),
                 _buildChallengeStatsCards(context),
                 const SizedBox(height: 12),
+                _buildAchievementStatsCards(context),
+                const SizedBox(height: 12),
                 _buildQuickActions(context),
                 const SizedBox(height: 12),
               ],
@@ -992,6 +994,72 @@ class AdminHomeScreen extends GetView<AdminDashboardController> {
                     '${controller.totalChallengeCompletions.value}',
                     'Completions',
                     Iconsax.tick_circle,
+                    AppColors.mintFresh,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ));
+  }
+
+  // ============================================
+  // ACHIEVEMENT STATS
+  // ============================================
+
+  Widget _buildAchievementStatsCards(BuildContext context) {
+    return Obx(() => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Achievement Stats',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    '${controller.totalAchievements.value}',
+                    'Total',
+                    Iconsax.medal_star,
+                    AppColors.lavender,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    '${controller.activeAchievementsCount.value}',
+                    'Active',
+                    Iconsax.tick_circle,
+                    AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    '${controller.totalAchievementCompletions.value}',
+                    'Completions',
+                    Iconsax.star_1,
+                    AppColors.skyBlue,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    '${controller.totalUsersWithProgress.value}',
+                    'Users Tracking',
+                    Iconsax.people,
                     AppColors.mintFresh,
                   ),
                 ),

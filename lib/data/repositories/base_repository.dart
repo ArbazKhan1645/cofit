@@ -76,7 +76,7 @@ class Result<T> {
     R Function(RepositoryException error) onError,
     R Function(T data) onSuccess,
   ) {
-    if (isSuccess && data != null) {
+    if (isSuccess) {
       return onSuccess(data as T);
     }
     return onError(error ?? RepositoryException(message: 'Unknown error'));

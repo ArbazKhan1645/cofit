@@ -10,10 +10,13 @@ class MainBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<NavigationController>(() => NavigationController());
-    Get.lazyPut<HomeController>(() => HomeController());
+    // HomeController may already be pre-loaded from splash/auth flow
+    if (!Get.isRegistered<HomeController>()) {
+      Get.put<HomeController>(HomeController());
+    }
     Get.lazyPut<WorkoutsController>(() => WorkoutsController());
     Get.lazyPut<ProgressController>(() => ProgressController());
-    Get.lazyPut<CommunityController>(() => CommunityController());
+    Get.put<CommunityController>(CommunityController());
     Get.lazyPut<ProfileController>(() => ProfileController());
   }
 }

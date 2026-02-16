@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
+import '../../../app/routes/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../controllers/progress_controller.dart';
@@ -200,58 +201,129 @@ class ProgressScreen extends GetView<ProgressController> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () => Get.toNamed(AppRoutes.achievements),
               child: const Text('View All'),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        Obx(() => GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.8,
+        Obx(() {
+          if (controller.isLoadingAchievements.value) {
+            return const SizedBox(
+              height: 100,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final displayItems = controller.sortedDisplayItems;
+          if (displayItems.isEmpty) {
+            return Container(
+              width: double.infinity,
+              padding: AppPadding.cardLarge,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: AppRadius.large,
+                boxShadow: AppShadows.subtle,
               ),
-              itemCount: controller.badges.take(8).length,
-              itemBuilder: (context, index) {
-                final badge = controller.badges[index];
-                return _buildBadgeItem(context, badge);
-              },
-            )),
+              child: Column(
+                children: [
+                  Icon(Iconsax.medal_star,
+                      size: 40, color: AppColors.textDisabled),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No achievements yet',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.75,
+            ),
+            itemCount: displayItems.take(8).length,
+            itemBuilder: (context, index) {
+              final item = displayItems[index];
+              return _buildAchievementItem(context, item);
+            },
+          );
+        }),
       ],
     );
   }
 
-  Widget _buildBadgeItem(BuildContext context, dynamic badge) {
-    final isUnlocked = badge.isUnlocked;
+  Widget _buildAchievementItem(BuildContext context, dynamic item) {
+    final achievement = item.achievement;
+    final bool isCompleted = item.isCompleted;
+    final bool isInProgress = item.isInProgress;
+
+    Color borderColor;
+    Color bgColor;
+    Color iconColor;
+    if (isCompleted) {
+      borderColor = AppColors.success;
+      bgColor = AppColors.success.withValues(alpha: 0.1);
+      iconColor = AppColors.success;
+    } else if (isInProgress) {
+      borderColor = AppColors.primary;
+      bgColor = AppColors.bgBlush;
+      iconColor = AppColors.primary;
+    } else {
+      borderColor = AppColors.borderLight;
+      bgColor = AppColors.bgCream;
+      iconColor = AppColors.textDisabled;
+    }
 
     return Column(
       children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: isUnlocked ? AppColors.bgBlush : AppColors.bgCream,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isUnlocked ? AppColors.primary : AppColors.borderLight,
-              width: 2,
+        Stack(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: bgColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: borderColor, width: 2),
+              ),
+              child: Icon(
+                achievement.iconData,
+                color: iconColor,
+                size: 24,
+              ),
             ),
-          ),
-          child: Icon(
-            _getBadgeIcon(badge.iconName),
-            color: isUnlocked ? AppColors.primary : AppColors.textDisabled,
-            size: 24,
-          ),
+            if (isCompleted)
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                    color: AppColors.success,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 12),
+                ),
+              ),
+          ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
-          badge.name,
+          achievement.name,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: isUnlocked ? AppColors.textPrimary : AppColors.textMuted,
+                color: isCompleted || isInProgress
+                    ? AppColors.textPrimary
+                    : AppColors.textMuted,
               ),
           textAlign: TextAlign.center,
           maxLines: 2,
@@ -259,29 +331,6 @@ class ProgressScreen extends GetView<ProgressController> {
         ),
       ],
     );
-  }
-
-  IconData _getBadgeIcon(String iconName) {
-    switch (iconName) {
-      case 'footsteps':
-        return Iconsax.lovely;
-      case 'calendar':
-        return Iconsax.calendar_tick;
-      case 'sunrise':
-        return Iconsax.sun_1;
-      case 'star':
-        return Iconsax.star_1;
-      case 'trophy':
-        return Iconsax.cup;
-      case 'fire':
-        return Iconsax.flash_1;
-      case 'medal':
-        return Iconsax.medal;
-      case 'crown':
-        return Iconsax.crown_1;
-      default:
-        return Iconsax.award;
-    }
   }
 
   Widget _buildStreakCalendar(BuildContext context) {

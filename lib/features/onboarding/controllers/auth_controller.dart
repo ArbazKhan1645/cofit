@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../shared/widgets/widgets.dart';
+import '../../home/controllers/home_controller.dart';
 
 class AuthController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
@@ -225,7 +226,10 @@ class AuthController extends GetxController {
       return;
     }
 
-    // Everything complete - go to main app
+    // Everything complete - pre-load home data then go to main app
+    if (!Get.isRegistered<HomeController>()) {
+      Get.put<HomeController>(HomeController(), permanent: true);
+    }
     Get.offAllNamed(AppRoutes.main);
   }
 

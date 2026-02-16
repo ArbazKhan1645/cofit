@@ -613,11 +613,6 @@ class WorkoutFormScreen extends GetView<AdminWorkoutController> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Iconsax.edit_2, size: 18),
-                        onPressed: () =>
-                            controller.showVariantDialog(editing: v),
-                      ),
-                      IconButton(
                         icon: const Icon(Icons.close,
                             size: 18, color: AppColors.error),
                         onPressed: () => controller.removeVariant(v),

@@ -1,48 +1,104 @@
-/// Badge Model - Achievement badge definitions
-/// Supabase Table: badges
-class BadgeModel {
+import 'package:flutter/material.dart';
+
+/// Achievement Model - Achievement definitions created by admin
+/// Supabase Table: achievements
+class AchievementModel {
   final String id;
   final String name;
   final String description;
-  final String iconUrl;
-  final String category; // streak, workout, community, milestone, special
-  final String requirementType; // workouts_completed, streak_days, challenges_won, etc.
-  final int requiredCount;
-  final int xpReward;
-  final String rarity; // common, rare, epic, legendary
+  final int iconCode; // Material Icon codePoint
+  final String type; // workout_count, workout_minutes, streak_days, category_workouts, calories_burned, consecutive_days, first_workout, first_challenge, challenge_completions
+  final int targetValue;
+  final String targetUnit; // workouts, minutes, days, calories, challenges
+  final String category; // workout, streak, milestone, community, special
+  final String? targetCategory; // for category_workouts type (e.g. yoga, hiit)
   final bool isActive;
   final int sortOrder;
   final DateTime createdAt;
+  final DateTime updatedAt;
 
-  BadgeModel({
+  AchievementModel({
     required this.id,
     required this.name,
     required this.description,
-    required this.iconUrl,
+    required this.iconCode,
+    required this.type,
+    required this.targetValue,
+    required this.targetUnit,
     required this.category,
-    required this.requirementType,
-    this.requiredCount = 1,
-    this.xpReward = 0,
-    this.rarity = 'common',
+    this.targetCategory,
     this.isActive = true,
     this.sortOrder = 0,
     required this.createdAt,
+    required this.updatedAt,
   });
 
-  factory BadgeModel.fromJson(Map<String, dynamic> json) {
-    return BadgeModel(
+  /// Get Flutter IconData from stored codePoint
+  IconData get iconData => IconData(iconCode, fontFamily: 'MaterialIcons');
+
+  /// Human-readable type label
+  String get typeLabel {
+    switch (type) {
+      case 'workout_count':
+        return 'Workout Count';
+      case 'workout_minutes':
+        return 'Workout Minutes';
+      case 'streak_days':
+        return 'Streak Days';
+      case 'category_workouts':
+        return 'Category Workouts';
+      case 'calories_burned':
+        return 'Calories Burned';
+      case 'consecutive_days':
+        return 'Consecutive Days';
+      case 'first_workout':
+        return 'First Workout';
+      case 'first_challenge':
+        return 'First Challenge';
+      case 'challenge_completions':
+        return 'Challenge Completions';
+      default:
+        return type.replaceAll('_', ' ');
+    }
+  }
+
+  /// Human-readable category label
+  String get categoryLabel {
+    switch (category) {
+      case 'workout':
+        return 'Workout';
+      case 'streak':
+        return 'Streak';
+      case 'milestone':
+        return 'Milestone';
+      case 'community':
+        return 'Community';
+      case 'special':
+        return 'Special';
+      default:
+        return category;
+    }
+  }
+
+  factory AchievementModel.fromJson(Map<String, dynamic> json) {
+    return AchievementModel(
       id: json['id'] as String,
-      name: json['name'] as String,
-      description: json['description'] as String,
-      iconUrl: json['icon_url'] as String,
-      category: json['category'] as String,
-      requirementType: json['requirement_type'] as String,
-      requiredCount: json['required_count'] as int? ?? 1,
-      xpReward: json['xp_reward'] as int? ?? 0,
-      rarity: json['rarity'] as String? ?? 'common',
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      iconCode: json['icon_code'] as int? ?? 0xe5d2, // fitness_center default
+      type: json['type'] as String? ?? 'workout_count',
+      targetValue: json['target_value'] as int? ?? 1,
+      targetUnit: json['target_unit'] as String? ?? 'workouts',
+      category: json['category'] as String? ?? 'workout',
+      targetCategory: json['target_category'] as String?,
       isActive: json['is_active'] as bool? ?? true,
       sortOrder: json['sort_order'] as int? ?? 0,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : DateTime.now(),
     );
   }
 
@@ -51,85 +107,107 @@ class BadgeModel {
       'id': id,
       'name': name,
       'description': description,
-      'icon_url': iconUrl,
+      'icon_code': iconCode,
+      'type': type,
+      'target_value': targetValue,
+      'target_unit': targetUnit,
       'category': category,
-      'requirement_type': requirementType,
-      'required_count': requiredCount,
-      'xp_reward': xpReward,
-      'rarity': rarity,
+      'target_category': targetCategory,
       'is_active': isActive,
       'sort_order': sortOrder,
       'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
-  BadgeModel copyWith({
+  AchievementModel copyWith({
     String? id,
     String? name,
     String? description,
-    String? iconUrl,
+    int? iconCode,
+    String? type,
+    int? targetValue,
+    String? targetUnit,
     String? category,
-    String? requirementType,
-    int? requiredCount,
-    int? xpReward,
-    String? rarity,
+    String? targetCategory,
     bool? isActive,
     int? sortOrder,
     DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
-    return BadgeModel(
+    return AchievementModel(
       id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
-      iconUrl: iconUrl ?? this.iconUrl,
+      iconCode: iconCode ?? this.iconCode,
+      type: type ?? this.type,
+      targetValue: targetValue ?? this.targetValue,
+      targetUnit: targetUnit ?? this.targetUnit,
       category: category ?? this.category,
-      requirementType: requirementType ?? this.requirementType,
-      requiredCount: requiredCount ?? this.requiredCount,
-      xpReward: xpReward ?? this.xpReward,
-      rarity: rarity ?? this.rarity,
+      targetCategory: targetCategory ?? this.targetCategory,
       isActive: isActive ?? this.isActive,
       sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }
 
-/// User Achievement Model - Tracks which badges users have earned
+/// User Achievement Model - Tracks user progress towards achievements
 /// Supabase Table: user_achievements
 class UserAchievementModel {
   final String id;
   final String userId;
-  final String badgeId;
-  final DateTime earnedAt;
+  final String achievementId;
   final int currentProgress;
-  final bool isNew; // Flag for showing notification
+  final bool isCompleted;
+  final DateTime? completedAt;
   final DateTime createdAt;
+  final DateTime updatedAt;
 
   // Joined data (optional, populated from joins)
-  final BadgeModel? badge;
+  final AchievementModel? achievement;
 
   UserAchievementModel({
     required this.id,
     required this.userId,
-    required this.badgeId,
-    required this.earnedAt,
+    required this.achievementId,
     this.currentProgress = 0,
-    this.isNew = true,
+    this.isCompleted = false,
+    this.completedAt,
     required this.createdAt,
-    this.badge,
+    required this.updatedAt,
+    this.achievement,
   });
+
+  /// Whether user has started but not completed
+  bool get isInProgress => !isCompleted && currentProgress > 0;
+
+  /// Progress as percentage 0.0 - 1.0
+  double get progressPercentage {
+    if (achievement == null || achievement!.targetValue == 0) return 0.0;
+    return (currentProgress / achievement!.targetValue).clamp(0.0, 1.0);
+  }
 
   factory UserAchievementModel.fromJson(Map<String, dynamic> json) {
     return UserAchievementModel(
       id: json['id'] as String,
       userId: json['user_id'] as String,
-      badgeId: json['badge_id'] as String,
-      earnedAt: DateTime.parse(json['earned_at'] as String),
+      achievementId: json['achievement_id'] as String,
       currentProgress: json['current_progress'] as int? ?? 0,
-      isNew: json['is_new'] as bool? ?? true,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      badge: json['badges'] != null
-          ? BadgeModel.fromJson(json['badges'] as Map<String, dynamic>)
+      isCompleted: json['is_completed'] as bool? ?? false,
+      completedAt: json['completed_at'] != null
+          ? DateTime.parse(json['completed_at'] as String)
+          : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : DateTime.now(),
+      achievement: json['achievements'] != null
+          ? AchievementModel.fromJson(
+              json['achievements'] as Map<String, dynamic>)
           : null,
     );
   }
@@ -138,117 +216,54 @@ class UserAchievementModel {
     return {
       'id': id,
       'user_id': userId,
-      'badge_id': badgeId,
-      'earned_at': earnedAt.toIso8601String(),
+      'achievement_id': achievementId,
       'current_progress': currentProgress,
-      'is_new': isNew,
+      'is_completed': isCompleted,
+      'completed_at': completedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
-    };
-  }
-
-  Map<String, dynamic> toInsertJson() {
-    return {
-      'user_id': userId,
-      'badge_id': badgeId,
-      'earned_at': earnedAt.toIso8601String(),
-      'current_progress': currentProgress,
-      'is_new': isNew,
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
   UserAchievementModel copyWith({
     String? id,
     String? userId,
-    String? badgeId,
-    DateTime? earnedAt,
+    String? achievementId,
     int? currentProgress,
-    bool? isNew,
+    bool? isCompleted,
+    DateTime? completedAt,
     DateTime? createdAt,
-    BadgeModel? badge,
+    DateTime? updatedAt,
+    AchievementModel? achievement,
   }) {
     return UserAchievementModel(
       id: id ?? this.id,
       userId: userId ?? this.userId,
-      badgeId: badgeId ?? this.badgeId,
-      earnedAt: earnedAt ?? this.earnedAt,
+      achievementId: achievementId ?? this.achievementId,
       currentProgress: currentProgress ?? this.currentProgress,
-      isNew: isNew ?? this.isNew,
+      isCompleted: isCompleted ?? this.isCompleted,
+      completedAt: completedAt ?? this.completedAt,
       createdAt: createdAt ?? this.createdAt,
-      badge: badge ?? this.badge,
+      updatedAt: updatedAt ?? this.updatedAt,
+      achievement: achievement ?? this.achievement,
     );
-  }
-
-  /// Check if achievement is complete
-  bool get isComplete => badge != null ? currentProgress >= badge!.requiredCount : false;
-
-  /// Get progress percentage
-  double get progressPercentage {
-    if (badge == null || badge!.requiredCount == 0) return 0.0;
-    return (currentProgress / badge!.requiredCount).clamp(0.0, 1.0);
   }
 }
 
-/// Achievement Progress Model - Tracks progress towards locked achievements
-/// Supabase Table: achievement_progress
-class AchievementProgressModel {
-  final String id;
-  final String userId;
-  final String badgeId;
-  final int currentProgress;
-  final DateTime lastUpdated;
-  final DateTime createdAt;
+/// Achievement Stats Model - Computed analytics for admin detail view
+class AchievementStatsModel {
+  final int totalUsers;
+  final int completedCount;
+  final double avgProgress; // 0.0 - 1.0
+  final int inProgressCount;
 
-  // Joined data
-  final BadgeModel? badge;
-
-  AchievementProgressModel({
-    required this.id,
-    required this.userId,
-    required this.badgeId,
-    required this.currentProgress,
-    required this.lastUpdated,
-    required this.createdAt,
-    this.badge,
+  AchievementStatsModel({
+    required this.totalUsers,
+    required this.completedCount,
+    required this.avgProgress,
+    required this.inProgressCount,
   });
 
-  factory AchievementProgressModel.fromJson(Map<String, dynamic> json) {
-    return AchievementProgressModel(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      badgeId: json['badge_id'] as String,
-      currentProgress: json['current_progress'] as int,
-      lastUpdated: DateTime.parse(json['last_updated'] as String),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      badge: json['badges'] != null
-          ? BadgeModel.fromJson(json['badges'] as Map<String, dynamic>)
-          : null,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'user_id': userId,
-      'badge_id': badgeId,
-      'current_progress': currentProgress,
-      'last_updated': lastUpdated.toIso8601String(),
-      'created_at': createdAt.toIso8601String(),
-    };
-  }
-
-  Map<String, dynamic> toInsertJson() {
-    return {
-      'user_id': userId,
-      'badge_id': badgeId,
-      'current_progress': currentProgress,
-      'last_updated': lastUpdated.toIso8601String(),
-    };
-  }
-
-  double get progressPercentage {
-    if (badge == null || badge!.requiredCount == 0) return 0.0;
-    return (currentProgress / badge!.requiredCount).clamp(0.0, 1.0);
-  }
-
-  bool get isComplete => badge != null ? currentProgress >= badge!.requiredCount : false;
+  double get completionRate =>
+      totalUsers > 0 ? completedCount / totalUsers : 0.0;
 }

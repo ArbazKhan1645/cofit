@@ -13,8 +13,11 @@ class MockData {
       PostModel(
         id: '1',
         userId: 'user1',
-        content: 'Just completed my first full week of workouts! Feeling amazing and so grateful for this community.',
-        imageUrls: ['https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400'],
+        content:
+            'Just completed my first full week of workouts! Feeling amazing and so grateful for this community.',
+        imageUrls: [
+          'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400',
+        ],
         postType: 'image',
         likesCount: 24,
         commentsCount: 5,
@@ -23,14 +26,16 @@ class MockData {
         author: UserSummary(
           id: 'user1',
           fullName: 'Sarah M.',
-          avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
         ),
         isLikedByMe: true,
       ),
       PostModel(
         id: '2',
         userId: 'user2',
-        content: 'Morning yoga with Nadine is the perfect way to start the day. Who else is a morning workout person?',
+        content:
+            'Morning yoga with Nadine is the perfect way to start the day. Who else is a morning workout person?',
         postType: 'text',
         likesCount: 18,
         commentsCount: 12,
@@ -39,15 +44,19 @@ class MockData {
         author: UserSummary(
           id: 'user2',
           fullName: 'Emma K.',
-          avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
         ),
         isLikedByMe: false,
       ),
       PostModel(
         id: '3',
         userId: 'user3',
-        content: 'Hit a new personal record today! 5 weeks streak and still going strong.',
-        imageUrls: ['https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400'],
+        content:
+            'Hit a new personal record today! 5 weeks streak and still going strong.',
+        imageUrls: [
+          'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400',
+        ],
         postType: 'achievement',
         likesCount: 45,
         commentsCount: 8,
@@ -56,14 +65,16 @@ class MockData {
         author: UserSummary(
           id: 'user3',
           fullName: 'Lisa T.',
-          avatarUrl: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=100',
         ),
         isLikedByMe: true,
       ),
       PostModel(
         id: '4',
         userId: 'user4',
-        content: 'The HIIT Blast workout is no joke! But so worth it. Who else loves the burn?',
+        content:
+            'The HIIT Blast workout is no joke! But so worth it. Who else loves the burn?',
         postType: 'text',
         likesCount: 32,
         commentsCount: 15,
@@ -72,7 +83,8 @@ class MockData {
         author: UserSummary(
           id: 'user4',
           fullName: 'Amy R.',
-          avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100',
         ),
         isLikedByMe: false,
       ),
@@ -86,8 +98,10 @@ class MockData {
       ChallengeModel(
         id: '1',
         title: '7 Day Workout Streak',
-        description: 'Complete a workout every day for 7 consecutive days. Any workout counts!',
-        imageUrl: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400',
+        description:
+            'Complete a workout every day for 7 consecutive days. Any workout counts!',
+        imageUrl:
+            'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400',
         challengeType: 'streak',
         targetValue: 7,
         targetUnit: 'days',
@@ -103,7 +117,8 @@ class MockData {
         id: '2',
         title: 'February Fitness',
         description: 'Complete 20 workouts this month. Consistency is key!',
-        imageUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400',
+        imageUrl:
+            'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400',
         challengeType: 'workout_count',
         targetValue: 20,
         targetUnit: 'workouts',
@@ -119,7 +134,8 @@ class MockData {
         id: '3',
         title: 'Core Crusher Challenge',
         description: 'Complete 10 core-focused workouts this month.',
-        imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400',
+        imageUrl:
+            'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400',
         challengeType: 'specific_category',
         targetCategory: 'core',
         targetValue: 10,
@@ -136,7 +152,8 @@ class MockData {
         id: '4',
         title: 'Early Bird Special',
         description: 'Complete 5 workouts before 8 AM this week.',
-        imageUrl: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400',
+        imageUrl:
+            'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400',
         challengeType: 'workout_count',
         targetValue: 5,
         targetUnit: 'morning workouts',
@@ -159,8 +176,10 @@ class MockData {
         id: '1',
         userId: 'user1',
         title: 'Protein Power Smoothie',
-        description: 'A delicious post-workout smoothie packed with protein and nutrients.',
-        imageUrl: 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=400',
+        description:
+            'A delicious post-workout smoothie packed with protein and nutrients.',
+        imageUrl:
+            'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=400',
         prepTimeMinutes: 5,
         cookTimeMinutes: 0,
         servings: 1,
@@ -174,7 +193,8 @@ class MockData {
         author: UserSummary(
           id: 'user1',
           fullName: 'Sarah M.',
-          avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
         ),
         isLikedByMe: true,
         isSavedByMe: true,
@@ -183,8 +203,10 @@ class MockData {
         id: '2',
         userId: 'user2',
         title: 'Quinoa Buddha Bowl',
-        description: 'A nutritious and filling bowl perfect for lunch or dinner.',
-        imageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
+        description:
+            'A nutritious and filling bowl perfect for lunch or dinner.',
+        imageUrl:
+            'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
         prepTimeMinutes: 15,
         cookTimeMinutes: 20,
         servings: 2,
@@ -198,7 +220,8 @@ class MockData {
         author: UserSummary(
           id: 'user2',
           fullName: 'Emma K.',
-          avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
         ),
         isLikedByMe: false,
         isSavedByMe: false,
@@ -208,7 +231,8 @@ class MockData {
         userId: 'user3',
         title: 'Greek Yogurt Parfait',
         description: 'A healthy breakfast or snack that tastes like dessert!',
-        imageUrl: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400',
+        imageUrl:
+            'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400',
         prepTimeMinutes: 10,
         cookTimeMinutes: 0,
         servings: 1,
@@ -222,7 +246,8 @@ class MockData {
         author: UserSummary(
           id: 'user3',
           fullName: 'Lisa T.',
-          avatarUrl: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=100',
         ),
         isLikedByMe: true,
         isSavedByMe: false,
@@ -232,7 +257,8 @@ class MockData {
         userId: 'user4',
         title: 'Grilled Chicken Salad',
         description: 'A classic protein-packed salad perfect for meal prep.',
-        imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+        imageUrl:
+            'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
         prepTimeMinutes: 15,
         cookTimeMinutes: 15,
         servings: 2,
@@ -246,7 +272,8 @@ class MockData {
         author: UserSummary(
           id: 'user4',
           fullName: 'Amy R.',
-          avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100',
         ),
         isLikedByMe: false,
         isSavedByMe: true,
@@ -263,9 +290,12 @@ class MockData {
         id: '1',
         trainerId: 'trainer1',
         title: 'Full Body Burn',
-        description: 'A complete full body workout to get your heart pumping and muscles working.',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+        description:
+            'A complete full body workout to get your heart pumping and muscles working.',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400',
+        videoUrl:
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
         durationMinutes: 30,
         difficulty: 'intermediate',
         category: 'full_body',
@@ -276,7 +306,8 @@ class MockData {
         trainer: TrainerModel(
           id: 'trainer1',
           fullName: 'Jess',
-          avatarUrl: 'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=100',
           bio: 'Certified fitness trainer with 8 years of experience',
           specialties: ['HIIT', 'Strength Training', 'Full Body'],
           createdAt: now.subtract(const Duration(days: 365)),
@@ -288,8 +319,10 @@ class MockData {
         trainerId: 'trainer1',
         title: 'Core Crusher',
         description: 'Target your core with this intense ab-focused workout.',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400',
+        videoUrl:
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
         durationMinutes: 20,
         difficulty: 'beginner',
         category: 'core',
@@ -300,7 +333,8 @@ class MockData {
         trainer: TrainerModel(
           id: 'trainer1',
           fullName: 'Jess',
-          avatarUrl: 'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=100',
           createdAt: now.subtract(const Duration(days: 365)),
           updatedAt: now,
         ),
@@ -309,9 +343,12 @@ class MockData {
         id: '3',
         trainerId: 'trainer1',
         title: 'Lower Body Sculpt',
-        description: 'Sculpt and tone your legs and glutes with this targeted workout.',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+        description:
+            'Sculpt and tone your legs and glutes with this targeted workout.',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400',
+        videoUrl:
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
         durationMinutes: 35,
         difficulty: 'intermediate',
         category: 'lower_body',
@@ -322,7 +359,8 @@ class MockData {
         trainer: TrainerModel(
           id: 'trainer1',
           fullName: 'Jess',
-          avatarUrl: 'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=100',
           createdAt: now.subtract(const Duration(days: 365)),
           updatedAt: now,
         ),
@@ -332,8 +370,10 @@ class MockData {
         trainerId: 'trainer1',
         title: 'Cardio Dance Party',
         description: 'Get moving with this fun dance cardio session!',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400',
+        videoUrl:
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
         durationMinutes: 25,
         difficulty: 'beginner',
         category: 'cardio',
@@ -344,7 +384,8 @@ class MockData {
         trainer: TrainerModel(
           id: 'trainer1',
           fullName: 'Jess',
-          avatarUrl: 'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=100',
           createdAt: now.subtract(const Duration(days: 365)),
           updatedAt: now,
         ),
@@ -355,8 +396,10 @@ class MockData {
         trainerId: 'trainer2',
         title: 'Upper Body Strength',
         description: 'Build strength in your arms, shoulders, and back.',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=400',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=400',
+        videoUrl:
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
         durationMinutes: 30,
         difficulty: 'intermediate',
         category: 'upper_body',
@@ -367,8 +410,10 @@ class MockData {
         trainer: TrainerModel(
           id: 'trainer2',
           fullName: 'Nadine',
-          avatarUrl: 'https://images.unsplash.com/photo-1609899464926-209bc8bde0c4?w=100',
-          bio: 'Yoga and Pilates specialist with a passion for mindful movement',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1609899464926-209bc8bde0c4?w=100',
+          bio:
+              'Yoga and Pilates specialist with a passion for mindful movement',
           specialties: ['Yoga', 'Pilates', 'Stretching'],
           createdAt: now.subtract(const Duration(days: 365)),
           updatedAt: now,
@@ -378,9 +423,12 @@ class MockData {
         id: '6',
         trainerId: 'trainer2',
         title: 'HIIT Blast',
-        description: 'High intensity interval training to maximize calorie burn.',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+        description:
+            'High intensity interval training to maximize calorie burn.',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400',
+        videoUrl:
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
         durationMinutes: 20,
         difficulty: 'advanced',
         category: 'hiit',
@@ -391,7 +439,8 @@ class MockData {
         trainer: TrainerModel(
           id: 'trainer2',
           fullName: 'Nadine',
-          avatarUrl: 'https://images.unsplash.com/photo-1609899464926-209bc8bde0c4?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1609899464926-209bc8bde0c4?w=100',
           createdAt: now.subtract(const Duration(days: 365)),
           updatedAt: now,
         ),
@@ -401,8 +450,10 @@ class MockData {
         trainerId: 'trainer2',
         title: 'Yoga Flow',
         description: 'Relax and stretch with this calming yoga session.',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400',
+        videoUrl:
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
         durationMinutes: 40,
         difficulty: 'beginner',
         category: 'yoga',
@@ -413,7 +464,8 @@ class MockData {
         trainer: TrainerModel(
           id: 'trainer2',
           fullName: 'Nadine',
-          avatarUrl: 'https://images.unsplash.com/photo-1609899464926-209bc8bde0c4?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1609899464926-209bc8bde0c4?w=100',
           createdAt: now.subtract(const Duration(days: 365)),
           updatedAt: now,
         ),
@@ -423,8 +475,10 @@ class MockData {
         trainerId: 'trainer2',
         title: 'Pilates Power',
         description: 'Strengthen your core and improve posture with Pilates.',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400',
+        videoUrl:
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
         durationMinutes: 35,
         difficulty: 'intermediate',
         category: 'pilates',
@@ -435,7 +489,8 @@ class MockData {
         trainer: TrainerModel(
           id: 'trainer2',
           fullName: 'Nadine',
-          avatarUrl: 'https://images.unsplash.com/photo-1609899464926-209bc8bde0c4?w=100',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1609899464926-209bc8bde0c4?w=100',
           createdAt: now.subtract(const Duration(days: 365)),
           updatedAt: now,
         ),

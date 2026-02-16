@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../core/services/media/media_config.dart';
 import '../../core/services/media/media_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../data/models/workout_model.dart';
@@ -397,79 +396,102 @@ class AdminWorkoutController extends BaseController {
     selectedVariant.value = variant;
   }
 
-  void showVariantDialog({WorkoutVariantModel? editing}) {
-    final tagC = TextEditingController(text: editing?.variantTag ?? '');
-    final labelC = TextEditingController(text: editing?.label ?? '');
-    final descC = TextEditingController(text: editing?.description ?? '');
+  void showVariantDialog() {
+    // Get tags already used by existing variants
+    final usedTags = variants.map((v) => v.variantTag).toSet();
 
-    Get.dialog(
-      AlertDialog(
-        title: Text(editing != null ? 'Edit Variant' : 'Add Variant'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: tagC,
-                decoration: const InputDecoration(
-                  labelText: 'Tag *',
-                  hintText: 'e.g. knee_safe, beginner',
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: labelC,
-                decoration: const InputDecoration(
-                  labelText: 'Label *',
-                  hintText: 'e.g. Knee Safe Version',
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: descC,
-                decoration: const InputDecoration(labelText: 'Description'),
-                maxLines: 2,
-              ),
-            ],
-          ),
+    // Filter available tags
+    final available = conditionTags
+        .where((ct) => !usedTags.contains(ct['tag']))
+        .toList();
+
+    if (available.isEmpty) {
+      Get.snackbar('All Added', 'All condition types are already added as variants.',
+          snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    Get.bottomSheet(
+      Container(
+        constraints: const BoxConstraints(maxHeight: 500),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              if (tagC.text.trim().isEmpty || labelC.text.trim().isEmpty) {
-                return;
-              }
-              if (editing != null) {
-                final idx = variants.indexOf(editing);
-                if (idx >= 0) {
-                  variants[idx] = editing.copyWith(
-                    variantTag: tagC.text.trim(),
-                    label: labelC.text.trim(),
-                    description: descC.text.trim().isNotEmpty
-                        ? descC.text.trim()
-                        : null,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Select Condition Type',
+                style: Get.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: available.length,
+                itemBuilder: (context, index) {
+                  final ct = available[index];
+                  final tag = ct['tag']!;
+                  final label = ct['label']!;
+                  return ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF6B6B).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        tag,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFFFF6B6B),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    title: Text(label),
+                    subtitle: Text(
+                      'for ${label.toLowerCase()} users',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                    onTap: () {
+                      variants.add(
+                        WorkoutVariantModel(
+                          id: 'temp_${_uuid.v4()}',
+                          workoutId: editingWorkout.value?.id ?? '',
+                          variantTag: tag,
+                          label: label,
+                          description: 'for ${label.toLowerCase()} users',
+                          createdAt: DateTime.now(),
+                        ),
+                      );
+                      Get.back();
+                    },
                   );
-                }
-              } else {
-                variants.add(
-                  WorkoutVariantModel(
-                    id: 'temp_${_uuid.v4()}',
-                    workoutId: editingWorkout.value?.id ?? '',
-                    variantTag: tagC.text.trim(),
-                    label: labelC.text.trim(),
-                    description: descC.text.trim().isNotEmpty
-                        ? descC.text.trim()
-                        : null,
-                    createdAt: DateTime.now(),
-                  ),
-                );
-              }
-              Get.back();
-            },
-            child: Text(editing != null ? 'Save' : 'Add'),
-          ),
-        ],
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -63,6 +63,14 @@ class AdminDashboardController extends BaseController {
   final RxInt totalChallengeCompletions = 0.obs;
 
   // ============================================
+  // ACHIEVEMENT STATS
+  // ============================================
+  final RxInt totalAchievements = 0.obs;
+  final RxInt activeAchievementsCount = 0.obs;
+  final RxInt totalAchievementCompletions = 0.obs;
+  final RxInt totalUsersWithProgress = 0.obs;
+
+  // ============================================
   // ADMIN INFO
   // ============================================
   String get adminName =>
@@ -87,6 +95,7 @@ class AdminDashboardController extends BaseController {
         _loadSupportStats(),
         _loadContentStats(),
         _loadChallengeStats(),
+        _loadAchievementStats(),
       ]);
       setSuccess();
     } catch (e) {
@@ -208,6 +217,24 @@ class AdminDashboardController extends BaseController {
     totalChallengeParticipants.value = participants.length;
     totalChallengeCompletions.value =
         participants.where((p) => p['is_completed'] == true).length;
+  }
+
+  Future<void> _loadAchievementStats() async {
+    final achievementsRes =
+        await _supabase.from('achievements').select('id, is_active');
+    final achievements = achievementsRes as List;
+    totalAchievements.value = achievements.length;
+    activeAchievementsCount.value =
+        achievements.where((a) => a['is_active'] == true).length;
+
+    final progressRes = await _supabase
+        .from('user_achievements')
+        .select('id, is_completed, user_id');
+    final progress = progressRes as List;
+    totalAchievementCompletions.value =
+        progress.where((p) => p['is_completed'] == true).length;
+    totalUsersWithProgress.value =
+        progress.map((p) => p['user_id']).toSet().length;
   }
 
   Future<void> refreshDashboard() async => loadDashboardData();

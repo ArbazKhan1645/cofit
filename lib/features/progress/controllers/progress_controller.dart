@@ -1,10 +1,12 @@
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../shared/controllers/base_controller.dart';
-import '../../../data/mock/mock_data.dart';
+import '../../../data/models/badge_model.dart';
+import '../../../data/repositories/achievement_repository.dart';
 
 class ProgressController extends BaseController {
   final _storage = GetStorage();
+  final AchievementRepository _achievementRepo = AchievementRepository();
 
   // Stats
   final RxInt totalWorkouts = 0.obs;
@@ -13,9 +15,11 @@ class ProgressController extends BaseController {
   final RxInt totalMinutes = 0.obs;
   final RxInt totalCalories = 0.obs;
 
-  // Badges
-  final RxList<MockBadge> badges = <MockBadge>[].obs;
-  final RxList<MockBadge> unlockedBadges = <MockBadge>[].obs;
+  // Achievements
+  final RxList<AchievementModel> allAchievements = <AchievementModel>[].obs;
+  final RxList<UserAchievementModel> userAchievements =
+      <UserAchievementModel>[].obs;
+  final RxBool isLoadingAchievements = false.obs;
 
   // Workout dates for calendar
   final RxList<DateTime> workoutDates = <DateTime>[].obs;
@@ -24,7 +28,7 @@ class ProgressController extends BaseController {
   void onInit() {
     super.onInit();
     loadStats();
-    loadBadges();
+    loadAchievements();
     loadWorkoutHistory();
   }
 
@@ -36,10 +40,63 @@ class ProgressController extends BaseController {
     totalCalories.value = _storage.read<int>('totalCalories') ?? 4800;
   }
 
-  void loadBadges() {
-    badges.value = MockData.getMockBadges();
-    unlockedBadges.value = badges.where((b) => b.isUnlocked).toList();
+  Future<void> loadAchievements() async {
+    isLoadingAchievements.value = true;
+
+    final results = await Future.wait([
+      _achievementRepo.getActiveAchievements(),
+      _achievementRepo.getMyAchievements(),
+    ]);
+
+    results[0].fold(
+      (error) {},
+      (data) => allAchievements.value = data as List<AchievementModel>,
+    );
+
+    results[1].fold(
+      (error) {},
+      (data) => userAchievements.value = data as List<UserAchievementModel>,
+    );
+
+    isLoadingAchievements.value = false;
   }
+
+  /// Sorted display list: in-progress first (by % desc), completed, then locked
+  List<_AchievementDisplay> get sortedDisplayItems {
+    final items = <_AchievementDisplay>[];
+
+    for (final achievement in allAchievements) {
+      final userProgress = userAchievements.firstWhereOrNull(
+        (ua) => ua.achievementId == achievement.id,
+      );
+      items.add(_AchievementDisplay(
+        achievement: achievement,
+        userProgress: userProgress,
+      ));
+    }
+
+    // Sort: in-progress (by % desc) → completed (by date desc) → locked (by sortOrder)
+    items.sort((a, b) {
+      if (a.isInProgress && !b.isInProgress) return -1;
+      if (!a.isInProgress && b.isInProgress) return 1;
+      if (a.isInProgress && b.isInProgress) {
+        return b.progressPercentage.compareTo(a.progressPercentage);
+      }
+      if (a.isCompleted && !b.isCompleted) return -1;
+      if (!a.isCompleted && b.isCompleted) return 1;
+      if (a.isCompleted && b.isCompleted) {
+        final aDate = a.userProgress?.completedAt ?? DateTime(2000);
+        final bDate = b.userProgress?.completedAt ?? DateTime(2000);
+        return bDate.compareTo(aDate);
+      }
+      return a.achievement.sortOrder.compareTo(b.achievement.sortOrder);
+    });
+
+    return items;
+  }
+
+  int get completedCount =>
+      userAchievements.where((ua) => ua.isCompleted).length;
 
   void loadWorkoutHistory() {
     // Mock workout dates for the last 30 days
@@ -68,5 +125,29 @@ class ProgressController extends BaseController {
     } else {
       return "Ready to start your fitness journey?";
     }
+  }
+}
+
+class _AchievementDisplay {
+  final AchievementModel achievement;
+  final UserAchievementModel? userProgress;
+
+  const _AchievementDisplay({
+    required this.achievement,
+    this.userProgress,
+  });
+
+  bool get isCompleted => userProgress?.isCompleted ?? false;
+  bool get isInProgress =>
+      userProgress != null &&
+      !userProgress!.isCompleted &&
+      userProgress!.currentProgress > 0;
+  bool get isLocked => userProgress == null || userProgress!.currentProgress == 0;
+
+  double get progressPercentage {
+    if (userProgress == null) return 0.0;
+    final target = achievement.targetValue;
+    if (target <= 0) return 0.0;
+    return (userProgress!.currentProgress / target).clamp(0.0, 1.0);
   }
 }

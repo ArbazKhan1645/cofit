@@ -16,7 +16,12 @@ import '../../features/home/bindings/home_binding.dart';
 
 // Workouts
 import '../../features/workouts/views/workout_detail_screen.dart';
+import '../../features/workouts/controllers/workout_detail_controller.dart';
+import '../../features/workouts/views/workout_player_screen.dart';
+import '../../features/workouts/controllers/workout_player_controller.dart';
 import '../../features/workouts/views/trainer_profile_screen.dart';
+import '../../features/workouts/views/saved_workouts_screen.dart';
+import '../../features/workouts/views/workout_library_screen.dart';
 
 // Notifications
 import '../../features/notifications/views/notifications_screen.dart';
@@ -59,6 +64,11 @@ import '../../admin_modules/community/admin_posts_screen.dart';
 import '../../admin_modules/support/admin_support_controller.dart';
 import '../../admin_modules/support/admin_ticket_list_screen.dart';
 import '../../admin_modules/support/admin_ticket_chat_screen.dart';
+import '../../features/achievements/views/achievements_screen.dart';
+import '../../admin_modules/achievements/achievement_controller.dart';
+import '../../admin_modules/achievements/achievement_list_screen.dart';
+import '../../admin_modules/achievements/achievement_form_screen.dart';
+import '../../admin_modules/achievements/achievement_detail_screen.dart';
 import '../../features/support/support_controller.dart';
 import '../../features/support/ticket_list_screen.dart';
 import '../../features/support/ticket_chat_screen.dart';
@@ -116,13 +126,40 @@ class AppPages {
     GetPage(
       name: AppRoutes.workoutDetail,
       page: () => const WorkoutDetailScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => WorkoutDetailController());
+      }),
       transition: Transition.rightToLeft,
+    ),
+
+    // Workout Player
+    GetPage(
+      name: AppRoutes.workoutPlayer,
+      page: () => const WorkoutPlayerScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => WorkoutPlayerController());
+      }),
+      transition: Transition.fadeIn,
     ),
 
     // Trainer Profile
     GetPage(
       name: AppRoutes.trainer,
       page: () => const TrainerProfileScreen(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Saved Workouts
+    GetPage(
+      name: AppRoutes.savedWorkouts,
+      page: () => const SavedWorkoutsScreen(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Workout Library
+    GetPage(
+      name: AppRoutes.workoutLibrary,
+      page: () => const WorkoutLibraryScreen(),
       transition: Transition.rightToLeft,
     ),
 
@@ -297,6 +334,33 @@ class AppPages {
     GetPage(
       name: AppRoutes.adminTicketChat,
       page: () => const AdminTicketChatScreen(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // User Achievements
+    GetPage(
+      name: AppRoutes.achievements,
+      page: () => const AchievementsScreen(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Admin Achievements
+    GetPage(
+      name: AppRoutes.adminAchievementList,
+      page: () => const AchievementListScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => AchievementController());
+      }),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminAchievementForm,
+      page: () => const AchievementFormScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminAchievementDetail,
+      page: () => const AchievementDetailScreen(),
       transition: Transition.rightToLeft,
     ),
 
