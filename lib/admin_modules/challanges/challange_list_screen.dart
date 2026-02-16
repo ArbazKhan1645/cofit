@@ -171,7 +171,10 @@ class ChallangeListScreen extends GetView<ChallangeController> {
             ),
             PopupMenuButton<String>(
               onSelected: (val) {
-                if (val == 'edit') {
+                if (val == 'view') {
+                  controller.loadChallengeDetail(challenge.id);
+                  Get.toNamed(AppRoutes.adminChallangeDetail);
+                } else if (val == 'edit') {
                   controller.initFormForEdit(challenge);
                   Get.toNamed(AppRoutes.adminChallangeForm);
                 } else if (val == 'delete') {
@@ -179,6 +182,13 @@ class ChallangeListScreen extends GetView<ChallangeController> {
                 }
               },
               itemBuilder: (_) => [
+                const PopupMenuItem(
+                    value: 'view',
+                    child: Row(children: [
+                      Icon(Iconsax.eye, size: 18),
+                      SizedBox(width: 8),
+                      Text('View Details')
+                    ])),
                 const PopupMenuItem(
                     value: 'edit',
                     child: Row(children: [

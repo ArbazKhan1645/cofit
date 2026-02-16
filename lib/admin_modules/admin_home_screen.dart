@@ -64,6 +64,8 @@ class AdminHomeScreen extends GetView<AdminDashboardController> {
                 const SizedBox(height: 12),
                 _buildWorkoutCategoryChart(context),
                 const SizedBox(height: 12),
+                _buildChallengeStatsCards(context),
+                const SizedBox(height: 12),
                 _buildQuickActions(context),
                 const SizedBox(height: 12),
               ],
@@ -935,6 +937,70 @@ class AdminHomeScreen extends GetView<AdminDashboardController> {
 
   // ============================================
   // QUICK ACTIONS
+  // ============================================
+
+  Widget _buildChallengeStatsCards(BuildContext context) {
+    return Obx(() => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Challenge Stats',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    '${controller.totalChallenges.value}',
+                    'Total Challenges',
+                    Iconsax.cup,
+                    AppColors.lavender,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    '${controller.activeChallengesCount.value}',
+                    'Active',
+                    Iconsax.flag,
+                    AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    '${controller.totalChallengeParticipants.value}',
+                    'Participants',
+                    Iconsax.people,
+                    AppColors.skyBlue,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    '${controller.totalChallengeCompletions.value}',
+                    'Completions',
+                    Iconsax.tick_circle,
+                    AppColors.mintFresh,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ));
+  }
+
   // ============================================
 
   Widget _buildQuickActions(BuildContext context) {

@@ -332,6 +332,96 @@ class ChallengeRepository extends BaseRepository {
     }
   }
 
+  // ============================================
+  // PARTICIPANTS & STATS
+  // ============================================
+
+  /// Get participants for a challenge (with user profile data)
+  Future<Result<List<ChallengeParticipantModel>>> getParticipants(
+    String challengeId, {
+    int limit = 100,
+  }) async {
+    try {
+      final response = await client
+          .from('user_challenges')
+          .select('*, users(id, full_name, username, avatar_url)')
+          .eq('challenge_id', challengeId)
+          .order('current_progress', ascending: false)
+          .limit(limit);
+
+      final participants = (response as List)
+          .map((json) =>
+              ChallengeParticipantModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      return Result.success(participants);
+    } catch (e) {
+      return Result.failure(RepositoryException(message: e.toString()));
+    }
+  }
+
+  /// Get challenge statistics (computed from participants)
+  Future<Result<ChallengeStatsModel>> getChallengeStats(
+    String challengeId,
+  ) async {
+    try {
+      final response = await client
+          .from('user_challenges')
+          .select('current_progress, is_completed')
+          .eq('challenge_id', challengeId);
+
+      final participants = response as List;
+      final total = participants.length;
+      final completed =
+          participants.where((p) => p['is_completed'] == true).length;
+
+      // Get challenge target for percentage calculation
+      final challengeResult = await getChallenge(challengeId);
+      final targetValue =
+          challengeResult.isSuccess ? challengeResult.data!.targetValue : 1;
+
+      double sumProgress = 0;
+      for (final p in participants) {
+        final progress = (p['current_progress'] as int? ?? 0);
+        sumProgress += (progress / targetValue).clamp(0.0, 1.0);
+      }
+
+      return Result.success(ChallengeStatsModel(
+        totalParticipants: total,
+        completedCount: completed,
+        avgProgress: total > 0 ? sumProgress / total : 0.0,
+        activeCount: total - completed,
+      ));
+    } catch (e) {
+      return Result.failure(RepositoryException(message: e.toString()));
+    }
+  }
+
+  /// Get all challenges with participant counts (for admin dashboard)
+  Future<Result<Map<String, int>>> getChallengeOverviewStats() async {
+    try {
+      final challengesRes = await client.from('challenges').select('id, status');
+      final challenges = challengesRes as List;
+
+      final participantsRes = await client
+          .from('user_challenges')
+          .select('challenge_id, is_completed');
+      final participants = participantsRes as List;
+
+      return Result.success({
+        'total': challenges.length,
+        'active': challenges.where((c) => c['status'] == 'active').length,
+        'upcoming': challenges.where((c) => c['status'] == 'upcoming').length,
+        'completed': challenges.where((c) => c['status'] == 'completed').length,
+        'totalParticipants': participants.length,
+        'totalCompletions':
+            participants.where((p) => p['is_completed'] == true).length,
+      });
+    } catch (e) {
+      return Result.failure(RepositoryException(message: e.toString()));
+    }
+  }
+
   /// Get user's rank in a challenge
   Future<Result<int?>> getUserRank(String challengeId) async {
     try {

@@ -52,6 +52,7 @@ abstract class AppRoutes {
   static const adminHome = '/admin';
   static const adminChallangeList = '/admin/challanges';
   static const adminChallangeForm = '/admin/challanges/form';
+  static const adminChallangeDetail = '/admin/challanges/detail';
   static const adminTrainerList = '/admin/trainers';
   static const adminTrainerForm = '/admin/trainers/form';
   static const adminWorkoutList = '/admin/workouts';

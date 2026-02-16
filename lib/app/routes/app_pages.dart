@@ -38,6 +38,10 @@ import '../../admin_modules/trainers/trainer_form_screen.dart';
 import '../../admin_modules/challanges/challange_controller.dart';
 import '../../admin_modules/challanges/challange_list_screen.dart';
 import '../../admin_modules/challanges/challange_form_screen.dart';
+import '../../admin_modules/challanges/challange_detail_screen.dart';
+import '../../features/challenges/controllers/challenge_controller.dart';
+import '../../features/challenges/views/challenges_screen.dart';
+import '../../features/challenges/views/challenge_detail_screen.dart';
 import '../../admin_modules/workouts/workout_controller.dart';
 import '../../admin_modules/workouts/workout_list_screen.dart';
 import '../../admin_modules/workouts/workout_form_screen.dart';
@@ -190,6 +194,36 @@ class AppPages {
     GetPage(
       name: AppRoutes.adminChallangeForm,
       page: () => const ChallangeFormScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminChallangeDetail,
+      page: () => const ChallangeDetailScreen(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // User-side Challenges
+    GetPage(
+      name: AppRoutes.challenges,
+      page: () => const ChallengesScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => ChallengeController());
+      }),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.challengeDetail,
+      page: () => const ChallengeDetailScreen(),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<ChallengeController>()) {
+          Get.lazyPut(() => ChallengeController());
+        }
+        // Load detail from arguments if provided
+        final challengeId = Get.arguments as String?;
+        if (challengeId != null) {
+          Get.find<ChallengeController>().loadChallengeDetail(challengeId);
+        }
+      }),
       transition: Transition.rightToLeft,
     ),
     GetPage(

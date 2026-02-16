@@ -8,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../data/models/challenge_model.dart';
 import '../../../data/models/workout_model.dart';
 import '../../../data/mock/mock_data.dart';
 import '../../../app/routes/app_routes.dart';
@@ -505,68 +506,200 @@ class HomeScreen extends GetView<HomeController> {
   }
 
   Widget _buildActiveChallenges(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Active Challenges',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: AppColors.mintGradient,
-            borderRadius: AppRadius.large,
-          ),
-          child: Row(
+    return Obx(() {
+      final myChallenges = controller.myChallenges;
+      final activeChallenges = controller.activeChallenges;
+      final hasContent = myChallenges.isNotEmpty || activeChallenges.isNotEmpty;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  borderRadius: AppRadius.medium,
-                ),
-                child: const Icon(Iconsax.cup, color: Colors.white, size: 28),
+              Text(
+                'Active Challenges',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '30 Day Core Challenge',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Day 12 of 30 • 156 participants',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                    ),
+              if (hasContent)
+                TextButton(
+                  onPressed: () => Get.toNamed(AppRoutes.challenges),
+                  child: Row(
+                    children: [
+                      const Text('See All'),
+                      const SizedBox(width: 4),
+                      const Icon(Iconsax.arrow_right_3, size: 16),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Show user's joined challenges first, then active ones
+          if (myChallenges.isNotEmpty)
+            ...myChallenges.take(2).toList().asMap().entries.map((entry) {
+              final uc = entry.value;
+              final challenge = uc.challenge;
+              if (challenge == null) return const SizedBox.shrink();
+              return Padding(
+                padding: EdgeInsets.only(bottom: entry.key < myChallenges.length - 1 ? 10 : 0),
+                child: _buildChallengePreviewCard(
+                  context,
+                  challenge: challenge,
+                  userProgress: uc.currentProgress,
+                  gradient: _challengeGradients[entry.key % _challengeGradients.length],
+                  isJoined: true,
+                ),
+              );
+            })
+          else if (activeChallenges.isNotEmpty)
+            ...activeChallenges.take(2).toList().asMap().entries.map((entry) {
+              final challenge = entry.value;
+              return Padding(
+                padding: EdgeInsets.only(bottom: entry.key < activeChallenges.length - 1 ? 10 : 0),
+                child: _buildChallengePreviewCard(
+                  context,
+                  challenge: challenge,
+                  gradient: _challengeGradients[entry.key % _challengeGradients.length],
+                  isJoined: false,
+                ),
+              );
+            })
+          else
+            _buildEmptyChallengeCard(context),
+        ],
+      );
+    });
+  }
+
+  static const List<LinearGradient> _challengeGradients = [
+    AppColors.mintGradient,
+    AppColors.primaryGradient,
+    AppColors.calmGradient,
+    AppColors.energyGradient,
+  ];
+
+  Widget _buildChallengePreviewCard(
+    BuildContext context, {
+    required ChallengeModel challenge,
+    required LinearGradient gradient,
+    required bool isJoined,
+    int? userProgress,
+  }) {
+    return GestureDetector(
+      onTap: () => Get.toNamed(AppRoutes.challengeDetail, arguments: challenge.id),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: AppRadius.large,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.3),
+                borderRadius: AppRadius.medium,
+              ),
+              child: const Icon(Iconsax.cup, color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    challenge.title,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isJoined
+                        ? '${userProgress ?? 0}/${challenge.targetValue} ${challenge.targetUnit} • ${challenge.participantCount} joined'
+                        : '${challenge.daysRemaining}d left • ${challenge.participantCount} participants',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                  ),
+                  if (isJoined) ...[
                     const SizedBox(height: 8),
                     LinearProgressIndicator(
-                      value: 12 / 30,
+                      value: challenge.targetValue > 0
+                          ? ((userProgress ?? 0) / challenge.targetValue).clamp(0.0, 1.0)
+                          : 0.0,
                       backgroundColor: Colors.white.withValues(alpha: 0.3),
                       valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ],
-                ),
+                ],
               ),
-              const SizedBox(width: 12),
-              const Icon(Iconsax.arrow_right_3, color: Colors.white),
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+            const Icon(Iconsax.arrow_right_3, color: Colors.white),
+          ],
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyChallengeCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Get.toNamed(AppRoutes.challenges),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: AppRadius.large,
+          boxShadow: AppShadows.subtle,
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.bgBlush,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Iconsax.cup, color: AppColors.primary, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Explore Challenges',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Join a challenge and compete with others!',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Iconsax.arrow_right_3, color: AppColors.textMuted),
+          ],
+        ),
+      ),
     );
   }
 

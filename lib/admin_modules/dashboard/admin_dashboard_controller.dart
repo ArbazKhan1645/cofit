@@ -55,6 +55,14 @@ class AdminDashboardController extends BaseController {
   final RxMap<String, int> categoryBreakdown = <String, int>{}.obs;
 
   // ============================================
+  // CHALLENGE STATS
+  // ============================================
+  final RxInt totalChallenges = 0.obs;
+  final RxInt activeChallengesCount = 0.obs;
+  final RxInt totalChallengeParticipants = 0.obs;
+  final RxInt totalChallengeCompletions = 0.obs;
+
+  // ============================================
   // ADMIN INFO
   // ============================================
   String get adminName =>
@@ -78,6 +86,7 @@ class AdminDashboardController extends BaseController {
         _loadPostStats(),
         _loadSupportStats(),
         _loadContentStats(),
+        _loadChallengeStats(),
       ]);
       setSuccess();
     } catch (e) {
@@ -182,6 +191,23 @@ class AdminDashboardController extends BaseController {
       catMap[cat] = (catMap[cat] ?? 0) + 1;
     }
     categoryBreakdown.value = catMap;
+  }
+
+  Future<void> _loadChallengeStats() async {
+    final challengesRes =
+        await _supabase.from('challenges').select('id, status');
+    final challenges = challengesRes as List;
+    totalChallenges.value = challenges.length;
+    activeChallengesCount.value =
+        challenges.where((c) => c['status'] == 'active').length;
+
+    final participantsRes = await _supabase
+        .from('user_challenges')
+        .select('id, is_completed');
+    final participants = participantsRes as List;
+    totalChallengeParticipants.value = participants.length;
+    totalChallengeCompletions.value =
+        participants.where((p) => p['is_completed'] == true).length;
   }
 
   Future<void> refreshDashboard() async => loadDashboardData();

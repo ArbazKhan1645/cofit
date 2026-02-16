@@ -399,3 +399,71 @@ class ChallengeLeaderboardEntry {
     return 'User';
   }
 }
+
+/// Challenge Participant Model - Enriched participant data for admin views
+class ChallengeParticipantModel {
+  final String id;
+  final String userId;
+  final String? fullName;
+  final String? username;
+  final String? avatarUrl;
+  final int currentProgress;
+  final int rank;
+  final bool isCompleted;
+  final DateTime? completedAt;
+  final DateTime joinedAt;
+
+  ChallengeParticipantModel({
+    required this.id,
+    required this.userId,
+    this.fullName,
+    this.username,
+    this.avatarUrl,
+    required this.currentProgress,
+    this.rank = 0,
+    this.isCompleted = false,
+    this.completedAt,
+    required this.joinedAt,
+  });
+
+  factory ChallengeParticipantModel.fromJson(Map<String, dynamic> json) {
+    return ChallengeParticipantModel(
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      fullName: json['users']?['full_name'] as String?,
+      username: json['users']?['username'] as String?,
+      avatarUrl: json['users']?['avatar_url'] as String?,
+      currentProgress: json['current_progress'] as int? ?? 0,
+      rank: json['rank'] as int? ?? 0,
+      isCompleted: json['is_completed'] as bool? ?? false,
+      completedAt: json['completed_at'] != null
+          ? DateTime.parse(json['completed_at'] as String)
+          : null,
+      joinedAt: DateTime.parse(json['joined_at'] as String),
+    );
+  }
+
+  String get displayName {
+    if (fullName != null && fullName!.isNotEmpty) return fullName!;
+    if (username != null && username!.isNotEmpty) return username!;
+    return 'User';
+  }
+}
+
+/// Challenge Stats Model - Computed analytics for a challenge
+class ChallengeStatsModel {
+  final int totalParticipants;
+  final int completedCount;
+  final double avgProgress; // 0.0 - 1.0
+  final int activeCount;
+
+  ChallengeStatsModel({
+    required this.totalParticipants,
+    required this.completedCount,
+    required this.avgProgress,
+    required this.activeCount,
+  });
+
+  double get completionRate =>
+      totalParticipants > 0 ? completedCount / totalParticipants : 0.0;
+}

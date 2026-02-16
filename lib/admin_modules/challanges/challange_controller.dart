@@ -7,10 +7,12 @@ import 'package:intl/intl.dart';
 import '../../core/services/media/media_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../data/models/challenge_model.dart';
+import '../../data/repositories/challenge_repository.dart';
 import '../../shared/controllers/base_controller.dart';
 
 class ChallangeController extends BaseController {
   final SupabaseService _supabase = SupabaseService.to;
+  final ChallengeRepository _repository = ChallengeRepository();
 
   // List state
   final RxList<ChallengeModel> challenges = <ChallengeModel>[].obs;
@@ -43,6 +45,18 @@ class ChallangeController extends BaseController {
   final RxBool isFeatured = false.obs;
   final RxList<String> rules = <String>[].obs;
   final RxList<ChallengePrize> prizes = <ChallengePrize>[].obs;
+
+  // ============================================
+  // DETAIL / ANALYTICS STATE
+  // ============================================
+  final Rx<ChallengeModel?> selectedChallenge = Rx<ChallengeModel?>(null);
+  final RxList<ChallengeParticipantModel> participants =
+      <ChallengeParticipantModel>[].obs;
+  final RxList<ChallengeLeaderboardEntry> leaderboard =
+      <ChallengeLeaderboardEntry>[].obs;
+  final Rx<ChallengeStatsModel?> challengeStats =
+      Rx<ChallengeStatsModel?>(null);
+  final RxBool isLoadingDetail = false.obs;
 
   final _dateFormat = DateFormat('MMM d, yyyy');
 
@@ -331,6 +345,61 @@ class ChallangeController extends BaseController {
       Get.snackbar('Error', 'Failed to delete challenge',
           snackPosition: SnackPosition.BOTTOM);
     }
+  }
+
+  // ============================================
+  // DETAIL / ANALYTICS
+  // ============================================
+
+  Future<void> loadChallengeDetail(String challengeId) async {
+    isLoadingDetail.value = true;
+    participants.clear();
+    leaderboard.clear();
+    challengeStats.value = null;
+
+    // Find in loaded challenges or fetch
+    selectedChallenge.value =
+        challenges.firstWhereOrNull((c) => c.id == challengeId);
+    if (selectedChallenge.value == null) {
+      final result = await _repository.getChallenge(challengeId);
+      result.fold(
+        (error) => setError(error.message),
+        (data) => selectedChallenge.value = data,
+      );
+    }
+
+    // Load participants, leaderboard, stats in parallel
+    await Future.wait([
+      _loadParticipants(challengeId),
+      _loadLeaderboard(challengeId),
+      _loadStats(challengeId),
+    ]);
+
+    isLoadingDetail.value = false;
+  }
+
+  Future<void> _loadParticipants(String challengeId) async {
+    final result = await _repository.getParticipants(challengeId);
+    result.fold(
+      (error) {},
+      (data) => participants.value = data,
+    );
+  }
+
+  Future<void> _loadLeaderboard(String challengeId) async {
+    final result = await _repository.getLeaderboard(challengeId, limit: 100);
+    result.fold(
+      (error) {},
+      (data) => leaderboard.value = data,
+    );
+  }
+
+  Future<void> _loadStats(String challengeId) async {
+    final result = await _repository.getChallengeStats(challengeId);
+    result.fold(
+      (error) {},
+      (data) => challengeStats.value = data,
+    );
   }
 
   @override
