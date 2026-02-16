@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../shared/widgets/widgets.dart';
+import '../../../core/services/progress_service.dart';
 import '../../home/controllers/home_controller.dart';
 
 class AuthController extends GetxController {
@@ -209,7 +210,7 @@ class AuthController extends GetxController {
 
   /// Navigate after successful authentication
   /// Flow: Auth → Journal Prompts → Prompt Result → Subscription → Main
-  void _navigateAfterAuth() {
+  Future<void> _navigateAfterAuth() async {
     // Clear form fields
     _clearFields();
 
@@ -226,10 +227,17 @@ class AuthController extends GetxController {
       return;
     }
 
-    // Everything complete - pre-load home data then go to main app
+    // 1. ProgressService MUST be created permanent + initialized BEFORE HomeController
+    if (!Get.isRegistered<ProgressService>()) {
+      Get.put<ProgressService>(ProgressService(), permanent: true);
+    }
+    await Get.find<ProgressService>().init();
+
+    // 2. Now create HomeController — reads from initialized ProgressService
     if (!Get.isRegistered<HomeController>()) {
       Get.put<HomeController>(HomeController(), permanent: true);
     }
+
     Get.offAllNamed(AppRoutes.main);
   }
 

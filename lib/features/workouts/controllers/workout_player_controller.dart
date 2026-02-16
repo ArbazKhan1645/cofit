@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/services/progress_service.dart';
 import '../../../core/services/workout_resume_service.dart';
 import '../../../data/models/workout_model.dart';
 import '../../../data/repositories/workout_repository.dart';
@@ -329,6 +330,16 @@ class WorkoutPlayerController extends GetxController {
       caloriesBurned: workout.caloriesBurned,
       completionPercentage: 1.0,
     );
+
+    // Trigger progress tracking pipeline (fire-and-forget)
+    if (Get.isRegistered<ProgressService>()) {
+      unawaited(Get.find<ProgressService>().onWorkoutCompleted(
+        workoutId: workout.id,
+        workoutCategory: workout.category,
+        durationMinutes: durationMinutes,
+        caloriesBurned: workout.caloriesBurned,
+      ));
+    }
   }
 
   void finishAndGoHome() {

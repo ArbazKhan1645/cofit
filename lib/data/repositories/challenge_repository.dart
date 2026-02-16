@@ -244,6 +244,54 @@ class ChallengeRepository extends BaseRepository {
     }
   }
 
+  /// Update challenge progress for a specific user challenge
+  Future<Result<void>> updateChallengeProgress(
+      String challengeId, int newProgress) async {
+    try {
+      if (userId == null) {
+        return Result.failure(
+            RepositoryException(message: 'Not authenticated'));
+      }
+
+      await client
+          .from('user_challenges')
+          .update({
+            'current_progress': newProgress,
+            'last_updated': DateTime.now().toIso8601String(),
+          })
+          .eq('user_id', userId!)
+          .eq('challenge_id', challengeId);
+
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure(RepositoryException(message: e.toString()));
+    }
+  }
+
+  /// Mark a challenge as completed
+  Future<Result<void>> markChallengeCompleted(String challengeId) async {
+    try {
+      if (userId == null) {
+        return Result.failure(
+            RepositoryException(message: 'Not authenticated'));
+      }
+
+      await client
+          .from('user_challenges')
+          .update({
+            'is_completed': true,
+            'completed_at': DateTime.now().toIso8601String(),
+            'last_updated': DateTime.now().toIso8601String(),
+          })
+          .eq('user_id', userId!)
+          .eq('challenge_id', challengeId);
+
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure(RepositoryException(message: e.toString()));
+    }
+  }
+
   /// Helper to get user's joined challenge IDs
   Future<Set<String>> _getUserChallengeIds() async {
     if (userId == null) return {};

@@ -9,3 +9,4 @@ export 'challenge_repository.dart';
 export 'notification_repository.dart';
 export 'recipe_repository.dart';
 export 'achievement_repository.dart';
+export 'progress_repository.dart';

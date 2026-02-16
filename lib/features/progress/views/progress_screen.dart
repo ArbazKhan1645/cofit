@@ -66,13 +66,13 @@ class ProgressScreen extends GetView<ProgressController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                Obx(() => Text(
                   controller.getMotivationalMessage(),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
                       ),
-                ),
+                )),
                 const SizedBox(height: 4),
                 Text(
                   'Keep up the amazing work!',
@@ -97,53 +97,57 @@ class ProgressScreen extends GetView<ProgressController> {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 16),
-        Row(
+        Obx(() => Column(
           children: [
-            Expanded(
-              child: _buildStatCard(
-                context,
-                icon: Iconsax.activity,
-                value: '${controller.totalWorkouts.value}',
-                label: 'Total Workouts',
-                color: AppColors.primary,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    icon: Iconsax.activity,
+                    value: '${controller.totalWorkouts.value}',
+                    label: 'Total Workouts',
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    icon: Iconsax.flash_1,
+                    value: '${controller.currentStreak.value}',
+                    label: 'Current Streak',
+                    color: AppColors.sunnyYellow,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                context,
-                icon: Iconsax.flash_1,
-                value: '${controller.currentStreak.value}',
-                label: 'Current Streak',
-                color: AppColors.sunnyYellow,
-              ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    icon: Iconsax.timer_1,
+                    value: '${controller.totalMinutes.value}',
+                    label: 'Minutes Active',
+                    color: AppColors.lavender,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    icon: Iconsax.strongbox,
+                    value: '${controller.longestStreak.value}',
+                    label: 'Longest Streak',
+                    color: AppColors.mintFresh,
+                  ),
+                ),
+              ],
             ),
           ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                context,
-                icon: Iconsax.timer_1,
-                value: '${controller.totalMinutes.value}',
-                label: 'Minutes Active',
-                color: AppColors.lavender,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                context,
-                icon: Iconsax.strongbox,
-                value: '${controller.longestStreak.value}',
-                label: 'Longest Streak',
-                color: AppColors.mintFresh,
-              ),
-            ),
-          ],
-        ),
+        )),
       ],
     );
   }
@@ -342,26 +346,86 @@ class ProgressScreen extends GetView<ProgressController> {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 16),
-        Container(
-          padding: AppPadding.card,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: AppRadius.large,
-            boxShadow: AppShadows.subtle,
-          ),
-          child: Column(
-            children: [
-              // Simplified calendar view
-              _buildWeekRow(context, 'Week 1', 5, 7),
-              const SizedBox(height: 12),
-              _buildWeekRow(context, 'Week 2', 4, 7),
-              const SizedBox(height: 12),
-              _buildWeekRow(context, 'Week 3', 3, 7),
-              const SizedBox(height: 12),
-              _buildWeekRow(context, 'Week 4', 0, 3),
-            ],
-          ),
-        ),
+        Obx(() {
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          final monthStart = DateTime(now.year, now.month, 1);
+          final monthEnd = DateTime(now.year, now.month + 1, 0);
+
+          // Find the Monday on or before month start
+          final firstMonday = monthStart.subtract(
+            Duration(days: (monthStart.weekday - 1) % 7),
+          );
+
+          // Build dynamic weeks
+          final weekWidgets = <Widget>[];
+          var weekStart = firstMonday;
+          int weekNum = 1;
+
+          while (!weekStart.isAfter(monthEnd)) {
+            int completed = 0;
+            int total = 0;
+
+            for (int d = 0; d < 7; d++) {
+              final day = weekStart.add(Duration(days: d));
+              if (day.month == now.month &&
+                  day.year == now.year &&
+                  !day.isAfter(today)) {
+                total++;
+                if (controller.workoutDates.any((wd) =>
+                    wd.year == day.year &&
+                    wd.month == day.month &&
+                    wd.day == day.day)) {
+                  completed++;
+                }
+              }
+            }
+
+            if (total > 0) {
+              if (weekWidgets.isNotEmpty) {
+                weekWidgets.add(const SizedBox(height: 12));
+              }
+              weekWidgets.add(
+                _buildWeekRow(context, 'Week $weekNum', completed, total),
+              );
+            }
+            weekNum++;
+            weekStart = weekStart.add(const Duration(days: 7));
+          }
+
+          if (weekWidgets.isEmpty) {
+            return Container(
+              width: double.infinity,
+              padding: AppPadding.card,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: AppRadius.large,
+                boxShadow: AppShadows.subtle,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Center(
+                  child: Text(
+                    'No workout data this month',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return Container(
+            padding: AppPadding.card,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: AppRadius.large,
+              boxShadow: AppShadows.subtle,
+            ),
+            child: Column(children: weekWidgets),
+          );
+        }),
       ],
     );
   }

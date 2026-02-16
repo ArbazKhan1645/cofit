@@ -32,6 +32,7 @@ class HomeScreen extends GetView<HomeController> {
               _buildTodaysWorkoutBanner(context).animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
               const SizedBox(height: 16),
               _buildExercisePreview(context).animate().fadeIn(delay: 150.ms, duration: 400.ms),
+              _buildCompletedTodaySection(context).animate().fadeIn(delay: 175.ms, duration: 400.ms),
               const SizedBox(height: 24),
               Padding(
                 padding: AppPadding.horizontal,
@@ -781,6 +782,111 @@ class HomeScreen extends GetView<HomeController> {
   }
 
   // ============================================
+  // COMPLETED TODAY SECTION
+  // ============================================
+
+  Widget _buildCompletedTodaySection(BuildContext context) {
+    return Obx(() {
+      final completed = controller.completedTodayWorkouts;
+      if (completed.isEmpty || controller.allTodayCompleted) {
+        return const SizedBox.shrink();
+      }
+
+      return Padding(
+        padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: AppRadius.large,
+            boxShadow: AppShadows.subtle,
+            border: Border.all(
+              color: AppColors.success.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Iconsax.tick_circle,
+                        size: 16, color: AppColors.success),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Completed Today',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.1),
+                      borderRadius: AppRadius.pill,
+                    ),
+                    child: Text(
+                      '${completed.length}/${controller.todayItems.length}',
+                      style:
+                          Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: AppColors.success,
+                                fontWeight: FontWeight.w700,
+                              ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ...completed.map((workout) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle,
+                            size: 18, color: AppColors.success),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            workout.title,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  decoration: TextDecoration.lineThrough,
+                                  decorationColor: AppColors.textDisabled,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${workout.durationMinutes} min',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(color: AppColors.textMuted),
+                        ),
+                      ],
+                    ),
+                  )),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  // ============================================
   // PROGRESS SECTION
   // ============================================
 
@@ -792,10 +898,10 @@ class HomeScreen extends GetView<HomeController> {
         borderRadius: AppRadius.large,
         boxShadow: AppShadows.subtle,
       ),
-      child: Row(
+      child: Obx(() => Row(
         children: [
           // Progress circle
-          Obx(() => CircularPercentIndicator(
+          CircularPercentIndicator(
                 radius: 45,
                 lineWidth: 10,
                 percent: (controller.workoutsThisWeek.value / 8).clamp(0.0, 1.0),
@@ -819,7 +925,7 @@ class HomeScreen extends GetView<HomeController> {
                 progressColor: AppColors.primary,
                 backgroundColor: AppColors.bgBlush,
                 circularStrokeCap: CircularStrokeCap.round,
-              )),
+              ),
           const SizedBox(width: 20),
           // Stats
           Expanded(
@@ -835,12 +941,12 @@ class HomeScreen extends GetView<HomeController> {
                 const SizedBox(height: 8),
                 _buildMiniStat(context, Iconsax.flash_1, '${controller.currentStreak.value} day streak', AppColors.sunnyYellow),
                 const SizedBox(height: 6),
-                _buildMiniStat(context, Iconsax.timer_1, '${controller.totalWorkoutsThisMonth.value * 30} min this week', AppColors.mintFresh),
+                _buildMiniStat(context, Iconsax.timer_1, '${controller.minutesThisWeek.value} min this week', AppColors.mintFresh),
               ],
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 

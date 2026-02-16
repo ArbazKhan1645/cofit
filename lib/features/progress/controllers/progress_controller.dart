@@ -1,11 +1,10 @@
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import '../../../shared/controllers/base_controller.dart';
+import '../../../core/services/progress_service.dart';
 import '../../../data/models/badge_model.dart';
 import '../../../data/repositories/achievement_repository.dart';
 
 class ProgressController extends BaseController {
-  final _storage = GetStorage();
   final AchievementRepository _achievementRepo = AchievementRepository();
 
   // Stats
@@ -30,14 +29,30 @@ class ProgressController extends BaseController {
     loadStats();
     loadAchievements();
     loadWorkoutHistory();
+
+    // React to ProgressService changes
+    if (Get.isRegistered<ProgressService>()) {
+      final ps = Get.find<ProgressService>();
+      ever(ps.totalWorkouts, (_) => totalWorkouts.value = ps.totalWorkouts.value);
+      ever(ps.currentStreak, (_) => currentStreak.value = ps.currentStreak.value);
+      ever(ps.longestStreak, (_) => longestStreak.value = ps.longestStreak.value);
+      ever(ps.totalMinutes, (_) => totalMinutes.value = ps.totalMinutes.value);
+      ever(ps.totalCalories, (_) => totalCalories.value = ps.totalCalories.value);
+      ever(ps.workoutDates, (_) => workoutDates.value = ps.workoutDates.toList());
+      // Reload achievements when ProgressService finishes processing them
+      ever(ps.achievementVersion, (_) => loadAchievements());
+    }
   }
 
   void loadStats() {
-    totalWorkouts.value = _storage.read<int>('totalWorkouts') ?? 24;
-    currentStreak.value = _storage.read<int>('currentStreak') ?? 5;
-    longestStreak.value = _storage.read<int>('longestStreak') ?? 12;
-    totalMinutes.value = _storage.read<int>('totalMinutes') ?? 720;
-    totalCalories.value = _storage.read<int>('totalCalories') ?? 4800;
+    if (Get.isRegistered<ProgressService>()) {
+      final ps = Get.find<ProgressService>();
+      totalWorkouts.value = ps.totalWorkouts.value;
+      currentStreak.value = ps.currentStreak.value;
+      longestStreak.value = ps.longestStreak.value;
+      totalMinutes.value = ps.totalMinutes.value;
+      totalCalories.value = ps.totalCalories.value;
+    }
   }
 
   Future<void> loadAchievements() async {
@@ -99,20 +114,10 @@ class ProgressController extends BaseController {
       userAchievements.where((ua) => ua.isCompleted).length;
 
   void loadWorkoutHistory() {
-    // Mock workout dates for the last 30 days
-    final now = DateTime.now();
-    workoutDates.value = [
-      now.subtract(const Duration(days: 1)),
-      now.subtract(const Duration(days: 2)),
-      now.subtract(const Duration(days: 4)),
-      now.subtract(const Duration(days: 5)),
-      now.subtract(const Duration(days: 6)),
-      now.subtract(const Duration(days: 8)),
-      now.subtract(const Duration(days: 9)),
-      now.subtract(const Duration(days: 11)),
-      now.subtract(const Duration(days: 12)),
-      now.subtract(const Duration(days: 15)),
-    ];
+    if (Get.isRegistered<ProgressService>()) {
+      final ps = Get.find<ProgressService>();
+      workoutDates.value = ps.workoutDates.toList();
+    }
   }
 
   String getMotivationalMessage() {

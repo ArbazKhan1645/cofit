@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/progress_service.dart';
 import '../../../core/services/today_workout_cache_service.dart';
 import '../../../core/services/variant_resolution_service.dart';
 import '../../../data/models/challenge_model.dart';
@@ -13,7 +13,6 @@ import '../../../data/repositories/workout_repository.dart';
 
 class HomeController extends BaseController {
   final AuthService _authService = AuthService.to;
-  final _storage = GetStorage();
   final ChallengeRepository _challengeRepo = ChallengeRepository();
   final WorkoutRepository _workoutRepo = WorkoutRepository();
   final _todayCache = TodayWorkoutCacheService();
@@ -23,6 +22,7 @@ class HomeController extends BaseController {
   final RxInt workoutsThisWeek = 0.obs;
   final RxInt currentStreak = 0.obs;
   final RxInt totalWorkoutsThisMonth = 0.obs;
+  final RxInt minutesThisWeek = 0.obs;
 
   // Today's workouts
   final Rx<WeeklyScheduleModel?> activeSchedule =
@@ -60,6 +60,14 @@ class HomeController extends BaseController {
     loadHomeChallenges();
     loadHotWorkouts();
     _loadSavedWorkoutIds();
+    // React to ProgressService changes
+    if (Get.isRegistered<ProgressService>()) {
+      final ps = Get.find<ProgressService>();
+      ever(ps.workoutsThisWeek, (_) => workoutsThisWeek.value = ps.workoutsThisWeek.value);
+      ever(ps.currentStreak, (_) => currentStreak.value = ps.currentStreak.value);
+      ever(ps.totalWorkoutsThisMonth, (_) => totalWorkoutsThisMonth.value = ps.totalWorkoutsThisMonth.value);
+      ever(ps.minutesThisWeek, (_) => minutesThisWeek.value = ps.minutesThisWeek.value);
+    }
     // React to user changes from AuthService
     ever(_authService.currentUserRx, (_) {
       loadUserData();
@@ -75,11 +83,16 @@ class HomeController extends BaseController {
   }
 
   void loadWorkoutStats() {
-    final user = _authService.currentUser;
-    currentStreak.value = user?.currentStreak ?? 0;
-    workoutsThisWeek.value = _storage.read<int>('workoutsThisWeek') ?? 0;
-    totalWorkoutsThisMonth.value =
-        _storage.read<int>('totalWorkoutsThisMonth') ?? 0;
+    if (Get.isRegistered<ProgressService>()) {
+      final ps = Get.find<ProgressService>();
+      currentStreak.value = ps.currentStreak.value;
+      workoutsThisWeek.value = ps.workoutsThisWeek.value;
+      totalWorkoutsThisMonth.value = ps.totalWorkoutsThisMonth.value;
+      minutesThisWeek.value = ps.minutesThisWeek.value;
+    } else {
+      final user = _authService.currentUser;
+      currentStreak.value = user?.currentStreak ?? 0;
+    }
   }
 
   // ============================================
@@ -114,8 +127,18 @@ class HomeController extends BaseController {
       return;
     }
 
-    // Online: always fetch fresh from network
-    // Show cached data first for instant display while fetching
+    // 1. Load completed IDs FIRST — so cache rendering knows which are done
+    final completedResult = await _workoutRepo.getTodayCompletedWorkoutIds();
+    completedResult.fold(
+      (error) {},
+      (ids) {
+        completedTodayIds.clear();
+        completedTodayIds.addAll(ids);
+        completedTodayIds.refresh();
+      },
+    );
+
+    // 2. Show cached data for instant display (now completedTodayIds is populated)
     final cachedSchedule = _todayCache.getCachedSchedule();
     final cachedItems = _todayCache.getCachedItems();
     if (cachedSchedule != null && cachedItems != null) {
@@ -125,17 +148,7 @@ class HomeController extends BaseController {
       isLoadingSchedule.value = true;
     }
 
-    // Load completed workout IDs for today
-    final completedResult = await _workoutRepo.getTodayCompletedWorkoutIds();
-    completedResult.fold(
-      (error) {},
-      (ids) {
-        completedTodayIds.clear();
-        completedTodayIds.addAll(ids);
-      },
-    );
-
-    // Fetch fresh schedule from network
+    // 3. Fetch fresh schedule from network
     final scheduleResult = await _workoutRepo.getActiveSchedule();
     WeeklyScheduleModel? schedule;
     scheduleResult.fold(
@@ -259,6 +272,16 @@ class HomeController extends BaseController {
   bool get isTodayRestDay {
     if (activeSchedule.value == null) return false;
     return activeSchedule.value!.isDayDisabled(DateTime.now().weekday - 1);
+  }
+
+  /// Workouts completed today (for "completed" section)
+  List<WorkoutModel> get completedTodayWorkouts {
+    return todayItems
+        .where((item) =>
+            completedTodayIds.contains(item.workoutId) &&
+            item.workout != null)
+        .map((item) => item.workout!)
+        .toList();
   }
 
   /// Whether all today's workouts are completed

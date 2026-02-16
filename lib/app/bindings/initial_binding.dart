@@ -11,5 +11,9 @@ class InitialBinding extends Bindings {
 
     // Achievement Service
     Get.lazyPut<AchievementService>(() => AchievementService(), fenix: true);
+
+    // ProgressService is created as permanent in splash/auth BEFORE HomeController
+    // to guarantee initialized data. Do NOT lazyPut here — non-permanent instances
+    // get disposed on route transitions, causing all stats to reset to zero.
   }
 }
