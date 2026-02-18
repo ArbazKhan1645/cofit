@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:cofit_collective/features/community/views/post_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -113,6 +114,11 @@ class CommunityController extends BaseController {
     await loadFeed(refresh: true, showLoading: cachedPosts == null);
   }
 
+  initializeFeed(String id) {
+    final postId = id;
+    loadPostById(postId);
+  }
+
   /// Check internet connectivity
   Future<bool> _hasInternet() async {
     final result = await Connectivity().checkConnectivity();
@@ -193,6 +199,50 @@ class CommunityController extends BaseController {
   /// Refresh feed (pull to refresh)
   Future<void> refreshFeed() async {
     await loadFeed(refresh: true, showLoading: false);
+  }
+
+  // ============================================
+  // DEEP LINK HANDLING
+  // ============================================
+
+  /// Load a post by ID (for deep linking)
+  /// Fetches fresh from server and sets as currentPost
+  Future<void> loadPostById(String postId) async {
+    setLoading(true);
+
+    final result = await _repository.getPost(postId);
+
+    if (result.isSuccess) {
+      currentPost.value = result.data!;
+      setCurrentPost(result.data!);
+      Get.to(() => const PostDetailScreen());
+    } else {
+      if (Get.context != null) {
+        AppSnackbar.error(
+          Get.context!,
+          message: 'Post not found or unavailable',
+        );
+      }
+    }
+
+    setLoading(false);
+  }
+
+  /// Helper to sync a post into all loaded lists
+  void _updatePostInAllLists(PostModel post) {
+    void tryUpdate(RxList<PostModel> list) {
+      final idx = list.indexWhere((p) => p.id == post.id);
+      if (idx != -1) {
+        list[idx] = post;
+        list.refresh();
+      }
+    }
+
+    tryUpdate(posts);
+    tryUpdate(myPosts);
+    tryUpdate(challengePosts);
+    tryUpdate(recipePosts);
+    tryUpdate(userProfilePosts);
   }
 
   // ============================================

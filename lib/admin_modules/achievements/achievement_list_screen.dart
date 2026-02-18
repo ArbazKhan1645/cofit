@@ -39,7 +39,9 @@ class AchievementListScreen extends GetView<AchievementController> {
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
               onChanged: (v) => controller.searchQuery.value = v,
             ),
@@ -48,23 +50,25 @@ class AchievementListScreen extends GetView<AchievementController> {
           // Filter chips
           SizedBox(
             height: 44,
-            child: Obx(() => ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    _buildFilterChip(context, 'All', 'all'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(context, 'Workout', 'workout'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(context, 'Streak', 'streak'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(context, 'Milestone', 'milestone'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(context, 'Community', 'community'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(context, 'Special', 'special'),
-                  ],
-                )),
+            child: Obx(
+              () => ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  _buildFilterChip(context, 'All', 'all'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(context, 'Workout', 'workout'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(context, 'Streak', 'streak'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(context, 'Milestone', 'milestone'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(context, 'Community', 'community'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(context, 'Special', 'special'),
+                ],
+              ),
+            ),
           ),
 
           const SizedBox(height: 8),
@@ -82,15 +86,17 @@ class AchievementListScreen extends GetView<AchievementController> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Iconsax.medal_star,
-                          size: 56, color: AppColors.textDisabled),
+                      Icon(
+                        Iconsax.medal_star,
+                        size: 56,
+                        color: AppColors.textDisabled,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'No achievements found',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyLarge
-                            ?.copyWith(color: AppColors.textMuted),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: AppColors.textMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -114,8 +120,7 @@ class AchievementListScreen extends GetView<AchievementController> {
     );
   }
 
-  Widget _buildFilterChip(
-      BuildContext context, String label, String value) {
+  Widget _buildFilterChip(BuildContext context, String label, String value) {
     final isSelected = controller.filterCategory.value == value;
     return GestureDetector(
       onTap: () => controller.filterCategory.value = value,
@@ -131,16 +136,15 @@ class AchievementListScreen extends GetView<AchievementController> {
         child: Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: isSelected ? Colors.white : AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
+            color: isSelected ? Colors.white : AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildAchievementCard(
-      BuildContext context, dynamic achievement) {
+  Widget _buildAchievementCard(BuildContext context, dynamic achievement) {
     final a = achievement;
     return Container(
       padding: const EdgeInsets.all(14),
@@ -159,11 +163,7 @@ class AchievementListScreen extends GetView<AchievementController> {
               color: AppColors.bgBlush,
               borderRadius: AppRadius.medium,
             ),
-            child: Icon(
-              a.iconData,
-              color: AppColors.primary,
-              size: 24,
-            ),
+            child: Icon(a.getIconData(), color: AppColors.primary, size: 24),
           ),
           const SizedBox(width: 14),
 
@@ -177,17 +177,18 @@ class AchievementListScreen extends GetView<AchievementController> {
                     Expanded(
                       child: Text(
                         a.name,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: a.isActive
                             ? AppColors.successLight
@@ -196,15 +197,12 @@ class AchievementListScreen extends GetView<AchievementController> {
                       ),
                       child: Text(
                         a.isActive ? 'Active' : 'Inactive',
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelSmall
-                            ?.copyWith(
-                              color: a.isActive
-                                  ? AppColors.success
-                                  : AppColors.error,
-                              fontWeight: FontWeight.w600,
-                            ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: a.isActive
+                              ? AppColors.success
+                              : AppColors.error,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -212,9 +210,9 @@ class AchievementListScreen extends GetView<AchievementController> {
                 const SizedBox(height: 4),
                 Text(
                   '${a.typeLabel} \u2022 ${a.targetValue} ${a.targetUnit}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textMuted,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -234,13 +232,11 @@ class AchievementListScreen extends GetView<AchievementController> {
               }
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(
-                  value: 'detail', child: Text('View Details')),
+              const PopupMenuItem(value: 'detail', child: Text('View Details')),
               const PopupMenuItem(value: 'edit', child: Text('Edit')),
               const PopupMenuItem(
                 value: 'delete',
-                child: Text('Delete',
-                    style: TextStyle(color: AppColors.error)),
+                child: Text('Delete', style: TextStyle(color: AppColors.error)),
               ),
             ],
           ),

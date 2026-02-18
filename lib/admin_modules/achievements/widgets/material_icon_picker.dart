@@ -48,17 +48,16 @@ class _MaterialIconPickerState extends State<MaterialIconPicker> {
           children: [
             Text(
               'Choose Icon',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 14),
             TextField(
               controller: searchController,
               decoration: InputDecoration(
                 hintText: 'Search icons...',
-                prefixIcon:
-                    const Icon(Iconsax.search_normal, size: 20),
+                prefixIcon: const Icon(Iconsax.search_normal, size: 20),
                 filled: true,
                 fillColor: AppColors.bgCream,
                 border: OutlineInputBorder(
@@ -66,7 +65,9 @@ class _MaterialIconPickerState extends State<MaterialIconPicker> {
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
               onChanged: (v) => setState(() => searchQuery = v),
             ),
@@ -77,22 +78,26 @@ class _MaterialIconPickerState extends State<MaterialIconPicker> {
                       child: Text(
                         'No icons found',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textMuted,
-                            ),
+                          color: AppColors.textMuted,
+                        ),
                       ),
                     )
                   : GridView.builder(
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 5,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                      ),
+                            crossAxisCount: 5,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                          ),
                       itemCount: filteredIcons.length,
                       itemBuilder: (context, index) {
                         final entry = filteredIcons[index];
                         final isSelected =
                             entry.codePoint == widget.currentIconCode;
+                        final iconData = IconData(
+                          entry.codePoint,
+                          fontFamily: 'MaterialIcons',
+                        );
                         return GestureDetector(
                           onTap: () {
                             widget.onIconSelected(entry.codePoint);
@@ -109,12 +114,12 @@ class _MaterialIconPickerState extends State<MaterialIconPicker> {
                                 border: isSelected
                                     ? Border.all(
                                         color: AppColors.primaryDark,
-                                        width: 2)
+                                        width: 2,
+                                      )
                                     : null,
                               ),
                               child: Icon(
-                                IconData(entry.codePoint,
-                                    fontFamily: 'MaterialIcons'),
+                                iconData,
                                 color: isSelected
                                     ? Colors.white
                                     : AppColors.textSecondary,

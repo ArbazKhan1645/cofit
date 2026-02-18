@@ -9,14 +9,7 @@ import '../../../data/repositories/workout_repository.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../home/controllers/home_controller.dart';
 
-enum PlayerState {
-  countdown,
-  playing,
-  paused,
-  resting,
-  completing,
-  completed,
-}
+enum PlayerState { countdown, playing, paused, resting, completing, completed }
 
 class WorkoutPlayerController extends GetxController {
   final WorkoutRepository _workoutRepo = WorkoutRepository();
@@ -35,11 +28,19 @@ class WorkoutPlayerController extends GetxController {
   final RxInt elapsedSeconds = 0.obs;
   final RxInt completedExerciseCount = 0.obs;
 
-  // Video
+  // Active controller for currently playing exercise
   VideoPlayerController? videoController;
+
+  // Video UI state
   final RxDouble videoProgress = 0.0.obs;
   final RxBool isVideoPlaying = false.obs;
   final RxBool isVideoInitialized = false.obs;
+  final RxBool isVideoError = false.obs;
+  final RxInt videoRemainingSeconds = 0.obs;
+
+  // Guards
+  bool _exerciseFinishCalled = false;
+  bool _disposed = false;
 
   // Timers
   Timer? _countdownTimer;
@@ -47,8 +48,11 @@ class WorkoutPlayerController extends GetxController {
   Timer? _elapsedTimer;
   Timer? _exerciseTimer;
 
-  // Stopwatch for total elapsed
   final Stopwatch _stopwatch = Stopwatch();
+
+  // ============================================
+  // INIT / CLOSE
+  // ============================================
 
   @override
   void onInit() {
@@ -58,15 +62,25 @@ class WorkoutPlayerController extends GetxController {
     exercises = args['exercises'] as List<WorkoutExerciseModel>;
     variant = args['variant'] as WorkoutVariantModel?;
 
-    // Check for resume data
     final resumeData = _resumeService.getResumeData(workout.id);
-    if (resumeData != null && resumeData.currentExerciseIndex < exercises.length) {
+    if (resumeData != null &&
+        resumeData.currentExerciseIndex < exercises.length) {
       currentExerciseIndex.value = resumeData.currentExerciseIndex;
       completedExerciseCount.value = resumeData.completedExerciseCount;
-      // Restore elapsed time
-      _stopwatch.reset();
-      // We can't set stopwatch directly, so track offset
-      elapsedSeconds.value = resumeData.elapsedSeconds;
+
+      int calculatedElapsed = 0;
+      for (int i = 0; i < resumeData.currentExerciseIndex; i++) {
+        final ex = exercises[i];
+        if (ex.exerciseType == 'rest') {
+          calculatedElapsed += ex.durationSeconds;
+        } else {
+          calculatedElapsed += ex.durationSeconds > 0 ? ex.durationSeconds : 30;
+        }
+        if (ex.restSeconds != null && ex.exerciseType != 'rest') {
+          calculatedElapsed += ex.restSeconds!;
+        }
+      }
+      elapsedSeconds.value = calculatedElapsed;
     }
 
     _startElapsedTimer();
@@ -75,8 +89,10 @@ class WorkoutPlayerController extends GetxController {
 
   @override
   void onClose() {
+    _disposed = true;
     _disposeTimers();
     videoController?.dispose();
+    videoController = null;
     _stopwatch.stop();
     super.onClose();
   }
@@ -123,87 +139,159 @@ class WorkoutPlayerController extends GetxController {
   // EXERCISE PLAYBACK
   // ============================================
 
-  WorkoutExerciseModel get currentExercise => exercises[currentExerciseIndex.value];
+  WorkoutExerciseModel get currentExercise =>
+      exercises[currentExerciseIndex.value];
   bool get isLastExercise => currentExerciseIndex.value >= exercises.length - 1;
 
   void _startExercise() {
-    final exercise = currentExercise;
+    final idx = currentExerciseIndex.value;
+    final exercise = exercises[idx];
+
     playerState.value = PlayerState.playing;
-    isVideoPlaying.value = true;
+    isVideoPlaying.value = false;
     videoProgress.value = 0.0;
+    videoRemainingSeconds.value = 0;
     isVideoInitialized.value = false;
+    isVideoError.value = false;
+    _exerciseFinishCalled = false;
 
     if (exercise.exerciseType == 'rest') {
-      // Rest-type exercises are just countdown timers
       _startExerciseCountdownTimer(exercise.durationSeconds);
       return;
     }
 
-    // Video-first: always try video URL regardless of exercise type
     if (exercise.videoUrl != null && exercise.videoUrl!.isNotEmpty) {
-      _initializeVideo(exercise.videoUrl!);
+      _loadAndPlayVideo(idx, exercise);
     } else if (exercise.durationSeconds > 0) {
-      // No video — use timer-based exercise
       _startExerciseCountdownTimer(exercise.durationSeconds);
     } else {
-      // Reps with no video and no duration: auto-complete after 30 seconds
       _startExerciseCountdownTimer(30);
     }
   }
 
-  Future<void> _initializeVideo(String url) async {
+  // ============================================
+  // VIDEO LOAD + PLAY
+  // ============================================
+
+  Future<void> _loadAndPlayVideo(int idx, WorkoutExerciseModel exercise) async {
+    // Clean up any previous controller
     videoController?.dispose();
-    videoController = VideoPlayerController.networkUrl(Uri.parse(url));
+    videoController = null;
+    isVideoInitialized.value = false;
+    isVideoError.value = false;
+
+    final url = exercise.videoUrl!;
+    final vc = VideoPlayerController.networkUrl(Uri.parse(url));
 
     try {
-      await videoController!.initialize();
+      await vc.initialize();
+
+      // Guard: screen may have moved on (user went back, etc.)
+      if (_disposed || currentExerciseIndex.value != idx) {
+        vc.dispose();
+        return;
+      }
+
+      videoController = vc;
       isVideoInitialized.value = true;
-      videoController!.play();
 
-      videoController!.addListener(_onVideoUpdate);
-    } catch (_) {
-      // Fallback to timer if video fails
-      final duration = currentExercise.durationSeconds;
-      _startExerciseCountdownTimer(duration > 0 ? duration : 30);
+      // Reset progress AFTER initialization — duration is now known
+      videoProgress.value = 0.0;
+      videoRemainingSeconds.value = vc.value.duration.inSeconds;
+
+      await vc.play();
+      isVideoPlaying.value = true;
+
+      // Start the listener-based progress tracker
+      _attachVideoListener(vc, idx);
+    } catch (e) {
+      vc.dispose();
+      isVideoError.value = true;
+      // Fallback: 20-second timer so workout can continue
+      _startExerciseCountdownTimer(20);
     }
   }
 
-  void _onVideoUpdate() {
-    final vc = videoController;
-    if (vc == null || !vc.value.isInitialized) return;
+  // ============================================
+  // VIDEO LISTENER — no polling, no Duration math
+  //
+  // Flutter's VideoPlayerController fires addListener on every frame.
+  // We read position & duration directly from vc.value each callback.
+  // Completion = position reached duration (with 300ms tolerance).
+  // ============================================
 
-    final duration = vc.value.duration;
-    final position = vc.value.position;
+  void _attachVideoListener(VideoPlayerController vc, int idx) {
+    void listener() {
+      // Stop if disposed or a different exercise is active
+      if (_disposed ||
+          currentExerciseIndex.value != idx ||
+          videoController != vc) {
+        vc.removeListener(listener);
+        return;
+      }
 
-    if (duration.inMilliseconds > 0) {
-      videoProgress.value =
-          (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0);
+      final val = vc.value;
+      if (!val.isInitialized) return;
+
+      final durationMs = val.duration.inMilliseconds;
+      final positionMs = val.position.inMilliseconds;
+
+      // Duration must be settled (> 0) before we trust anything
+      if (durationMs <= 0) return;
+
+      // Update progress bar (0.0 → 1.0)
+      final progress = (positionMs / durationMs).clamp(0.0, 1.0);
+      videoProgress.value = progress;
+
+      // Update remaining seconds display
+      final remainingMs = (durationMs - positionMs).clamp(0, durationMs);
+      videoRemainingSeconds.value = (remainingMs / 1000).ceil();
+
+      // Update play/pause icon
+      isVideoPlaying.value = val.isPlaying;
+
+      // Completion: position within 300ms of end OR flutter marks it completed
+      final isFinished = val.isCompleted || positionMs >= (durationMs - 300);
+
+      if (!_exerciseFinishCalled && isFinished) {
+        _exerciseFinishCalled = true;
+        vc.removeListener(listener);
+        _onExerciseFinished();
+      }
     }
 
-    isVideoPlaying.value = vc.value.isPlaying;
-
-    // Check if video completed
-    if (position >= duration && duration.inMilliseconds > 0) {
-      vc.removeListener(_onVideoUpdate);
-      _onExerciseFinished();
-    }
+    vc.addListener(listener);
   }
+
+  // ============================================
+  // FALLBACK TIMER (no video / video error)
+  // ============================================
 
   void _startExerciseCountdownTimer(int durationSeconds) {
-    if (durationSeconds <= 0) {
-      durationSeconds = 30; // Safety fallback
-    }
+    if (durationSeconds <= 0) durationSeconds = 30;
     int remaining = durationSeconds;
+    videoRemainingSeconds.value = remaining;
+    videoProgress.value = 0.0;
+
+    _exerciseTimer?.cancel();
     _exerciseTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       remaining--;
-      videoProgress.value =
-          1.0 - (remaining / durationSeconds).clamp(0.0, 1.0);
+      videoRemainingSeconds.value = remaining.clamp(0, durationSeconds);
+      videoProgress.value = 1.0 - (remaining / durationSeconds).clamp(0.0, 1.0);
+
       if (remaining <= 0) {
         timer.cancel();
-        _onExerciseFinished();
+        if (!_exerciseFinishCalled) {
+          _exerciseFinishCalled = true;
+          _onExerciseFinished();
+        }
       }
     });
   }
+
+  // ============================================
+  // PLAY / PAUSE
+  // ============================================
 
   void togglePlayPause() {
     final vc = videoController;
@@ -219,7 +307,7 @@ class WorkoutPlayerController extends GetxController {
       }
       isVideoPlaying.value = vc.value.isPlaying;
     } else {
-      // Timer-based exercise toggle
+      // No video controller (timer-based exercise)
       if (playerState.value == PlayerState.paused) {
         playerState.value = PlayerState.playing;
         _stopwatch.start();
@@ -238,15 +326,7 @@ class WorkoutPlayerController extends GetxController {
 
   void goToPreviousExercise() {
     if (!canGoBack) return;
-
-    // Dispose current playback
-    _exerciseTimer?.cancel();
-    videoController?.removeListener(_onVideoUpdate);
-    videoController?.pause();
-    videoController?.dispose();
-    videoController = null;
-    isVideoInitialized.value = false;
-
+    _tearDownCurrentVideo();
     currentExerciseIndex.value--;
     _startCountdown();
   }
@@ -255,13 +335,25 @@ class WorkoutPlayerController extends GetxController {
   // EXERCISE TRANSITION
   // ============================================
 
+  void _tearDownCurrentVideo() {
+    _exerciseTimer?.cancel();
+    videoController?.dispose();
+    videoController = null;
+    isVideoInitialized.value = false;
+    isVideoError.value = false;
+    videoRemainingSeconds.value = 0;
+    videoProgress.value = 0.0;
+    _exerciseFinishCalled = false;
+  }
+
   void _onExerciseFinished() {
     videoController?.dispose();
     videoController = null;
     isVideoInitialized.value = false;
+    isVideoError.value = false;
+    videoRemainingSeconds.value = 0;
     completedExerciseCount.value++;
 
-    // Save resume progress
     _resumeService.saveProgress(
       workoutId: workout.id,
       exerciseIndex: currentExerciseIndex.value + 1,
@@ -274,7 +366,6 @@ class WorkoutPlayerController extends GetxController {
       return;
     }
 
-    // Always go through rest state before next exercise
     final exercise = currentExercise;
     final restSeconds = exercise.restSeconds ?? 0;
     _startRestTimer(restSeconds > 0 ? restSeconds : 5);
@@ -312,40 +403,68 @@ class WorkoutPlayerController extends GetxController {
     _stopwatch.stop();
     _elapsedTimer?.cancel();
 
-    // Show animation for 3 seconds then move to completed
     Future.delayed(const Duration(seconds: 3), () {
+      if (_disposed) return;
       playerState.value = PlayerState.completed;
       _logCompletion();
     });
   }
 
   Future<void> _logCompletion() async {
-    // Clear resume data on full completion
     _resumeService.clearResume(workout.id);
-
     final durationMinutes = (elapsedSeconds.value / 60).ceil();
-    await _workoutRepo.logWorkoutCompletion(
-      workoutId: workout.id,
-      durationMinutes: durationMinutes,
-      caloriesBurned: workout.caloriesBurned,
-      completionPercentage: 1.0,
-    );
 
-    // Trigger progress tracking pipeline (fire-and-forget)
+    int retries = 0;
+    const maxRetries = 3;
+    bool saved = false;
+
+    while (!saved && retries < maxRetries) {
+      try {
+        final result = await _workoutRepo.logWorkoutCompletion(
+          workoutId: workout.id,
+          durationMinutes: durationMinutes,
+          caloriesBurned: workout.caloriesBurned,
+          completionPercentage: 1.0,
+        );
+
+        result.fold(
+          (error) async {
+            retries++;
+            if (retries < maxRetries) {
+              await Future.delayed(Duration(milliseconds: 500 * retries));
+            }
+          },
+          (_) {
+            saved = true;
+          },
+        );
+      } catch (e) {
+        retries++;
+        if (retries < maxRetries) {
+          await Future.delayed(Duration(milliseconds: 500 * retries));
+        }
+      }
+    }
+
     if (Get.isRegistered<ProgressService>()) {
-      unawaited(Get.find<ProgressService>().onWorkoutCompleted(
-        workoutId: workout.id,
-        workoutCategory: workout.category,
-        durationMinutes: durationMinutes,
-        caloriesBurned: workout.caloriesBurned,
-      ));
+      unawaited(
+        Get.find<ProgressService>().onWorkoutCompleted(
+          workoutId: workout.id,
+          workoutCategory: workout.category,
+          durationMinutes: durationMinutes,
+          caloriesBurned: workout.caloriesBurned,
+        ),
+      );
     }
   }
 
-  void finishAndGoHome() {
-    // Notify HomeController
+  Future<void> finishAndGoHome() async {
+    if (playerState.value == PlayerState.completing) {
+      await _logCompletion();
+    }
+
     if (Get.isRegistered<HomeController>()) {
-      Get.find<HomeController>().onWorkoutCompleted(workout.id);
+      await Get.find<HomeController>().onWorkoutCompleted(workout.id);
     }
     Get.until((route) => route.settings.name == AppRoutes.main);
   }
@@ -364,7 +483,8 @@ class WorkoutPlayerController extends GetxController {
       AlertDialog(
         title: const Text('Exit Workout?'),
         content: const Text(
-            'Your progress will be saved. You can resume this workout later today.'),
+          'Your progress will be saved. You can resume this workout later today.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
@@ -381,15 +501,12 @@ class WorkoutPlayerController extends GetxController {
     if (confirmed == true) {
       _stopwatch.stop();
       _disposeTimers();
-
-      // Save progress for resume (don't clear)
       _resumeService.saveProgress(
         workoutId: workout.id,
         exerciseIndex: currentExerciseIndex.value,
         completedCount: completedExerciseCount.value,
         elapsedSeconds: elapsedSeconds.value,
       );
-
       Get.back();
       return true;
     }
@@ -402,6 +519,14 @@ class WorkoutPlayerController extends GetxController {
 
   String get formattedElapsed {
     final total = elapsedSeconds.value;
+    final m = total ~/ 60;
+    final s = total % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  String get formattedRemaining {
+    final total = elapsedSeconds.value;
+    if (total <= 0) return '0:00';
     final m = total ~/ 60;
     final s = total % 60;
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';

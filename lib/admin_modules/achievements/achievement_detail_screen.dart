@@ -89,22 +89,26 @@ class AchievementDetailScreen extends GetView<AchievementController> {
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.primary, width: 2),
             ),
-            child: Icon(achievement.iconData, color: AppColors.primary, size: 34),
+            child: Icon(
+              achievement.getIconData(),
+              color: AppColors.primary,
+              size: 34,
+            ),
           ),
           const SizedBox(height: 14),
           Text(
             achievement.name,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 6),
           Text(
             achievement.description,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 14),
@@ -112,7 +116,11 @@ class AchievementDetailScreen extends GetView<AchievementController> {
             spacing: 8,
             children: [
               _buildChip(context, achievement.typeLabel, AppColors.lavender),
-              _buildChip(context, achievement.categoryLabel, AppColors.mintFresh),
+              _buildChip(
+                context,
+                achievement.categoryLabel,
+                AppColors.mintFresh,
+              ),
               _buildChip(
                 context,
                 achievement.isActive ? 'Active' : 'Inactive',
@@ -135,9 +143,9 @@ class AchievementDetailScreen extends GetView<AchievementController> {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -150,28 +158,31 @@ class AchievementDetailScreen extends GetView<AchievementController> {
       children: [
         Text(
           'Analytics',
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
-              child: _buildStatCard(context,
-                  value: '${stats?.totalUsers ?? 0}',
-                  label: 'Total Users',
-                  icon: Iconsax.people,
-                  color: AppColors.lavender),
+              child: _buildStatCard(
+                context,
+                value: '${stats?.totalUsers ?? 0}',
+                label: 'Total Users',
+                icon: Iconsax.people,
+                color: AppColors.lavender,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildStatCard(context,
-                  value: '${stats?.completedCount ?? 0}',
-                  label: 'Completed',
-                  icon: Iconsax.tick_circle,
-                  color: AppColors.success),
+              child: _buildStatCard(
+                context,
+                value: '${stats?.completedCount ?? 0}',
+                label: 'Completed',
+                icon: Iconsax.tick_circle,
+                color: AppColors.success,
+              ),
             ),
           ],
         ),
@@ -179,20 +190,24 @@ class AchievementDetailScreen extends GetView<AchievementController> {
         Row(
           children: [
             Expanded(
-              child: _buildStatCard(context,
-                  value: '${stats?.inProgressCount ?? 0}',
-                  label: 'In Progress',
-                  icon: Iconsax.timer_1,
-                  color: AppColors.skyBlue),
+              child: _buildStatCard(
+                context,
+                value: '${stats?.inProgressCount ?? 0}',
+                label: 'In Progress',
+                icon: Iconsax.timer_1,
+                color: AppColors.skyBlue,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildStatCard(context,
-                  value:
-                      '${((stats?.avgProgress ?? 0) * 100).toStringAsFixed(0)}%',
-                  label: 'Avg Progress',
-                  icon: Iconsax.chart_2,
-                  color: AppColors.mintFresh),
+              child: _buildStatCard(
+                context,
+                value:
+                    '${((stats?.avgProgress ?? 0) * 100).toStringAsFixed(0)}%',
+                label: 'Avg Progress',
+                icon: Iconsax.chart_2,
+                color: AppColors.mintFresh,
+              ),
             ),
           ],
         ),
@@ -229,15 +244,15 @@ class AchievementDetailScreen extends GetView<AchievementController> {
           const SizedBox(height: 10),
           Text(
             value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.textMuted,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: AppColors.textMuted),
           ),
         ],
       ),
@@ -252,10 +267,9 @@ class AchievementDetailScreen extends GetView<AchievementController> {
       children: [
         Text(
           'Users (${users.length})',
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 12),
         if (users.isEmpty)
@@ -273,9 +287,9 @@ class AchievementDetailScreen extends GetView<AchievementController> {
                 const SizedBox(height: 8),
                 Text(
                   'No users tracking this achievement yet',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textMuted,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -303,8 +317,7 @@ class AchievementDetailScreen extends GetView<AchievementController> {
     );
   }
 
-  Widget _buildUserRow(
-      BuildContext context, dynamic ua, int targetValue) {
+  Widget _buildUserRow(BuildContext context, dynamic ua, int targetValue) {
     // Try to get user info from the joined 'users' data
     final progress = ua.currentProgress as int;
     final pct = targetValue > 0
@@ -315,10 +328,7 @@ class AchievementDetailScreen extends GetView<AchievementController> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
         children: [
-          CofitAvatar(
-            userId: ua.userId,
-            radius: 18,
-          ),
+          CofitAvatar(userId: ua.userId, radius: 18),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -326,9 +336,9 @@ class AchievementDetailScreen extends GetView<AchievementController> {
               children: [
                 Text(
                   'User',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -337,8 +347,9 @@ class AchievementDetailScreen extends GetView<AchievementController> {
                   lineHeight: 8,
                   percent: pct,
                   backgroundColor: AppColors.bgBlush,
-                  progressColor:
-                      ua.isCompleted ? AppColors.success : AppColors.primary,
+                  progressColor: ua.isCompleted
+                      ? AppColors.success
+                      : AppColors.primary,
                   barRadius: const Radius.circular(4),
                   padding: EdgeInsets.zero,
                 ),
@@ -351,15 +362,17 @@ class AchievementDetailScreen extends GetView<AchievementController> {
             children: [
               Text(
                 '$progress/$targetValue',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
               if (ua.isCompleted)
                 Container(
                   margin: const EdgeInsets.only(top: 4),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.successLight,
                     borderRadius: AppRadius.small,
@@ -367,10 +380,10 @@ class AchievementDetailScreen extends GetView<AchievementController> {
                   child: Text(
                     'Done',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppColors.success,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 10,
-                        ),
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 10,
+                    ),
                   ),
                 ),
             ],
@@ -386,10 +399,9 @@ class AchievementDetailScreen extends GetView<AchievementController> {
       children: [
         Text(
           'Configuration',
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 12),
         Container(
@@ -403,17 +415,29 @@ class AchievementDetailScreen extends GetView<AchievementController> {
           child: Column(
             children: [
               _buildConfigRow(context, 'Type', achievement.typeLabel),
-              _buildConfigRow(context, 'Target',
-                  '${achievement.targetValue} ${achievement.targetUnit}'),
+              _buildConfigRow(
+                context,
+                'Target',
+                '${achievement.targetValue} ${achievement.targetUnit}',
+              ),
               if (achievement.targetCategory != null &&
                   achievement.targetCategory!.isNotEmpty)
                 _buildConfigRow(
-                    context, 'Workout Category', achievement.targetCategory!),
+                  context,
+                  'Workout Category',
+                  achievement.targetCategory!,
+                ),
               _buildConfigRow(context, 'Category', achievement.categoryLabel),
               _buildConfigRow(
-                  context, 'Sort Order', '${achievement.sortOrder}'),
+                context,
+                'Sort Order',
+                '${achievement.sortOrder}',
+              ),
               _buildConfigRow(
-                  context, 'Icon Code', '0x${achievement.iconCode.toRadixString(16)}'),
+                context,
+                'Icon Code',
+                '0x${achievement.iconCode.toRadixString(16)}',
+              ),
             ],
           ),
         ),
@@ -421,8 +445,7 @@ class AchievementDetailScreen extends GetView<AchievementController> {
     );
   }
 
-  Widget _buildConfigRow(
-      BuildContext context, String label, String value) {
+  Widget _buildConfigRow(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -430,15 +453,15 @@ class AchievementDetailScreen extends GetView<AchievementController> {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textMuted,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
           ),
           Text(
             value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
         ],
       ),

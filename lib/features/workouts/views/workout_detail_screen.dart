@@ -810,7 +810,7 @@ class _WorkoutVideoAppBarState extends State<_WorkoutVideoAppBar> {
       videoPlayerController: _videoController!,
       autoPlay: true,
       looping: false,
-      aspectRatio: 16 / 9,
+
       placeholder: Container(
         color: Colors.black,
         child: const Center(

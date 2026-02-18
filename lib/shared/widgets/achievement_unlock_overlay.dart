@@ -54,7 +54,11 @@ class _AchievementUnlockCard extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
-            child: Icon(achievement.iconData, color: Colors.white, size: 28),
+            child: Icon(
+              achievement.getIconData(),
+              color: Colors.white,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(

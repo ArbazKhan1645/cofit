@@ -25,7 +25,8 @@ class WorkoutRepository extends BaseRepository {
 
   /// Get schedule items for a specific schedule, with joined workout + trainer
   Future<Result<List<WeeklyScheduleItemModel>>> getScheduleItems(
-      String scheduleId) async {
+    String scheduleId,
+  ) async {
     try {
       final response = await client
           .from('weekly_schedule_items')
@@ -34,8 +35,10 @@ class WorkoutRepository extends BaseRepository {
           .order('sort_order');
 
       final items = (response as List)
-          .map((json) =>
-              WeeklyScheduleItemModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) =>
+                WeeklyScheduleItemModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
 
       return Result.success(items);
@@ -88,7 +91,9 @@ class WorkoutRepository extends BaseRepository {
   }
 
   /// Get weekly workouts (current rotation)
-  Future<Result<List<WorkoutModel>>> getWeeklyWorkouts({int? weekNumber}) async {
+  Future<Result<List<WorkoutModel>>> getWeeklyWorkouts({
+    int? weekNumber,
+  }) async {
     try {
       final query = client
           .from('workouts')
@@ -128,7 +133,8 @@ class WorkoutRepository extends BaseRepository {
 
   /// Get workouts by category
   Future<Result<List<WorkoutModel>>> getWorkoutsByCategory(
-      String category) async {
+    String category,
+  ) async {
     try {
       final response = await client
           .from('workouts')
@@ -149,7 +155,8 @@ class WorkoutRepository extends BaseRepository {
 
   /// Get workouts by trainer
   Future<Result<List<WorkoutModel>>> getWorkoutsByTrainer(
-      String trainerId) async {
+    String trainerId,
+  ) async {
     try {
       final response = await client
           .from('workouts')
@@ -170,7 +177,8 @@ class WorkoutRepository extends BaseRepository {
 
   /// Get workout exercises
   Future<Result<List<WorkoutExerciseModel>>> getWorkoutExercises(
-      String workoutId) async {
+    String workoutId,
+  ) async {
     try {
       final response = await client
           .from('workout_exercises')
@@ -190,7 +198,8 @@ class WorkoutRepository extends BaseRepository {
 
   /// Get workout variants for a specific workout
   Future<Result<List<WorkoutVariantModel>>> getWorkoutVariants(
-      String workoutId) async {
+    String workoutId,
+  ) async {
     try {
       final response = await client
           .from('workout_variants')
@@ -199,8 +208,10 @@ class WorkoutRepository extends BaseRepository {
           .order('created_at');
 
       final variants = (response as List)
-          .map((json) =>
-              WorkoutVariantModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) =>
+                WorkoutVariantModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
 
       return Result.success(variants);
@@ -226,9 +237,11 @@ class WorkoutRepository extends BaseRepository {
       final ids = (response as List)
           .map((json) => json['workout_id'] as String)
           .toSet();
+      print(ids);
 
       return Result.success(ids);
     } catch (e) {
+      print(e);
       return Result.failure(RepositoryException(message: e.toString()));
     }
   }
@@ -242,7 +255,8 @@ class WorkoutRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       final response = await client
@@ -262,12 +276,15 @@ class WorkoutRepository extends BaseRepository {
   }
 
   /// Save a workout
-  Future<Result<SavedWorkoutModel>> saveWorkout(String workoutId,
-      {String? note}) async {
+  Future<Result<SavedWorkoutModel>> saveWorkout(
+    String workoutId, {
+    String? note,
+  }) async {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       final response = await client
@@ -292,7 +309,8 @@ class WorkoutRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       await client
@@ -344,7 +362,8 @@ class WorkoutRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       final response = await client
@@ -368,6 +387,9 @@ class WorkoutRepository extends BaseRepository {
 
       return Result.success(UserProgressModel.fromJson(response));
     } catch (e) {
+      print('object');
+      print(e);
+      print('object');
       return Result.failure(RepositoryException(message: e.toString()));
     }
   }
@@ -380,7 +402,8 @@ class WorkoutRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       final response = await client
@@ -408,7 +431,8 @@ class WorkoutRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       final response = await client
@@ -443,18 +467,15 @@ class WorkoutRepository extends BaseRepository {
     try {
       if (userId == null) return Result.success(null);
 
-      await client.from('workout_resume_progress').upsert(
-        {
-          'user_id': userId!,
-          'workout_id': workoutId,
-          'current_exercise_index': currentExerciseIndex,
-          'completed_exercise_count': completedExerciseCount,
-          'elapsed_seconds': elapsedSeconds,
-          'date': date,
-          'updated_at': DateTime.now().toIso8601String(),
-        },
-        onConflict: 'user_id,workout_id,date',
-      );
+      await client.from('workout_resume_progress').upsert({
+        'user_id': userId!,
+        'workout_id': workoutId,
+        'current_exercise_index': currentExerciseIndex,
+        'completed_exercise_count': completedExerciseCount,
+        'elapsed_seconds': elapsedSeconds,
+        'date': date,
+        'updated_at': DateTime.now().toIso8601String(),
+      }, onConflict: 'user_id,workout_id,date');
 
       return Result.success(null);
     } catch (e) {
@@ -464,7 +485,8 @@ class WorkoutRepository extends BaseRepository {
 
   /// Get resume progress for a workout (today only)
   Future<Result<Map<String, dynamic>?>> getResumeProgress(
-      String workoutId) async {
+    String workoutId,
+  ) async {
     try {
       if (userId == null) return Result.success(null);
 

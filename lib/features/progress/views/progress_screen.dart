@@ -17,10 +17,7 @@ class ProgressScreen extends GetView<ProgressController> {
       appBar: AppBar(
         title: const Text('Your Progress'),
         actions: [
-          IconButton(
-            icon: const Icon(Iconsax.calendar),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Iconsax.calendar), onPressed: () {}),
         ],
       ),
       body: SingleChildScrollView(
@@ -59,26 +56,32 @@ class ProgressScreen extends GetView<ProgressController> {
               color: Colors.white.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Iconsax.medal_star, color: Colors.white, size: 28),
+            child: const Icon(
+              Iconsax.medal_star,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Obx(() => Text(
-                  controller.getMotivationalMessage(),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                )),
+                Obx(
+                  () => Text(
+                    controller.getMotivationalMessage(),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   'Keep up the amazing work!',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
-                      ),
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
                 ),
               ],
             ),
@@ -92,62 +95,61 @@ class ProgressScreen extends GetView<ProgressController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Your Stats',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
+        Text('Your Stats', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
-        Obx(() => Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    icon: Iconsax.activity,
-                    value: '${controller.totalWorkouts.value}',
-                    label: 'Total Workouts',
-                    color: AppColors.primary,
+        Obx(
+          () => Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      context,
+                      icon: Iconsax.activity,
+                      value: '${controller.totalWorkouts.value}',
+                      label: 'Total Workouts',
+                      color: AppColors.primary,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    icon: Iconsax.flash_1,
-                    value: '${controller.currentStreak.value}',
-                    label: 'Current Streak',
-                    color: AppColors.sunnyYellow,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      context,
+                      icon: Iconsax.flash_1,
+                      value: '${controller.currentStreak.value}',
+                      label: 'Current Streak',
+                      color: AppColors.sunnyYellow,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    icon: Iconsax.timer_1,
-                    value: '${controller.totalMinutes.value}',
-                    label: 'Minutes Active',
-                    color: AppColors.lavender,
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      context,
+                      icon: Iconsax.timer_1,
+                      value: '${controller.totalMinutes.value}',
+                      label: 'Minutes Active',
+                      color: AppColors.lavender,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    icon: Iconsax.strongbox,
-                    value: '${controller.longestStreak.value}',
-                    label: 'Longest Streak',
-                    color: AppColors.mintFresh,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      context,
+                      icon: Iconsax.strongbox,
+                      value: '${controller.longestStreak.value}',
+                      label: 'Longest Streak',
+                      color: AppColors.mintFresh,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
-        )),
+                ],
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -181,14 +183,11 @@ class ProgressScreen extends GetView<ProgressController> {
           const SizedBox(height: 12),
           Text(
             value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall,
-          ),
+          Text(label, style: Theme.of(context).textTheme.labelSmall),
         ],
       ),
     );
@@ -200,10 +199,7 @@ class ProgressScreen extends GetView<ProgressController> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Achievements',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Achievements', style: Theme.of(context).textTheme.titleLarge),
             TextButton(
               onPressed: () => Get.toNamed(AppRoutes.achievements),
               child: const Text('View All'),
@@ -231,14 +227,17 @@ class ProgressScreen extends GetView<ProgressController> {
               ),
               child: Column(
                 children: [
-                  Icon(Iconsax.medal_star,
-                      size: 40, color: AppColors.textDisabled),
+                  Icon(
+                    Iconsax.medal_star,
+                    size: 40,
+                    color: AppColors.textDisabled,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     'No achievements yet',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textMuted,
-                        ),
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ],
               ),
@@ -300,7 +299,7 @@ class ProgressScreen extends GetView<ProgressController> {
                 border: Border.all(color: borderColor, width: 2),
               ),
               child: Icon(
-                achievement.iconData,
+                achievement.getIconData(),
                 color: iconColor,
                 size: 24,
               ),
@@ -325,10 +324,10 @@ class ProgressScreen extends GetView<ProgressController> {
         Text(
           achievement.name,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: isCompleted || isInProgress
-                    ? AppColors.textPrimary
-                    : AppColors.textMuted,
-              ),
+            color: isCompleted || isInProgress
+                ? AppColors.textPrimary
+                : AppColors.textMuted,
+          ),
           textAlign: TextAlign.center,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -341,10 +340,7 @@ class ProgressScreen extends GetView<ProgressController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'This Month',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
+        Text('This Month', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
         Obx(() {
           final now = DateTime.now();
@@ -372,10 +368,12 @@ class ProgressScreen extends GetView<ProgressController> {
                   day.year == now.year &&
                   !day.isAfter(today)) {
                 total++;
-                if (controller.workoutDates.any((wd) =>
-                    wd.year == day.year &&
-                    wd.month == day.month &&
-                    wd.day == day.day)) {
+                if (controller.workoutDates.any(
+                  (wd) =>
+                      wd.year == day.year &&
+                      wd.month == day.month &&
+                      wd.day == day.day,
+                )) {
                   completed++;
                 }
               }
@@ -408,8 +406,8 @@ class ProgressScreen extends GetView<ProgressController> {
                   child: Text(
                     'No workout data this month',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textMuted,
-                        ),
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ),
               ),
@@ -430,15 +428,17 @@ class ProgressScreen extends GetView<ProgressController> {
     );
   }
 
-  Widget _buildWeekRow(BuildContext context, String label, int completed, int total) {
+  Widget _buildWeekRow(
+    BuildContext context,
+    String label,
+    int completed,
+    int total,
+  ) {
     return Row(
       children: [
         SizedBox(
           width: 60,
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall,
-          ),
+          child: Text(label, style: Theme.of(context).textTheme.labelSmall),
         ),
         Expanded(
           child: LinearPercentIndicator(
@@ -453,9 +453,9 @@ class ProgressScreen extends GetView<ProgressController> {
         const SizedBox(width: 12),
         Text(
           '$completed/$total',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
       ],
     );

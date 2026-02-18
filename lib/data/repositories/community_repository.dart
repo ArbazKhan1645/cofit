@@ -15,11 +15,7 @@ class CommunityRepository extends BaseRepository {
     try {
       final response = await executeFunction<List<dynamic>>(
         'get_feed_posts',
-        params: {
-          'p_user_id': userId,
-          'p_limit': limit,
-          'p_offset': offset,
-        },
+        params: {'p_user_id': userId, 'p_limit': limit, 'p_offset': offset},
       );
 
       final posts = response
@@ -41,7 +37,9 @@ class CommunityRepository extends BaseRepository {
       final response = await client
           .from('posts')
           .select('*, users(id, full_name, username, avatar_url)')
-          .or('and(is_public.eq.true,approval_status.eq.approved),user_id.eq.$userId')
+          .or(
+            'and(is_public.eq.true,approval_status.eq.approved),user_id.eq.$userId',
+          )
           .order('is_pinned', ascending: false)
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
@@ -92,16 +90,31 @@ class CommunityRepository extends BaseRepository {
     }
   }
 
-  /// Get post by ID
+  /// Get post by ID (with liked/saved status)
   Future<Result<PostModel>> getPost(String postId) async {
     try {
       final response = await client
           .from('posts')
-          .select('*, users(id, full_name, username, avatar_url)')
+          .select('''
+          *,
+          users(id, full_name, username, avatar_url),
+          likes!left(id, user_id),
+          saved_posts!left(id, user_id)
+        ''')
           .eq('id', postId)
+          .eq('likes.user_id', userId ?? '')
+          .eq('saved_posts.user_id', userId ?? '')
           .single();
 
-      return Result.success(PostModel.fromJson(response));
+      final enrichedJson = Map<String, dynamic>.from(response);
+
+      enrichedJson['is_liked_by_me'] =
+          response['likes'] != null && response['likes'].length > 0;
+
+      enrichedJson['is_saved_by_me'] =
+          response['saved_posts'] != null && response['saved_posts'].length > 0;
+
+      return Result.success(PostModel.fromJson(enrichedJson));
     } catch (e) {
       return Result.failure(RepositoryException(message: e.toString()));
     }
@@ -123,7 +136,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       final insertData = {
@@ -165,7 +179,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       final updates = <String, dynamic>{
@@ -197,7 +212,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       await client
@@ -213,8 +229,11 @@ class CommunityRepository extends BaseRepository {
   }
 
   /// Get user's posts
-  Future<Result<List<PostModel>>> getUserPosts(String targetUserId,
-      {int limit = 20, int offset = 0}) async {
+  Future<Result<List<PostModel>>> getUserPosts(
+    String targetUserId, {
+    int limit = 20,
+    int offset = 0,
+  }) async {
     try {
       final response = await client
           .from('posts')
@@ -275,7 +294,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       await client.from('likes').insert({
@@ -295,7 +315,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       await client
@@ -316,7 +337,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       // Check if already liked
@@ -345,7 +367,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       await client.from('likes').insert({
@@ -365,7 +388,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       await client
@@ -442,7 +466,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       final response = await client
@@ -467,7 +492,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       await client
@@ -491,12 +517,14 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       if (userId == targetUserId) {
         return Result.failure(
-            RepositoryException(message: 'Cannot follow yourself'));
+          RepositoryException(message: 'Cannot follow yourself'),
+        );
       }
 
       await client.from('follows').insert({
@@ -515,7 +543,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       await client
@@ -535,7 +564,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       final isFollowingResult = await isFollowing(targetUserId);
@@ -582,7 +612,9 @@ class CommunityRepository extends BaseRepository {
     try {
       final response = await client
           .from('follows')
-          .select('*, follower:users!follower_id(id, full_name, username, avatar_url)')
+          .select(
+            '*, follower:users!follower_id(id, full_name, username, avatar_url)',
+          )
           .eq('following_id', targetUserId)
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
@@ -606,7 +638,9 @@ class CommunityRepository extends BaseRepository {
     try {
       final response = await client
           .from('follows')
-          .select('*, following:users!following_id(id, full_name, username, avatar_url)')
+          .select(
+            '*, following:users!following_id(id, full_name, username, avatar_url)',
+          )
           .eq('follower_id', targetUserId)
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
@@ -630,7 +664,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       await client.from('saved_posts').insert({
@@ -650,7 +685,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       await client
@@ -670,7 +706,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       // Check if already saved
@@ -701,7 +738,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       final response = await client
@@ -735,7 +773,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       await client.from('shares').insert({
@@ -761,7 +800,8 @@ class CommunityRepository extends BaseRepository {
     try {
       if (userId == null) {
         return Result.failure(
-            RepositoryException(message: 'Not authenticated'));
+          RepositoryException(message: 'Not authenticated'),
+        );
       }
 
       final response = await client

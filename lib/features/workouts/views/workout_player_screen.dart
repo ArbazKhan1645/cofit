@@ -63,50 +63,51 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
           Text(
             'Get Ready',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  letterSpacing: 2,
-                ),
+              color: Colors.white.withValues(alpha: 0.7),
+              letterSpacing: 2,
+            ),
           ),
           const SizedBox(height: 40),
-          Obx(() => Text(
-                controller.countdownValue.value > 0
-                    ? '${controller.countdownValue.value}'
-                    : 'GO!',
-                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 120,
+          Obx(
+            () =>
+                Text(
+                      controller.countdownValue.value > 0
+                          ? '${controller.countdownValue.value}'
+                          : 'GO!',
+                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 120,
+                      ),
+                    )
+                    .animate(onPlay: (c) => c.repeat())
+                    .scale(
+                      begin: const Offset(0.8, 0.8),
+                      end: const Offset(1.2, 1.2),
+                      duration: 500.ms,
+                    )
+                    .then()
+                    .scale(
+                      begin: const Offset(1.2, 1.2),
+                      end: const Offset(0.8, 0.8),
+                      duration: 500.ms,
                     ),
-              )
-                  .animate(
-                    onPlay: (c) => c.repeat(),
-                  )
-                  .scale(
-                    begin: const Offset(0.8, 0.8),
-                    end: const Offset(1.2, 1.2),
-                    duration: 500.ms,
-                  )
-                  .then()
-                  .scale(
-                    begin: const Offset(1.2, 1.2),
-                    end: const Offset(0.8, 0.8),
-                    duration: 500.ms,
-                  )),
+          ),
           const SizedBox(height: 40),
           Text(
             exercise.name,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             '${controller.currentExerciseIndex.value + 1} of ${controller.exercises.length}',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.6),
-                ),
+              color: Colors.white.withValues(alpha: 0.6),
+            ),
           ),
         ],
       ),
@@ -126,15 +127,16 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
         // Top bar
         _buildTopBar(context),
 
-        // Video / Timer area
+        // Video / Loading / Error area
         Expanded(
           child: GestureDetector(
             onTap: controller.togglePlayPause,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Video or timer placeholder
+                // FIX: Three distinct states instead of two
                 Obx(() {
+                  // 1. Video successfully loaded → show video
                   if (controller.isVideoInitialized.value &&
                       controller.videoController != null) {
                     return Center(
@@ -146,8 +148,14 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
                     );
                   }
 
-                  // Timer-based fallback
-                  return _buildTimerFallback(context, exercise);
+                  // 2. Video load completely failed → show error + 20s timer
+                  if (controller.isVideoError.value) {
+                    return _buildVideoErrorState(context, exercise);
+                  }
+
+                  // 3. Video is loading (or no video URL) → show loading spinner
+                  // NO more premature fallback timer here
+                  return _buildVideoLoadingState(context, exercise);
                 }),
 
                 // Pause overlay
@@ -173,6 +181,119 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
     );
   }
 
+  // FIX: Loading state — just spinner, no timer fallback
+  Widget _buildVideoLoadingState(
+    BuildContext context,
+    WorkoutExerciseModel exercise,
+  ) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(
+              color: AppColors.primary,
+              strokeWidth: 3,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              exercise.name,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Loading...',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // FIX: Error state — "Content not available" + 20s countdown timer
+  Widget _buildVideoErrorState(
+    BuildContext context,
+    WorkoutExerciseModel exercise,
+  ) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Iconsax.video_slash,
+              color: Colors.white.withValues(alpha: 0.4),
+              size: 56,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              exercise.name,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Content not available',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // 20s countdown ring
+            Obx(
+              () => CircularPercentIndicator(
+                radius: 52,
+                lineWidth: 6,
+                percent: controller.videoProgress.value,
+                center: Text(
+                  _remainingTimeText(exercise, fallbackDuration: 20),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                progressColor: Colors.white.withValues(alpha: 0.4),
+                backgroundColor: Colors.white.withValues(alpha: 0.1),
+                circularStrokeCap: CircularStrokeCap.round,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Moving to next exercise...',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTopBar(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -193,122 +314,93 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
           ),
           const SizedBox(width: 12),
           // Previous exercise button
-          Obx(() => controller.canGoBack
-              ? GestureDetector(
-                  onTap: controller.goToPreviousExercise,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
+          Obx(
+            () => controller.canGoBack
+                ? GestureDetector(
+                    onTap: controller.goToPreviousExercise,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Iconsax.arrow_left_2,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
-                    child: const Icon(Iconsax.arrow_left_2,
-                        color: Colors.white, size: 20),
-                  ),
-                )
-              : const SizedBox(width: 40)),
+                  )
+                : const SizedBox(width: 40),
+          ),
           const SizedBox(width: 12),
           // Exercise title
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Obx(() => Text(
-                      controller.currentExercise.name,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    )),
-                Obx(() => Text(
-                      '${controller.currentExerciseIndex.value + 1} of ${controller.exercises.length}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.6),
-                          ),
-                    )),
+                Obx(
+                  () => Text(
+                    controller.currentExercise.name,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Obx(
+                  () => Text(
+                    '${controller.currentExerciseIndex.value + 1} of ${controller.exercises.length}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          // Elapsed time
-          Obx(() => Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
+          // Workout elapsed time
+          Obx(
+            () => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                controller.formattedRemaining,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'monospace',
                 ),
-                child: Text(
-                  controller.formattedElapsed,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'monospace',
-                      ),
-                ),
-              )),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTimerFallback(
-      BuildContext context, WorkoutExerciseModel exercise) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Iconsax.activity, color: AppColors.primary, size: 64),
-            const SizedBox(height: 24),
-            Text(
-              exercise.name,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => CircularPercentIndicator(
-                  radius: 60,
-                  lineWidth: 8,
-                  percent: controller.videoProgress.value,
-                  center: Text(
-                    _remainingTimeText(exercise),
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  progressColor: AppColors.primary,
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  circularStrokeCap: CircularStrokeCap.round,
-                )),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _remainingTimeText(WorkoutExerciseModel exercise) {
-    final total = exercise.durationSeconds > 0 ? exercise.durationSeconds : 30;
+  String _remainingTimeText(
+    WorkoutExerciseModel exercise, {
+    int fallbackDuration = 30,
+  }) {
+    final total = exercise.durationSeconds > 0
+        ? exercise.durationSeconds
+        : fallbackDuration;
     final elapsed = (controller.videoProgress.value * total).round();
-    final remaining = total - elapsed;
+    final remaining = (total - elapsed).clamp(0, total);
     return '${remaining}s';
   }
 
   Widget _buildBottomControls(
-      BuildContext context, WorkoutExerciseModel exercise) {
+    BuildContext context,
+    WorkoutExerciseModel exercise,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -324,64 +416,74 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
       child: Column(
         children: [
           // Progress bar
-          Obx(() => ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: controller.videoProgress.value,
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                  minHeight: 4,
+          Obx(
+            () => ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: controller.videoProgress.value,
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.primary,
                 ),
-              )),
+                minHeight: 4,
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
           // Controls row
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Previous button
-              Obx(() => GestureDetector(
-                    onTap: controller.canGoBack
-                        ? controller.goToPreviousExercise
-                        : null,
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: controller.canGoBack
-                            ? Colors.white.withValues(alpha: 0.15)
-                            : Colors.white.withValues(alpha: 0.05),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Iconsax.previous,
-                        color: controller.canGoBack
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.3),
-                        size: 22,
-                      ),
+              Obx(
+                () => GestureDetector(
+                  onTap: controller.canGoBack
+                      ? controller.goToPreviousExercise
+                      : null,
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: controller.canGoBack
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : Colors.white.withValues(alpha: 0.05),
+                      shape: BoxShape.circle,
                     ),
-                  )),
-              const SizedBox(width: 20),
-              // Play/Pause
-              GestureDetector(
-                onTap: controller.togglePlayPause,
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
+                    child: Icon(
+                      Iconsax.previous,
+                      color: controller.canGoBack
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.3),
+                      size: 22,
+                    ),
                   ),
-                  child: Obx(() => Icon(
-                        controller.isVideoPlaying.value
-                            ? Icons.pause
-                            : Icons.play_arrow,
-                        color: Colors.white,
-                        size: 36,
-                      )),
                 ),
               ),
+              const SizedBox(width: 20),
+              // Play/Pause — disabled during loading/error
+              Obx(() {
+                final isInteractable = controller.isVideoInitialized.value;
+                return GestureDetector(
+                  onTap: isInteractable ? controller.togglePlayPause : null,
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: isInteractable
+                          ? AppColors.primary
+                          : AppColors.primary.withValues(alpha: 0.4),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      controller.isVideoPlaying.value
+                          ? Icons.pause
+                          : Icons.play_arrow,
+                      color: Colors.white,
+                      size: 36,
+                    ),
+                  ),
+                );
+              }),
             ],
           ),
           // Exercise info
@@ -391,8 +493,8 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
             Text(
               exercise.description!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.7),
-                  ),
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -425,9 +527,9 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
           Text(
             'Rest',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  letterSpacing: 2,
-                ),
+              color: Colors.white.withValues(alpha: 0.7),
+              letterSpacing: 2,
+            ),
           ),
           const SizedBox(height: 32),
           Obx(() {
@@ -444,9 +546,9 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
               center: Text(
                 '$remaining',
                 style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               progressColor: AppColors.mintFresh,
               backgroundColor: Colors.white.withValues(alpha: 0.15),
@@ -454,26 +556,24 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
             );
           }),
           const SizedBox(height: 40),
-          // Up next preview
           if (next != null) ...[
             Text(
               'Up Next',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    letterSpacing: 1,
-                  ),
+                color: Colors.white.withValues(alpha: 0.5),
+                letterSpacing: 1,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               next.name,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
           const SizedBox(height: 32),
-          // Skip rest
           GestureDetector(
             onTap: controller.skipRest,
             child: Container(
@@ -485,9 +585,9 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
               child: Text(
                 'Skip Rest',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -513,11 +613,7 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Iconsax.medal_star,
-            color: AppColors.sunnyYellow,
-            size: 80,
-          )
+          const Icon(Iconsax.medal_star, color: AppColors.sunnyYellow, size: 80)
               .animate()
               .scale(
                 begin: const Offset(0.0, 0.0),
@@ -528,21 +624,21 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
               .fadeIn(duration: 300.ms),
           const SizedBox(height: 24),
           Text(
-            'Workout Complete!',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                'Workout Complete!',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
                 ),
-          )
+              )
               .animate()
               .fadeIn(delay: 400.ms, duration: 400.ms)
               .slideY(begin: 0.3, end: 0),
           const SizedBox(height: 8),
           Text(
             'Amazing work!',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.sunnyYellow,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: AppColors.sunnyYellow),
           ).animate().fadeIn(delay: 800.ms, duration: 400.ms),
         ],
       ),
@@ -568,18 +664,20 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Iconsax.medal_star,
-                color: AppColors.sunnyYellow, size: 64),
+            const Icon(
+              Iconsax.medal_star,
+              color: AppColors.sunnyYellow,
+              size: 64,
+            ),
             const SizedBox(height: 20),
             Text(
               'Well Done!',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 32),
-            // Stats summary
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -616,7 +714,6 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
               ),
             ),
             const SizedBox(height: 40),
-            // Done button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -632,9 +729,9 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
                 child: Text(
                   'Done',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -667,16 +764,16 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
           child: Text(
             label,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.7),
-                ),
+              color: Colors.white.withValues(alpha: 0.7),
+            ),
           ),
         ),
         Text(
           value,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ],
     );

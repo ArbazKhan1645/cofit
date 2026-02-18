@@ -7,7 +7,8 @@ class AchievementModel {
   final String name;
   final String description;
   final int iconCode; // Material Icon codePoint
-  final String type; // workout_count, workout_minutes, streak_days, category_workouts, calories_burned, consecutive_days, first_workout, first_challenge, challenge_completions
+  final String
+  type; // workout_count, workout_minutes, streak_days, category_workouts, calories_burned, consecutive_days, first_workout, first_challenge, challenge_completions
   final int targetValue;
   final String targetUnit; // workouts, minutes, days, calories, challenges
   final String category; // workout, streak, milestone, community, special
@@ -34,7 +35,7 @@ class AchievementModel {
   });
 
   /// Get Flutter IconData from stored codePoint
-  IconData get iconData => IconData(iconCode, fontFamily: 'MaterialIcons');
+  IconData getIconData() => IconData(iconCode, fontFamily: 'MaterialIcons');
 
   /// Human-readable type label
   String get typeLabel {
@@ -207,7 +208,8 @@ class UserAchievementModel {
           : DateTime.now(),
       achievement: json['achievements'] != null
           ? AchievementModel.fromJson(
-              json['achievements'] as Map<String, dynamic>)
+              json['achievements'] as Map<String, dynamic>,
+            )
           : null,
     );
   }

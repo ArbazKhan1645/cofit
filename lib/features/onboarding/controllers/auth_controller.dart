@@ -185,7 +185,9 @@ class AuthController extends GetxController {
     isLoading.value = true;
     errorMessage.value = null;
 
-    final result = await _authService.resetPassword(emailController.text.trim());
+    final result = await _authService.resetPassword(
+      emailController.text.trim(),
+    );
 
     isLoading.value = false;
 
@@ -234,9 +236,10 @@ class AuthController extends GetxController {
     await Get.find<ProgressService>().init();
 
     // 2. Now create HomeController — reads from initialized ProgressService
-    if (!Get.isRegistered<HomeController>()) {
-      Get.put<HomeController>(HomeController(), permanent: true);
-    }
+    await Get.put<HomeController>(
+      HomeController(),
+      permanent: true,
+    ).oninitialized();
 
     Get.offAllNamed(AppRoutes.main);
   }
@@ -262,10 +265,7 @@ class AuthController extends GetxController {
   void _showError(String message) {
     errorMessage.value = message;
     if (Get.context != null) {
-      AppSnackbar.error(
-        Get.context!,
-        message: message,
-      );
+      AppSnackbar.error(Get.context!, message: message);
     }
   }
 

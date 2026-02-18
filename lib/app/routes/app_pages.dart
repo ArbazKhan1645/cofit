@@ -1,3 +1,4 @@
+import 'package:cofit_collective/features/notifications/controller/binding.dart';
 import 'package:get/get.dart';
 import 'app_routes.dart';
 
@@ -166,6 +167,7 @@ class AppPages {
     // Notifications
     GetPage(
       name: AppRoutes.notifications,
+      binding: NotificationBinding(),
       page: () => const NotificationsScreen(),
       transition: Transition.rightToLeft,
     ),

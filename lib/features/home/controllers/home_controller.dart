@@ -1,5 +1,6 @@
+import 'dart:io';
+
 import 'package:get/get.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/progress_service.dart';
@@ -25,8 +26,9 @@ class HomeController extends BaseController {
   final RxInt minutesThisWeek = 0.obs;
 
   // Today's workouts
-  final Rx<WeeklyScheduleModel?> activeSchedule =
-      Rx<WeeklyScheduleModel?>(null);
+  final Rx<WeeklyScheduleModel?> activeSchedule = Rx<WeeklyScheduleModel?>(
+    null,
+  );
   final RxList<WeeklyScheduleItemModel> todayItems =
       <WeeklyScheduleItemModel>[].obs;
   final RxSet<String> completedTodayIds = <String>{}.obs;
@@ -35,8 +37,7 @@ class HomeController extends BaseController {
   // Current workout exercises (resolved by variant)
   final RxList<WorkoutExerciseModel> resolvedExercises =
       <WorkoutExerciseModel>[].obs;
-  final Rx<WorkoutVariantModel?> activeVariant =
-      Rx<WorkoutVariantModel?>(null);
+  final Rx<WorkoutVariantModel?> activeVariant = Rx<WorkoutVariantModel?>(null);
   final RxBool isLoadingExercises = false.obs;
   String? _lastLoadedWorkoutId;
 
@@ -51,9 +52,7 @@ class HomeController extends BaseController {
   // Saved workout IDs (for fav toggle)
   final RxSet<String> savedWorkoutIds = <String>{}.obs;
 
-  @override
-  void onInit() {
-    super.onInit();
+  Future<void> oninitialized() async {
     loadUserData();
     loadWorkoutStats();
     loadTodayWorkouts();
@@ -63,10 +62,22 @@ class HomeController extends BaseController {
     // React to ProgressService changes
     if (Get.isRegistered<ProgressService>()) {
       final ps = Get.find<ProgressService>();
-      ever(ps.workoutsThisWeek, (_) => workoutsThisWeek.value = ps.workoutsThisWeek.value);
-      ever(ps.currentStreak, (_) => currentStreak.value = ps.currentStreak.value);
-      ever(ps.totalWorkoutsThisMonth, (_) => totalWorkoutsThisMonth.value = ps.totalWorkoutsThisMonth.value);
-      ever(ps.minutesThisWeek, (_) => minutesThisWeek.value = ps.minutesThisWeek.value);
+      ever(
+        ps.workoutsThisWeek,
+        (_) => workoutsThisWeek.value = ps.workoutsThisWeek.value,
+      );
+      ever(
+        ps.currentStreak,
+        (_) => currentStreak.value = ps.currentStreak.value,
+      );
+      ever(
+        ps.totalWorkoutsThisMonth,
+        (_) => totalWorkoutsThisMonth.value = ps.totalWorkoutsThisMonth.value,
+      );
+      ever(
+        ps.minutesThisWeek,
+        (_) => minutesThisWeek.value = ps.minutesThisWeek.value,
+      );
     }
     // React to user changes from AuthService
     ever(_authService.currentUserRx, (_) {
@@ -100,13 +111,12 @@ class HomeController extends BaseController {
   // ============================================
 
   Future<bool> _hasInternet() async {
-    final result = await Connectivity().checkConnectivity();
-    return result.any(
-      (r) =>
-          r == ConnectivityResult.mobile ||
-          r == ConnectivityResult.wifi ||
-          r == ConnectivityResult.ethernet,
-    );
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    }
   }
 
   // ============================================
@@ -115,7 +125,6 @@ class HomeController extends BaseController {
 
   Future<void> loadTodayWorkouts() async {
     final hasInternet = await _hasInternet();
-
     if (!hasInternet) {
       // Offline: use cached data
       final cachedSchedule = _todayCache.getCachedSchedule();
@@ -129,14 +138,11 @@ class HomeController extends BaseController {
 
     // 1. Load completed IDs FIRST — so cache rendering knows which are done
     final completedResult = await _workoutRepo.getTodayCompletedWorkoutIds();
-    completedResult.fold(
-      (error) {},
-      (ids) {
-        completedTodayIds.clear();
-        completedTodayIds.addAll(ids);
-        completedTodayIds.refresh();
-      },
-    );
+    completedResult.fold((error) {}, (ids) {
+      completedTodayIds.clear();
+      completedTodayIds.addAll(ids);
+      completedTodayIds.refresh();
+    });
 
     // 2. Show cached data for instant display (now completedTodayIds is populated)
     final cachedSchedule = _todayCache.getCachedSchedule();
@@ -151,24 +157,17 @@ class HomeController extends BaseController {
     // 3. Fetch fresh schedule from network
     final scheduleResult = await _workoutRepo.getActiveSchedule();
     WeeklyScheduleModel? schedule;
-    scheduleResult.fold(
-      (error) {},
-      (data) => schedule = data,
-    );
+    scheduleResult.fold((error) {}, (data) => schedule = data);
 
     activeSchedule.value = schedule;
 
     if (schedule != null) {
       _todayCache.cacheSchedule(schedule!);
-      final itemsResult =
-          await _workoutRepo.getScheduleItems(schedule!.id);
-      itemsResult.fold(
-        (error) {},
-        (items) {
-          _todayCache.cacheItems(items);
-          _filterTodayItems(items);
-        },
-      );
+      final itemsResult = await _workoutRepo.getScheduleItems(schedule!.id);
+      itemsResult.fold((error) {}, (items) {
+        _todayCache.cacheItems(items);
+        _filterTodayItems(items);
+      });
     }
 
     isLoadingSchedule.value = false;
@@ -177,10 +176,13 @@ class HomeController extends BaseController {
   void _filterTodayItems(List<WeeklyScheduleItemModel> allItems) {
     // DateTime.weekday: 1=Monday, 7=Sunday → convert to 0=Monday, 6=Sunday
     final todayIndex = DateTime.now().weekday - 1;
-    todayItems.value = allItems
-        .where((item) => item.dayOfWeek == todayIndex && item.workout != null)
-        .toList()
-      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    todayItems.value =
+        allItems
+            .where(
+              (item) => item.dayOfWeek == todayIndex && item.workout != null,
+            )
+            .toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     // Load exercises for the current workout
     _loadCurrentWorkoutExercises();
   }
@@ -243,8 +245,7 @@ class HomeController extends BaseController {
   /// The current workout (first non-completed)
   WorkoutModel? get currentWorkout {
     for (final item in todayItems) {
-      if (!completedTodayIds.contains(item.workoutId) &&
-          item.workout != null) {
+      if (!completedTodayIds.contains(item.workoutId) && item.workout != null) {
         return item.workout;
       }
     }
@@ -256,8 +257,7 @@ class HomeController extends BaseController {
     bool passedCurrent = false;
     final result = <WorkoutModel>[];
     for (final item in todayItems) {
-      if (!completedTodayIds.contains(item.workoutId) &&
-          item.workout != null) {
+      if (!completedTodayIds.contains(item.workoutId) && item.workout != null) {
         if (!passedCurrent) {
           passedCurrent = true;
           continue;
@@ -277,9 +277,11 @@ class HomeController extends BaseController {
   /// Workouts completed today (for "completed" section)
   List<WorkoutModel> get completedTodayWorkouts {
     return todayItems
-        .where((item) =>
-            completedTodayIds.contains(item.workoutId) &&
-            item.workout != null)
+        .where(
+          (item) =>
+              completedTodayIds.contains(item.workoutId) &&
+              item.workout != null,
+        )
         .map((item) => item.workout!)
         .toList();
   }
@@ -287,8 +289,9 @@ class HomeController extends BaseController {
   /// Whether all today's workouts are completed
   bool get allTodayCompleted {
     if (todayItems.isEmpty) return false;
-    return todayItems
-        .every((item) => completedTodayIds.contains(item.workoutId));
+    return todayItems.every(
+      (item) => completedTodayIds.contains(item.workoutId),
+    );
   }
 
   /// The last completed workout (for "all done" banner)
@@ -304,11 +307,15 @@ class HomeController extends BaseController {
   }
 
   /// Called after a workout is completed to refresh the home view
-  void onWorkoutCompleted(String workoutId) {
+  Future<void> onWorkoutCompleted(String workoutId) async {
     completedTodayIds.add(workoutId);
     completedTodayIds.refresh();
     loadWorkoutStats();
     _loadCurrentWorkoutExercises();
+
+    // Persist to Supabase so it survives app restart
+    // Note: The actual workout completion logging happens in WorkoutPlayerController._logCompletion()
+    // This just ensures the UI is updated. The completion is already saved to Supabase by the player.
   }
 
   /// Exercise count excluding rest-type exercises
@@ -321,13 +328,10 @@ class HomeController extends BaseController {
 
   Future<void> loadHotWorkouts() async {
     final result = await _workoutRepo.getAllWorkouts();
-    result.fold(
-      (error) {},
-      (workouts) {
-        final shuffled = List<WorkoutModel>.from(workouts)..shuffle();
-        hotWorkouts.value = shuffled.take(5).toList();
-      },
-    );
+    result.fold((error) {}, (workouts) {
+      final shuffled = List<WorkoutModel>.from(workouts)..shuffle();
+      hotWorkouts.value = shuffled.take(5).toList();
+    });
   }
 
   // ============================================
@@ -336,13 +340,10 @@ class HomeController extends BaseController {
 
   Future<void> _loadSavedWorkoutIds() async {
     final result = await _workoutRepo.getSavedWorkoutIds();
-    result.fold(
-      (error) {},
-      (ids) {
-        savedWorkoutIds.clear();
-        savedWorkoutIds.addAll(ids);
-      },
-    );
+    result.fold((error) {}, (ids) {
+      savedWorkoutIds.clear();
+      savedWorkoutIds.addAll(ids);
+    });
   }
 
   bool isWorkoutSaved(String workoutId) => savedWorkoutIds.contains(workoutId);
@@ -353,27 +354,21 @@ class HomeController extends BaseController {
       savedWorkoutIds.remove(workoutId);
       savedWorkoutIds.refresh();
       final result = await _workoutRepo.unsaveWorkout(workoutId);
-      result.fold(
-        (error) {
-          // Revert on failure
-          savedWorkoutIds.add(workoutId);
-          savedWorkoutIds.refresh();
-        },
-        (_) {},
-      );
+      result.fold((error) {
+        // Revert on failure
+        savedWorkoutIds.add(workoutId);
+        savedWorkoutIds.refresh();
+      }, (_) {});
     } else {
       // Optimistic add
       savedWorkoutIds.add(workoutId);
       savedWorkoutIds.refresh();
       final result = await _workoutRepo.saveWorkout(workoutId);
-      result.fold(
-        (error) {
-          // Revert on failure
-          savedWorkoutIds.remove(workoutId);
-          savedWorkoutIds.refresh();
-        },
-        (_) {},
-      );
+      result.fold((error) {
+        // Revert on failure
+        savedWorkoutIds.remove(workoutId);
+        savedWorkoutIds.refresh();
+      }, (_) {});
     }
   }
 
@@ -416,12 +411,27 @@ class HomeController extends BaseController {
   String getFormattedDate() {
     final now = DateTime.now();
     final months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     final days = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
-      'Sunday'
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
     ];
     return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
   }

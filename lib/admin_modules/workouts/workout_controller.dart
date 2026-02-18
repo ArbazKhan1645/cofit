@@ -406,8 +406,11 @@ class AdminWorkoutController extends BaseController {
         .toList();
 
     if (available.isEmpty) {
-      Get.snackbar('All Added', 'All condition types are already added as variants.',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'All Added',
+        'All condition types are already added as variants.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
 
@@ -451,7 +454,9 @@ class AdminWorkoutController extends BaseController {
                   return ListTile(
                     leading: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFF6B6B).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -685,7 +690,7 @@ class AdminWorkoutController extends BaseController {
             children: [
               Obx(
                 () => DropdownButtonFormField<String>(
-                  value: selectedTag.value,
+                  initialValue: selectedTag.value,
                   decoration: const InputDecoration(labelText: 'Condition'),
                   items: available.map((t) {
                     return DropdownMenuItem(

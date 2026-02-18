@@ -14,9 +14,7 @@ class AchievementsScreen extends GetView<ProgressController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgCream,
-      appBar: AppBar(
-        title: const Text('Achievements'),
-      ),
+      appBar: AppBar(title: const Text('Achievements')),
       body: Obx(() {
         if (controller.isLoadingAchievements.value) {
           return const Center(child: CircularProgressIndicator());
@@ -28,24 +26,25 @@ class AchievementsScreen extends GetView<ProgressController> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Iconsax.medal_star,
-                    size: 64, color: AppColors.textDisabled),
+                Icon(
+                  Iconsax.medal_star,
+                  size: 64,
+                  color: AppColors.textDisabled,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'No achievements available yet',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textMuted,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(color: AppColors.textMuted),
                 ),
               ],
             ),
           );
         }
 
-        final inProgress =
-            displayItems.where((i) => i.isInProgress).toList();
-        final completed =
-            displayItems.where((i) => i.isCompleted).toList();
+        final inProgress = displayItems.where((i) => i.isInProgress).toList();
+        final completed = displayItems.where((i) => i.isCompleted).toList();
         final locked = displayItems.where((i) => i.isLocked).toList();
 
         return SingleChildScrollView(
@@ -60,31 +59,44 @@ class AchievementsScreen extends GetView<ProgressController> {
 
               // In Progress section
               if (inProgress.isNotEmpty) ...[
-                _buildSectionHeader(context, 'In Progress',
-                    '${inProgress.length}', AppColors.primary),
+                _buildSectionHeader(
+                  context,
+                  'In Progress',
+                  '${inProgress.length}',
+                  AppColors.primary,
+                ),
                 const SizedBox(height: 12),
                 ...inProgress.map(
-                    (item) => _buildAchievementCard(context, item)),
+                  (item) => _buildAchievementCard(context, item),
+                ),
                 const SizedBox(height: 20),
               ],
 
               // Completed section
               if (completed.isNotEmpty) ...[
-                _buildSectionHeader(context, 'Completed',
-                    '${completed.length}', AppColors.success),
+                _buildSectionHeader(
+                  context,
+                  'Completed',
+                  '${completed.length}',
+                  AppColors.success,
+                ),
                 const SizedBox(height: 12),
                 ...completed.map(
-                    (item) => _buildAchievementCard(context, item)),
+                  (item) => _buildAchievementCard(context, item),
+                ),
                 const SizedBox(height: 20),
               ],
 
               // Locked section
               if (locked.isNotEmpty) ...[
-                _buildSectionHeader(context, 'Locked',
-                    '${locked.length}', AppColors.textMuted),
+                _buildSectionHeader(
+                  context,
+                  'Locked',
+                  '${locked.length}',
+                  AppColors.textMuted,
+                ),
                 const SizedBox(height: 12),
-                ...locked.map(
-                    (item) => _buildAchievementCard(context, item)),
+                ...locked.map((item) => _buildAchievementCard(context, item)),
               ],
 
               const SizedBox(height: 24),
@@ -116,8 +128,11 @@ class AchievementsScreen extends GetView<ProgressController> {
               color: Colors.white.withValues(alpha: 0.25),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Iconsax.medal_star,
-                color: Colors.white, size: 28),
+            child: const Icon(
+              Iconsax.medal_star,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -127,9 +142,9 @@ class AchievementsScreen extends GetView<ProgressController> {
                 Text(
                   '$completed of $total completed',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 LinearPercentIndicator(
@@ -144,8 +159,8 @@ class AchievementsScreen extends GetView<ProgressController> {
                 Text(
                   '${(percent * 100).toInt()}% complete',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.85),
-                      ),
+                    color: Colors.white.withValues(alpha: 0.85),
+                  ),
                 ),
               ],
             ),
@@ -156,7 +171,11 @@ class AchievementsScreen extends GetView<ProgressController> {
   }
 
   Widget _buildSectionHeader(
-      BuildContext context, String title, String count, Color color) {
+    BuildContext context,
+    String title,
+    String count,
+    Color color,
+  ) {
     return Row(
       children: [
         Container(
@@ -170,9 +189,9 @@ class AchievementsScreen extends GetView<ProgressController> {
         const SizedBox(width: 8),
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(width: 8),
         Container(
@@ -184,9 +203,9 @@ class AchievementsScreen extends GetView<ProgressController> {
           child: Text(
             count,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],
@@ -219,7 +238,9 @@ class AchievementsScreen extends GetView<ProgressController> {
         boxShadow: AppShadows.subtle,
         border: isCompleted
             ? Border.all(
-                color: AppColors.success.withValues(alpha: 0.3), width: 1.5)
+                color: AppColors.success.withValues(alpha: 0.3),
+                width: 1.5,
+              )
             : null,
       ),
       child: Row(
@@ -232,10 +253,12 @@ class AchievementsScreen extends GetView<ProgressController> {
               color: accentColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
               border: Border.all(
-                  color: accentColor.withValues(alpha: 0.3), width: 1.5),
+                color: accentColor.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
             ),
             child: Icon(
-              achievement.iconData,
+              achievement.getIconData(),
               color: accentColor,
               size: 24,
             ),
@@ -251,29 +274,34 @@ class AchievementsScreen extends GetView<ProgressController> {
                     Expanded(
                       child: Text(
                         achievement.name,
-                        style:
-                            Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: isCompleted || isInProgress
-                                      ? AppColors.textPrimary
-                                      : AppColors.textMuted,
-                                ),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isCompleted || isInProgress
+                              ? AppColors.textPrimary
+                              : AppColors.textMuted,
+                        ),
                       ),
                     ),
                     if (isCompleted)
-                      const Icon(Icons.check_circle,
-                          color: AppColors.success, size: 20),
+                      const Icon(
+                        Icons.check_circle,
+                        color: AppColors.success,
+                        size: 20,
+                      ),
                     if (!isCompleted && !isInProgress)
-                      const Icon(Iconsax.lock,
-                          color: AppColors.textDisabled, size: 18),
+                      const Icon(
+                        Iconsax.lock,
+                        color: AppColors.textDisabled,
+                        size: 18,
+                      ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   achievement.description,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textMuted,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -294,11 +322,10 @@ class AchievementsScreen extends GetView<ProgressController> {
                       const SizedBox(width: 10),
                       Text(
                         '$current/$target',
-                        style:
-                            Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: accentColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: accentColor,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),

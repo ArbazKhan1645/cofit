@@ -1,3 +1,4 @@
+import 'package:cofit_collective/notifications/firebase_sender.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../app/routes/app_routes.dart';
@@ -90,16 +91,23 @@ class SubscriptionController extends BaseController {
     isProcessing.value = true;
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-
-      _storage.write('hasSubscription', true);
-      _storage.write('subscriptionPlan', 'Trial');
-      _storage.write(
-        'trialEndDate',
-        DateTime.now().add(const Duration(days: 7)).toIso8601String(),
+      final sender = FcmNotificationSender();
+      await sender.sendPostLikeNotification(
+        postOwnerId: '415064f4-de95-4d64-ba2d-83c886060713',
+        postId: '222',
+        likerName: 'Arbaz Khan',
+        postPreview: 'Aaj ki workout complete...', // Optional
       );
+      // await Future.delayed(const Duration(seconds: 1));
 
-      Get.offAllNamed(AppRoutes.main);
+      // _storage.write('hasSubscription', true);
+      // _storage.write('subscriptionPlan', 'Trial');
+      // _storage.write(
+      //   'trialEndDate',
+      //   DateTime.now().add(const Duration(days: 7)).toIso8601String(),
+      // );
+
+      // Get.offAllNamed(AppRoutes.main);
     } finally {
       isProcessing.value = false;
     }

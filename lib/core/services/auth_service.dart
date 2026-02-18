@@ -69,6 +69,24 @@ class AuthService extends GetxService {
     super.onClose();
   }
 
+  /// Fetch any user profile by userId (not current user)
+  Future<UserModel?> fetchUserById(String userId) async {
+    try {
+      final response = await _supabase.client
+          .from('users')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      return UserModel.fromJson(response);
+    } catch (e) {
+      _error.value = e.toString();
+      return null;
+    }
+  }
+
   /// Handle auth state changes
   Future<void> _onAuthStateChanged(AuthState state) async {
     switch (state.event) {
@@ -175,11 +193,14 @@ class AuthService extends GetxService {
         // Update users table with full_name and auto-generated username
         if (fullName != null && fullName.isNotEmpty) {
           final username = _generateUsername(fullName);
-          await _supabase.client.from('users').update({
-            'full_name': fullName,
-            'username': username,
-            'updated_at': DateTime.now().toIso8601String(),
-          }).eq('id', response.user!.id);
+          await _supabase.client
+              .from('users')
+              .update({
+                'full_name': fullName,
+                'username': username,
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+              .eq('id', response.user!.id);
         }
 
         // Fetch user profile
@@ -209,7 +230,9 @@ class AuthService extends GetxService {
         .replaceAll(RegExp(r'[^a-z0-9\s]'), '')
         .replaceAll(' ', '_');
     // Add random suffix for uniqueness
-    final suffix = DateTime.now().millisecondsSinceEpoch.toString().substring(8);
+    final suffix = DateTime.now().millisecondsSinceEpoch.toString().substring(
+      8,
+    );
     return '${cleanName}_$suffix';
   }
 
@@ -226,10 +249,7 @@ class AuthService extends GetxService {
     _error.value = null;
 
     try {
-      final response = await _supabase.signIn(
-        email: email,
-        password: password,
-      );
+      final response = await _supabase.signIn(email: email, password: password);
 
       if (response.user != null) {
         await _fetchCurrentUser();
@@ -336,10 +356,12 @@ class AuthService extends GetxService {
   // ============================================
 
   /// Check if user has completed onboarding prompts
-  bool get hasCompletedOnboarding => _currentUser.value?.onboardingCompleted ?? false;
+  bool get hasCompletedOnboarding =>
+      _currentUser.value?.onboardingCompleted ?? false;
 
   /// Check if user has active subscription
-  bool get hasActiveSubscription => _currentUser.value?.hasActiveSubscription ?? false;
+  bool get hasActiveSubscription =>
+      _currentUser.value?.hasActiveSubscription ?? false;
 
   /// Update user profile
   Future<bool> updateProfile({
@@ -354,6 +376,7 @@ class AuthService extends GetxService {
     String? fitnessLevel,
     int? workoutDaysPerWeek,
     String? preferredWorkoutTime,
+    String? fcm_token,
   }) async {
     if (_supabase.userId == null) return false;
 
@@ -366,13 +389,20 @@ class AuthService extends GetxService {
       if (username != null) updates['username'] = username;
       if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
       if (bio != null) updates['bio'] = bio;
-      if (dateOfBirth != null) updates['date_of_birth'] = dateOfBirth.toIso8601String();
+      if (dateOfBirth != null) {
+        updates['date_of_birth'] = dateOfBirth.toIso8601String();
+      }
       if (gender != null) updates['gender'] = gender;
       if (heightCm != null) updates['height_cm'] = heightCm;
       if (weightKg != null) updates['weight_kg'] = weightKg;
       if (fitnessLevel != null) updates['fitness_level'] = fitnessLevel;
-      if (workoutDaysPerWeek != null) updates['workout_days_per_week'] = workoutDaysPerWeek;
-      if (preferredWorkoutTime != null) updates['preferred_workout_time'] = preferredWorkoutTime;
+      if (workoutDaysPerWeek != null) {
+        updates['workout_days_per_week'] = workoutDaysPerWeek;
+      }
+      if (preferredWorkoutTime != null) {
+        updates['preferred_workout_time'] = preferredWorkoutTime;
+      }
+      if (fcm_token != null) updates['fcm_token'] = fcm_token;
 
       await _supabase.client
           .from('users')
@@ -398,13 +428,16 @@ class AuthService extends GetxService {
 
     try {
       // Update user profile with onboarding data
-      await _supabase.client.from('users').update({
-        'fitness_level': fitnessLevel,
-        'fitness_goals': fitnessGoals,
-        'workout_days_per_week': workoutDaysPerWeek,
-        'onboarding_completed': true,
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', _supabase.userId!);
+      await _supabase.client
+          .from('users')
+          .update({
+            'fitness_level': fitnessLevel,
+            'fitness_goals': fitnessGoals,
+            'workout_days_per_week': workoutDaysPerWeek,
+            'onboarding_completed': true,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', _supabase.userId!);
 
       // Save onboarding responses
       await _supabase.client.from('onboarding_responses').upsert({
@@ -456,7 +489,8 @@ class AuthService extends GetxService {
     if (message.contains('network') || message.contains('connection')) {
       return 'Network error. Please check your connection';
     }
-    if (message.contains('too many requests') || message.contains('rate limit')) {
+    if (message.contains('too many requests') ||
+        message.contains('rate limit')) {
       return 'Too many attempts. Please try again later';
     }
 
