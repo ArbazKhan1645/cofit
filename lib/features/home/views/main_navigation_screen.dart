@@ -9,6 +9,7 @@ import '../../workouts/views/workouts_screen.dart';
 import '../../progress/views/progress_screen.dart';
 import '../../community/views/community_screen.dart';
 import '../../profile/views/profile_screen.dart';
+import '../../recipes/views/recipes_screen.dart';
 
 class MainNavigationScreen extends GetView<NavigationController> {
   const MainNavigationScreen({super.key});
@@ -21,6 +22,7 @@ class MainNavigationScreen extends GetView<NavigationController> {
             children: const [
               HomeScreen(),
               WorkoutsScreen(),
+              RecipesScreen(),
               ProgressScreen(),
               CommunityScreen(),
               ProfileScreen(),
@@ -52,18 +54,24 @@ class MainNavigationScreen extends GetView<NavigationController> {
                     ),
                     _buildNavItem(
                       index: 2,
+                      icon: Iconsax.note_21,
+                      activeIcon: Iconsax.note_21,
+                      label: 'Recipes',
+                    ),
+                    _buildNavItem(
+                      index: 3,
                       icon: Iconsax.chart_2,
                       activeIcon: Iconsax.chart_21,
                       label: 'Progress',
                     ),
                     _buildNavItem(
-                      index: 3,
+                      index: 4,
                       icon: Iconsax.people,
                       activeIcon: Iconsax.people,
                       label: 'Community',
                     ),
                     _buildNavItem(
-                      index: 4,
+                      index: 5,
                       icon: Iconsax.profile_circle,
                       activeIcon: Iconsax.profile_circle,
                       label: 'Profile',
@@ -90,7 +98,7 @@ class MainNavigationScreen extends GetView<NavigationController> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 16 : 12,
+          horizontal: isSelected ? 12 : 8,
           vertical: 8,
         ),
         decoration: BoxDecoration(

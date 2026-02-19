@@ -52,14 +52,43 @@ class HomeController extends BaseController {
   // Saved workout IDs (for fav toggle)
   final RxSet<String> savedWorkoutIds = <String>{}.obs;
 
+  // Initialization guard - prevent duplicate init & concurrent loads
+  bool _isInitialized = false;
+  bool _isLoadingData = false;
+
   Future<void> oninitialized() async {
+    if (_isInitialized) return;
+    _isInitialized = true;
+
+    // 1. Sync data instantly from local/cached sources (no await needed)
     loadUserData();
     loadWorkoutStats();
-    loadTodayWorkouts();
-    loadHomeChallenges();
-    loadHotWorkouts();
-    _loadSavedWorkoutIds();
-    // React to ProgressService changes
+
+    // 2. Load all network data in parallel - await so splash waits
+    await _loadAllData();
+
+    // 3. Setup reactive listeners AFTER initial data is loaded
+    _setupReactiveListeners();
+  }
+
+  /// Load all home data in parallel - called once during init
+  Future<void> _loadAllData() async {
+    if (_isLoadingData) return;
+    _isLoadingData = true;
+
+    await Future.wait([
+      loadTodayWorkouts(),
+      loadHomeChallenges(),
+      loadHotWorkouts(),
+      _loadSavedWorkoutIds(),
+    ]);
+
+    _isLoadingData = false;
+  }
+
+  /// Setup reactive listeners - only called once after initial load
+  void _setupReactiveListeners() {
+    // React to ProgressService changes (lightweight, no network calls)
     if (Get.isRegistered<ProgressService>()) {
       final ps = Get.find<ProgressService>();
       ever(
@@ -79,13 +108,26 @@ class HomeController extends BaseController {
         (_) => minutesThisWeek.value = ps.minutesThisWeek.value,
       );
     }
-    // React to user changes from AuthService
-    ever(_authService.currentUserRx, (_) {
-      loadUserData();
-      loadWorkoutStats();
-      loadTodayWorkouts();
-      loadHomeChallenges();
-    });
+
+    // Debounce user changes - prevents rapid re-fires during auth flow
+    debounce(
+      _authService.currentUserRx,
+      (_) => _refreshOnUserChange(),
+      time: const Duration(seconds: 1),
+    );
+  }
+
+  /// Refresh data when user changes - debounced to prevent multiple fires
+  Future<void> _refreshOnUserChange() async {
+    if (_isLoadingData) return;
+    loadUserData();
+    loadWorkoutStats();
+    _isLoadingData = true;
+    await Future.wait([
+      loadTodayWorkouts(),
+      loadHomeChallenges(),
+    ]);
+    _isLoadingData = false;
   }
 
   void loadUserData() {

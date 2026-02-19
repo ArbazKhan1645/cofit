@@ -83,6 +83,13 @@ class AdminDrawer extends StatelessWidget {
                     color: AppColors.skyBlue,
                     route: AppRoutes.adminDailyPlan,
                   ),
+                  _buildDrawerItem(
+                    context,
+                    title: 'Diet Plans',
+                    icon: Iconsax.note_21,
+                    color: AppColors.sunnyYellow,
+                    route: AppRoutes.adminRecipeList,
+                  ),
                   const SizedBox(height: 8),
                   _buildSectionLabel(context, 'SUPPORT'),
                   _buildDrawerItem(

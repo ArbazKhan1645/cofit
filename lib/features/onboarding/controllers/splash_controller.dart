@@ -42,19 +42,7 @@ class SplashController extends GetxController {
     final authService = Get.find<AuthService>();
     final hasSeenIntro = _storage.read<bool>('hasSeenIntro') ?? false;
 
-    // 1. ProgressService initialize
-    if (!Get.isRegistered<ProgressService>()) {
-      Get.put<ProgressService>(ProgressService(), permanent: true);
-    }
-    await Get.find<ProgressService>().init();
-
-    // 2. HomeController initialize
-    await Get.put<HomeController>(
-      HomeController(),
-      permanent: true,
-    ).oninitialized();
-
-    // 3. Navigation flow
+    // 1. Navigation flow - check if user needs onboarding/auth first
     if (!hasSeenIntro) {
       Get.offAllNamed(AppRoutes.intro);
       return;
@@ -67,10 +55,22 @@ class SplashController extends GetxController {
       Get.offAllNamed(AppRoutes.journalPrompts);
       return;
     }
+
+    // 2. User is authenticated & ready - initialize services + load home data
+    if (!Get.isRegistered<ProgressService>()) {
+      Get.put<ProgressService>(ProgressService(), permanent: true);
+    }
+    await Get.find<ProgressService>().init();
+
+    await Get.put<HomeController>(
+      HomeController(),
+      permanent: true,
+    ).oninitialized();
     if (!authService.hasActiveSubscription) {
       Get.offAllNamed(AppRoutes.subscription);
       return;
     }
+
     Get.offAllNamed(AppRoutes.main);
   }
 }

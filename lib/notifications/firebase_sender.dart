@@ -98,22 +98,36 @@ class FcmNotificationSender {
   // ============================================================
 
   /// Post like notification bhejo post creator ko
+  /// Facebook-style: "Arbaz and 26 others liked your post"
   Future<void> sendPostLikeNotification({
     required String postOwnerId,
     required String postId,
     required String likerName,
     String? postPreview,
+    int totalLikes = 1,
   }) async {
     final fcmToken = await _getUserFcmToken(postOwnerId);
     if (fcmToken == null) return;
 
+    // Facebook-style body
+    String body;
+    if (totalLikes <= 1) {
+      body = postPreview != null
+          ? '$likerName liked your post: "$postPreview"'
+          : '$likerName liked your post';
+    } else {
+      final othersCount = totalLikes - 1;
+      final othersText = othersCount == 1 ? '1 other' : '$othersCount others';
+      body = postPreview != null
+          ? '$likerName and $othersText liked your post: "$postPreview"'
+          : '$likerName and $othersText liked your post';
+    }
+
     await _sendFcmMessage(
       token: fcmToken,
       notification: {
-        'title': '❤️ $likerName',
-        'body': postPreview != null
-            ? '"$postPreview" - ye post pasand aayi!'
-            : 'Tumhari post like ki!',
+        'title': '❤️ Post Liked!',
+        'body': body,
       },
       data: {
         'channel': NotificationChannel.socialActivity.channelId,
@@ -126,23 +140,37 @@ class FcmNotificationSender {
   }
 
   /// Comment notification bhejo
+  /// Facebook-style: "Arbaz and 5 others commented on your post"
   Future<void> sendCommentNotification({
     required String postOwnerId,
     required String postId,
     required String commenterName,
     required String commentText,
     String? postPreview,
+    int totalComments = 1,
   }) async {
     final fcmToken = await _getUserFcmToken(postOwnerId);
     if (fcmToken == null) return;
 
+    // Facebook-style title
+    String title;
+    if (totalComments <= 1) {
+      title = '💬 $commenterName commented on your post';
+    } else {
+      final othersCount = totalComments - 1;
+      final othersText = othersCount == 1 ? '1 other' : '$othersCount others';
+      title = '💬 $commenterName and $othersText commented on your post';
+    }
+
+    final truncatedComment = commentText.length > 100
+        ? '${commentText.substring(0, 97)}...'
+        : commentText;
+
     await _sendFcmMessage(
       token: fcmToken,
       notification: {
-        'title': '💬 $commenterName',
-        'body': commentText.length > 100
-            ? '${commentText.substring(0, 97)}...'
-            : commentText,
+        'title': title,
+        'body': '"$truncatedComment"',
       },
       data: {
         'channel': NotificationChannel.socialActivity.channelId,
@@ -150,6 +178,36 @@ class FcmNotificationSender {
         'post_id': postId,
         'actor_name': commenterName,
         'comment_text': commentText,
+        'action_route': '/community/post/$postId',
+      },
+    );
+  }
+
+  /// Post save/bookmark notification bhejo post creator ko
+  Future<void> sendPostSavedNotification({
+    required String postOwnerId,
+    required String postId,
+    required String saverName,
+    String? postPreview,
+  }) async {
+    final fcmToken = await _getUserFcmToken(postOwnerId);
+    if (fcmToken == null) return;
+
+    final body = postPreview != null
+        ? '$saverName saved your post: "$postPreview"'
+        : '$saverName saved your post';
+
+    await _sendFcmMessage(
+      token: fcmToken,
+      notification: {
+        'title': '🔖 Post Saved!',
+        'body': body,
+      },
+      data: {
+        'channel': NotificationChannel.socialActivity.channelId,
+        'social_type': SocialNotificationType.postShare.name,
+        'post_id': postId,
+        'actor_name': saverName,
         'action_route': '/community/post/$postId',
       },
     );
@@ -438,6 +496,84 @@ class FcmNotificationSender {
   }
 
   // ============================================================
+  // 📋 ADMIN - POST APPROVAL / REJECTION NOTIFICATIONS
+  // ============================================================
+
+  /// Post approved - post creator ko notify + community topic par broadcast
+  Future<void> sendPostApprovedNotification({
+    required String postOwnerId,
+    required String postId,
+    required String postAuthorName,
+    String? postPreview,
+  }) async {
+    // 1. Post creator ko notify karo
+    final fcmToken = await _getUserFcmToken(postOwnerId);
+    if (fcmToken != null) {
+      await _sendFcmMessage(
+        token: fcmToken,
+        notification: {
+          'title': '✅ Post Approved!',
+          'body': 'Your post has been approved and is now live!',
+        },
+        data: {
+          'channel': NotificationChannel.socialActivity.channelId,
+          'social_type': 'post_approved',
+          'post_id': postId,
+          'action_route': '/community/post/$postId',
+        },
+      );
+    }
+
+    // 2. Sab community subscribers ko notify karo via topic
+    final body = postPreview != null
+        ? '$postAuthorName shared a new post: "$postPreview"'
+        : '$postAuthorName shared a new post!';
+
+    await _sendFcmTopicMessage(
+      topic: 'community',
+      notification: {
+        'title': '📢 New Post Available!',
+        'body': body,
+      },
+      data: {
+        'channel': NotificationChannel.socialActivity.channelId,
+        'social_type': SocialNotificationType.newPost.name,
+        'post_id': postId,
+        'actor_name': postAuthorName,
+        'action_route': '/community/post/$postId',
+      },
+    );
+  }
+
+  /// Post rejected - sirf post creator ko notify karo
+  Future<void> sendPostRejectedNotification({
+    required String postOwnerId,
+    required String postId,
+    String? rejectionReason,
+  }) async {
+    final fcmToken = await _getUserFcmToken(postOwnerId);
+    if (fcmToken == null) return;
+
+    final body = rejectionReason != null && rejectionReason.isNotEmpty
+        ? 'Your post was not approved. Reason: $rejectionReason'
+        : 'Your post was not approved. Please review community guidelines.';
+
+    await _sendFcmMessage(
+      token: fcmToken,
+      notification: {
+        'title': '❌ Post Not Approved',
+        'body': body,
+      },
+      data: {
+        'channel': NotificationChannel.socialActivity.channelId,
+        'social_type': 'post_rejected',
+        'post_id': postId,
+        'action_route': '/community/post/$postId',
+      },
+    );
+  }
+
+  // ============================================================
   // PRIVATE HELPER METHODS
   // ============================================================
 
@@ -540,6 +676,69 @@ class FcmNotificationSender {
       }
     } catch (e) {
       developer.log('FCM send error: $e', name: 'FCMSender', level: 900);
+      return false;
+    }
+  }
+
+  /// Firebase topic par notification bhejo (sab subscribers ko)
+  Future<bool> _sendFcmTopicMessage({
+    required String topic,
+    required Map<String, String> notification,
+    required Map<String, String> data,
+    String? imageUrl,
+  }) async {
+    try {
+      final accessToken = await _getAccessToken();
+
+      final message = {
+        'message': {
+          'topic': topic,
+          'notification': {
+            'title': notification['title'],
+            'body': notification['body'],
+            if (imageUrl != null) 'image': imageUrl,
+          },
+          'data': data,
+          'android': {
+            'priority': 'high',
+            'notification': {
+              'channel_id': data['channel'] ?? 'social_activity',
+              'sound': 'default',
+            },
+          },
+          'apns': {
+            'payload': {
+              'aps': {'sound': 'default', 'badge': 1},
+            },
+          },
+        },
+      };
+
+      final response = await http.post(
+        Uri.parse(_fcmEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: jsonEncode(message),
+      );
+
+      if (response.statusCode == 200) {
+        developer.log(
+          'FCM topic message sent to: $topic',
+          name: 'FCMSender',
+        );
+        return true;
+      } else {
+        developer.log(
+          'FCM topic send failed: ${response.statusCode} - ${response.body}',
+          name: 'FCMSender',
+          level: 900,
+        );
+        return false;
+      }
+    } catch (e) {
+      developer.log('FCM topic send error: $e', name: 'FCMSender', level: 900);
       return false;
     }
   }

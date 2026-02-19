@@ -11,7 +11,8 @@
       "Bash(supabase --version:*)",
       "Bash(supabase login:*)",
       "Bash(xargs:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(wc:*)"
     ]
   }
 }

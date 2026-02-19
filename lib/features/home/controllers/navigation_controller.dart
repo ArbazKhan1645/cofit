@@ -9,7 +9,8 @@ class NavigationController extends GetxController {
 
   void goToHome() => changePage(0);
   void goToWorkouts() => changePage(1);
-  void goToProgress() => changePage(2);
-  void goToCommunity() => changePage(3);
-  void goToProfile() => changePage(4);
+  void goToRecipes() => changePage(2);
+  void goToProgress() => changePage(3);
+  void goToCommunity() => changePage(4);
+  void goToProfile() => changePage(5);
 }

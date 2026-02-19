@@ -74,6 +74,14 @@ import '../../features/support/support_controller.dart';
 import '../../features/support/ticket_list_screen.dart';
 import '../../features/support/ticket_chat_screen.dart';
 
+// Recipes / Diet Plans
+import '../../admin_modules/recipes/recipe_controller.dart';
+import '../../admin_modules/recipes/recipe_list_screen.dart';
+import '../../admin_modules/recipes/recipe_form_screen.dart';
+import '../../admin_modules/recipes/recipe_day_editor_screen.dart';
+import '../../features/recipes/controllers/recipe_controller.dart';
+import '../../features/recipes/views/recipe_detail_screen.dart';
+
 class AppPages {
   AppPages._();
 
@@ -363,6 +371,38 @@ class AppPages {
     GetPage(
       name: AppRoutes.adminAchievementDetail,
       page: () => const AchievementDetailScreen(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Admin Recipes / Diet Plans
+    GetPage(
+      name: AppRoutes.adminRecipeList,
+      page: () => const RecipeListScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => AdminRecipeController());
+      }),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminRecipeForm,
+      page: () => const RecipeFormScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminRecipeDayEditor,
+      page: () => const RecipeDayEditorScreen(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // User Recipe Detail
+    GetPage(
+      name: AppRoutes.recipeDetail,
+      page: () => const RecipeDetailScreen(),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<RecipeController>()) {
+          Get.lazyPut(() => RecipeController());
+        }
+      }),
       transition: Transition.rightToLeft,
     ),
 

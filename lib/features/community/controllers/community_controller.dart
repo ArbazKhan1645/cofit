@@ -12,11 +12,13 @@ import '../../../data/repositories/community_repository.dart';
 import '../../../core/services/feed_cache_service.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/media/media_service.dart';
+import '../../../notifications/firebase_sender.dart';
 
 class CommunityController extends BaseController {
   final CommunityRepository _repository = CommunityRepository();
   final FeedCacheService _cacheService = FeedCacheService.to;
   final SupabaseService _supabase = SupabaseService.to;
+  final FcmNotificationSender _fcmSender = FcmNotificationSender();
 
   // Feed state
   final RxList<PostModel> posts = <PostModel>[].obs;
@@ -355,6 +357,26 @@ class CommunityController extends BaseController {
       if (cacheIdx != -1) {
         await _cacheService.updatePostInCache(posts[cacheIdx]);
       }
+
+      // Send FCM notification on LIKE (not unlike) to post owner
+      if (newLikedState && originalPost.userId != _supabase.userId) {
+        final currentUserName = _supabase.client.auth.currentUser
+                ?.userMetadata?['full_name'] as String? ??
+            'Someone';
+        final preview = originalPost.content.length > 50
+            ? '${originalPost.content.substring(0, 47)}...'
+            : originalPost.content.isNotEmpty
+                ? originalPost.content
+                : null;
+
+        _fcmSender.sendPostLikeNotification(
+          postOwnerId: originalPost.userId,
+          postId: postId,
+          likerName: currentUserName,
+          postPreview: preview,
+          totalLikes: newLikesCount,
+        );
+      }
     }
   }
 
@@ -447,6 +469,25 @@ class CommunityController extends BaseController {
       final cacheIdx = posts.indexWhere((p) => p.id == postId);
       if (cacheIdx != -1) {
         await _cacheService.updatePostInCache(posts[cacheIdx]);
+      }
+
+      // Send FCM notification on SAVE (not unsave) to post owner
+      if (newSavedState && originalPost.userId != _supabase.userId) {
+        final currentUserName = _supabase.client.auth.currentUser
+                ?.userMetadata?['full_name'] as String? ??
+            'Someone';
+        final preview = originalPost.content.length > 50
+            ? '${originalPost.content.substring(0, 47)}...'
+            : originalPost.content.isNotEmpty
+                ? originalPost.content
+                : null;
+
+        _fcmSender.sendPostSavedNotification(
+          postOwnerId: originalPost.userId,
+          postId: postId,
+          saverName: currentUserName,
+          postPreview: preview,
+        );
       }
 
       // Show feedback
@@ -1115,6 +1156,23 @@ class CommunityController extends BaseController {
       if (currentPost.value?.id == postId) {
         currentPost.value = currentPost.value!.copyWith(
           commentsCount: currentPost.value!.commentsCount + 1,
+        );
+      }
+
+      // Send FCM notification to post owner
+      final post = posts.firstWhereOrNull((p) => p.id == postId) ??
+          currentPost.value;
+      if (post != null && post.userId != _supabase.userId) {
+        final currentUserName = _supabase.client.auth.currentUser
+                ?.userMetadata?['full_name'] as String? ??
+            'Someone';
+
+        _fcmSender.sendCommentNotification(
+          postOwnerId: post.userId,
+          postId: postId,
+          commenterName: currentUserName,
+          commentText: content,
+          totalComments: post.commentsCount + 1,
         );
       }
     } else {

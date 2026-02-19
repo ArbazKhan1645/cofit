@@ -3,10 +3,12 @@ import 'package:get/get.dart';
 
 import '../../core/services/supabase_service.dart';
 import '../../data/models/community_model.dart';
+import '../../notifications/firebase_sender.dart';
 import '../../shared/controllers/base_controller.dart';
 
 class AdminCommunityController extends BaseController {
   final SupabaseService _supabase = SupabaseService.to;
+  final FcmNotificationSender _fcmSender = FcmNotificationSender();
 
   // ============================================
   // STATE
@@ -194,6 +196,19 @@ class AdminCommunityController extends BaseController {
       _updatePostLocally(
           post.id, post.copyWith(approvalStatus: 'approved', rejectionReason: null));
 
+      // FCM: post creator ko "approved" + community topic par "new post available"
+      final preview = post.content.length > 50
+          ? '${post.content.substring(0, 47)}...'
+          : post.content.isNotEmpty
+              ? post.content
+              : null;
+      _fcmSender.sendPostApprovedNotification(
+        postOwnerId: post.userId,
+        postId: post.id,
+        postAuthorName: post.authorName,
+        postPreview: preview,
+      );
+
       Get.snackbar('Approved', '${post.authorName}\'s post has been approved',
           snackPosition: SnackPosition.BOTTOM);
     } catch (e) {
@@ -215,6 +230,13 @@ class AdminCommunityController extends BaseController {
 
       _updatePostLocally(post.id,
           post.copyWith(approvalStatus: 'rejected', rejectionReason: reason));
+
+      // FCM: sirf post creator ko "rejected" notification
+      _fcmSender.sendPostRejectedNotification(
+        postOwnerId: post.userId,
+        postId: post.id,
+        rejectionReason: reason,
+      );
 
       Get.snackbar('Rejected', '${post.authorName}\'s post has been rejected',
           snackPosition: SnackPosition.BOTTOM);

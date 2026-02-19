@@ -71,6 +71,9 @@ abstract class AppRoutes {
   static const adminAchievementList = '/admin/achievements';
   static const adminAchievementForm = '/admin/achievements/form';
   static const adminAchievementDetail = '/admin/achievements/detail';
+  static const adminRecipeList = '/admin/recipes';
+  static const adminRecipeForm = '/admin/recipes/form';
+  static const adminRecipeDayEditor = '/admin/recipes/days';
 
   // Support (User)
   static const supportTickets = '/support';
