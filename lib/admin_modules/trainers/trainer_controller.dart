@@ -197,7 +197,7 @@ class TrainerController extends BaseController {
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
-      print(e);
+      debugPrint('Save trainer error: $e');
       Get.snackbar(
         'Error',
         'Failed to save trainer',

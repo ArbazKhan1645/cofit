@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/models.dart';
+import 'device_service.dart';
 import 'supabase_service.dart';
 
 /// Auth Service - Manages authentication state and user data
@@ -314,10 +316,12 @@ class AuthService extends GetxService {
   // SIGN OUT
   // ============================================
 
-  /// Sign out current user
+  /// Sign out current user and remove this device's FCM token
   Future<void> signOut() async {
     _isLoading.value = true;
     try {
+      // Remove this device from user_devices so it stops receiving notifications
+      await removeCurrentDevice();
       await _supabase.signOut();
       _currentUser.value = null;
       _cacheUser(null);
@@ -325,6 +329,56 @@ class AuthService extends GetxService {
       _error.value = e.toString();
     }
     _isLoading.value = false;
+  }
+
+  // ============================================
+  // DEVICE TOKEN MANAGEMENT (multi-device)
+  // ============================================
+
+  /// Save FCM token for the current device into `user_devices` table.
+  /// Uses upsert on (user_id, device_id) so token refreshes update in-place.
+  Future<void> saveDeviceToken(String fcmToken) async {
+    final userId = _supabase.userId;
+    if (userId == null) return;
+
+    try {
+      final device = DeviceService.instance;
+      await _supabase.client.from('user_devices').upsert(
+        {
+          'user_id': userId,
+          'device_id': device.deviceId,
+          'fcm_token': fcmToken,
+          'platform': device.platform,
+          'device_model': device.deviceModel,
+          'last_active': DateTime.now().toIso8601String(),
+        },
+        onConflict: 'user_id,device_id',
+      );
+
+      // Also keep users.fcm_token updated (backward compat)
+      await _supabase.client
+          .from('users')
+          .update({'fcm_token': fcmToken})
+          .eq('id', userId);
+    } catch (e) {
+      debugPrint('Save device token error: $e');
+    }
+  }
+
+  /// Remove current device's row from `user_devices` (called on sign-out).
+  Future<void> removeCurrentDevice() async {
+    final userId = _supabase.userId;
+    if (userId == null) return;
+
+    try {
+      await _supabase.client
+          .from('user_devices')
+          .delete()
+          .eq('user_id', userId)
+          .eq('device_id', DeviceService.instance.deviceId);
+    } catch (e) {
+      debugPrint('Remove device error: $e');
+    }
   }
 
   // ============================================

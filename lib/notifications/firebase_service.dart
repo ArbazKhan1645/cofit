@@ -5,6 +5,7 @@
 // ============================================================
 
 import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
 import 'package:cofit_collective/notifications/local_service.dart';
 import 'package:cofit_collective/notifications/types.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -29,27 +30,37 @@ Future<void> _handleFirebaseMessage(
   RemoteMessage message,
   LocalNotificationService localService,
 ) async {
-  final data = message.data;
-  final channelStr = data['channel'] as String?;
-  final notifType = _parseChannel(channelStr);
+  try {
+    final data = message.data;
+    final channelStr = data['channel'] as String?;
+    // Default to socialActivity if channel is missing or unknown
+    final notifType =
+        _parseChannel(channelStr) ?? NotificationChannel.socialActivity;
 
-  if (notifType == null) return;
+    final title =
+        message.notification?.title ?? data['title'] as String? ?? '';
+    final body = message.notification?.body ?? data['body'] as String? ?? '';
 
-  final payload = NotificationPayload(
-    title: message.notification?.title ?? data['title'] ?? '',
-    body: message.notification?.body ?? data['body'] ?? '',
-    channel: notifType,
-    data: data,
-    imageUrl:
-        message.notification?.android?.imageUrl ??
-        message.notification?.apple?.imageUrl,
-    actionRoute: data['action_route'] as String?,
-  );
+    // Skip if no content to show
+    if (title.isEmpty && body.isEmpty) return;
 
-  await localService.showImmediate(
-    id: DateTime.now().millisecondsSinceEpoch % 100000,
-    payload: payload,
-  );
+    final payload = NotificationPayload(
+      title: title,
+      body: body,
+      channel: notifType,
+      data: data,
+      imageUrl: message.notification?.android?.imageUrl ??
+          message.notification?.apple?.imageUrl,
+      actionRoute: data['action_route'] as String?,
+    );
+
+    await localService.showImmediate(
+      id: DateTime.now().millisecondsSinceEpoch % 100000,
+      payload: payload,
+    );
+  } catch (e) {
+    developer.log('Handle FCM message error: $e', name: 'FCM', level: 900);
+  }
 }
 
 NotificationChannel? _parseChannel(String? channelStr) {
@@ -89,7 +100,12 @@ class FirebaseNotificationService {
     void Function(String token)? onTokenRefresh,
     void Function(Map<String, dynamic> data, String? route)? onNotificationTap,
   }) async {
-    if (_initialized) return;
+    if (_initialized) {
+      debugPrint('[FCM] Already initialized, skipping');
+      return;
+    }
+
+    debugPrint('[FCM] Initializing FirebaseNotificationService...');
 
     this.onTokenRefresh = onTokenRefresh;
     this.onNotificationTap = onNotificationTap;
@@ -99,12 +115,22 @@ class FirebaseNotificationService {
 
     // Permission request
     await _requestPermission();
+    debugPrint('[FCM] Permission granted');
+
+    // iOS foreground presentation — show notification even when app is open
+    await _messaging.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
 
     // FCM Token lo
     await _initializeToken();
+    debugPrint('[FCM] Token initialized: ${_fcmToken != null}');
 
     // Foreground messages handle karo
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    debugPrint('[FCM] onMessage listener registered');
 
     // App background se open hone par
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
@@ -116,7 +142,7 @@ class FirebaseNotificationService {
     }
 
     _initialized = true;
-    developer.log('FirebaseNotificationService initialized', name: 'FCM');
+    debugPrint('[FCM] FirebaseNotificationService fully initialized');
   }
 
   // ============================================================
@@ -147,7 +173,6 @@ class FirebaseNotificationService {
   Future<String?> _initializeToken() async {
     try {
       _fcmToken = await _messaging.getToken();
-      developer.log('FCM Token: $_fcmToken', name: 'FCM');
 
       if (_fcmToken != null) {
         onTokenRefresh?.call(_fcmToken!);
@@ -180,13 +205,15 @@ class FirebaseNotificationService {
   // ============================================================
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    developer.log(
-      'Foreground FCM: ${message.notification?.title}',
-      name: 'FCM',
-    );
+    debugPrint('[FCM] Foreground message received: ${message.notification?.title}');
 
-    // Foreground mein local notification show karo (Firebase auto-show nahi karta)
-    await _handleFirebaseMessage(message, _localService);
+    try {
+      // Foreground mein local notification show karo (Firebase auto-show nahi karta)
+      await _handleFirebaseMessage(message, _localService);
+      debugPrint('[FCM] Local notification shown successfully');
+    } catch (e) {
+      debugPrint('[FCM] Foreground notification show error: $e');
+    }
   }
 
   void _handleMessageOpenedApp(RemoteMessage message) {

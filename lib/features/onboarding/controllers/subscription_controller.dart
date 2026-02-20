@@ -1,9 +1,12 @@
-import 'package:cofit_collective/notifications/firebase_sender.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../app/routes/app_routes.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/supabase_service.dart';
+import '../../../notifications/firebase_sender.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/widgets/widgets.dart';
+import 'auth_controller.dart';
 
 class SubscriptionController extends BaseController {
   final _storage = GetStorage();
@@ -65,15 +68,26 @@ class SubscriptionController extends BaseController {
     isProcessing.value = true;
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final selectedPlan = plans[selectedPlanIndex.value];
+      final planName = selectedPlan['name'] as String;
+      final period = selectedPlan['period'] as String;
+      final now = DateTime.now();
+      final endDate = period == 'year'
+          ? DateTime(now.year + 1, now.month, now.day)
+          : DateTime(now.year, now.month + 1, now.day);
 
-      // Save subscription state
+      // Save to Supabase users table (persists across restarts)
+      // await _saveSubscriptionToSupabase(
+      //   plan: planName,
+      //   startDate: now,
+      //   endDate: endDate,
+      // );
+
+      // Also save locally for quick checks
       _storage.write('hasSubscription', true);
-      _storage.write(
-        'subscriptionPlan',
-        plans[selectedPlanIndex.value]['name'],
-      );
+      _storage.write('subscriptionPlan', planName);
 
+      await AuthController.ensureHomeReady();
       Get.offAllNamed(AppRoutes.main);
     } catch (e) {
       if (Get.context != null) {
@@ -96,18 +110,8 @@ class SubscriptionController extends BaseController {
         postOwnerId: '415064f4-de95-4d64-ba2d-83c886060713',
         postId: '222',
         likerName: 'Arbaz Khan',
-        postPreview: 'Aaj ki workout complete...', // Optional
+        postPreview: 'Aaj ki workout complete...',
       );
-      // await Future.delayed(const Duration(seconds: 1));
-
-      // _storage.write('hasSubscription', true);
-      // _storage.write('subscriptionPlan', 'Trial');
-      // _storage.write(
-      //   'trialEndDate',
-      //   DateTime.now().add(const Duration(days: 7)).toIso8601String(),
-      // );
-
-      // Get.offAllNamed(AppRoutes.main);
     } finally {
       isProcessing.value = false;
     }
@@ -138,9 +142,39 @@ class SubscriptionController extends BaseController {
     }
   }
 
-  void skipSubscription() {
-    // Allow limited access without subscription
+  Future<void> skipSubscription() async {
+    // Save as free-tier so user isn't redirected again on restart
+    await _saveSubscriptionToSupabase(
+      plan: 'Free',
+      startDate: DateTime.now(),
+      endDate: DateTime.now().add(const Duration(days: 365 * 10)),
+    );
     _storage.write('hasSubscription', false);
+    await AuthController.ensureHomeReady();
     Get.offAllNamed(AppRoutes.main);
+  }
+
+  /// Save subscription status to Supabase users table + refresh cached user
+  Future<void> _saveSubscriptionToSupabase({
+    required String plan,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final userId = SupabaseService.to.userId;
+    if (userId == null) return;
+
+    await SupabaseService.to.client
+        .from('users')
+        .update({
+          'subscription_status': 'active',
+          'subscription_plan': plan,
+          'subscription_start_date': startDate.toIso8601String(),
+          'subscription_end_date': endDate.toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', userId);
+
+    // Refresh cached user so hasActiveSubscription returns true immediately
+    await AuthService.to.refreshUser();
   }
 }

@@ -41,8 +41,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           debugPrint('notification route: $route');
         },
         onFcmTokenReceived: (token) async {
-          await authService.updateProfile(fcm_token: token);
-          debugPrint('fcm token: $token');
+          await authService.saveDeviceToken(token);
         },
       );
 

@@ -195,14 +195,14 @@ class WorkoutPlayerController extends GetxController {
       videoController = vc;
       isVideoInitialized.value = true;
 
-      // Reset progress AFTER initialization — duration is now known
+      debugPrint('[VideoPlayer] Init duration: ${vc.value.duration.inMilliseconds}ms for "${exercise.name}"');
+
       videoProgress.value = 0.0;
       videoRemainingSeconds.value = vc.value.duration.inSeconds;
 
       await vc.play();
       isVideoPlaying.value = true;
 
-      // Start the listener-based progress tracker
       _attachVideoListener(vc, idx);
     } catch (e) {
       vc.dispose();
@@ -213,14 +213,17 @@ class WorkoutPlayerController extends GetxController {
   }
 
   // ============================================
-  // VIDEO LISTENER — no polling, no Duration math
+  // VIDEO LISTENER
   //
-  // Flutter's VideoPlayerController fires addListener on every frame.
-  // We read position & duration directly from vc.value each callback.
-  // Completion = position reached duration (with 300ms tolerance).
+  // Uses LIVE duration/position from each frame (not captured at init).
+  // Progress only shown if live duration > 1s (avoids 100% jump).
+  // Wall-clock guard prevents any completion within first 3 seconds.
   // ============================================
 
   void _attachVideoListener(VideoPlayerController vc, int idx) {
+    final startTime = DateTime.now();
+    bool loggedFirstFrame = false;
+
     void listener() {
       // Stop if disposed or a different exercise is active
       if (_disposed ||
@@ -235,25 +238,41 @@ class WorkoutPlayerController extends GetxController {
 
       final durationMs = val.duration.inMilliseconds;
       final positionMs = val.position.inMilliseconds;
+      final wallClockMs = DateTime.now().difference(startTime).inMilliseconds;
 
-      // Duration must be settled (> 0) before we trust anything
-      if (durationMs <= 0) return;
+      // Log first frame for debugging
+      if (!loggedFirstFrame) {
+        loggedFirstFrame = true;
+        debugPrint(
+            '[VideoPlayer] First frame: duration=${durationMs}ms, position=${positionMs}ms, isCompleted=${val.isCompleted}');
+      }
 
-      // Update progress bar (0.0 → 1.0)
-      final progress = (positionMs / durationMs).clamp(0.0, 1.0);
-      videoProgress.value = progress;
-
-      // Update remaining seconds display
-      final remainingMs = (durationMs - positionMs).clamp(0, durationMs);
-      videoRemainingSeconds.value = (remainingMs / 1000).ceil();
+      // Progress: only update if live duration > 1 second
+      if (durationMs > 1000) {
+        videoProgress.value = (positionMs / durationMs).clamp(0.0, 1.0);
+        final remainingMs = (durationMs - positionMs).clamp(0, durationMs);
+        videoRemainingSeconds.value = (remainingMs / 1000).ceil();
+      }
 
       // Update play/pause icon
       isVideoPlaying.value = val.isPlaying;
 
-      // Completion: position within 300ms of end OR flutter marks it completed
-      final isFinished = val.isCompleted || positionMs >= (durationMs - 300);
+      // Completion detection
+      if (_exerciseFinishCalled) return;
 
-      if (!_exerciseFinishCalled && isFinished) {
+      // GUARD: Must have been playing for at least 3 seconds wall-clock
+      if (wallClockMs < 3000) return;
+
+      // Primary: video player says completed AND position is meaningful
+      final completedByPlayer = val.isCompleted && positionMs > 1000;
+      // Backup: position near end of a valid duration (> 3s)
+      final completedByPosition =
+          durationMs > 3000 && positionMs >= (durationMs - 500);
+
+      if (completedByPlayer || completedByPosition) {
+        debugPrint(
+            '[VideoPlayer] Completed: byPlayer=$completedByPlayer, byPosition=$completedByPosition, '
+            'duration=${durationMs}ms, position=${positionMs}ms, wallClock=${wallClockMs}ms');
         _exerciseFinishCalled = true;
         vc.removeListener(listener);
         _onExerciseFinished();

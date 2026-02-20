@@ -237,11 +237,9 @@ class WorkoutRepository extends BaseRepository {
       final ids = (response as List)
           .map((json) => json['workout_id'] as String)
           .toSet();
-      print(ids);
 
       return Result.success(ids);
     } catch (e) {
-      print(e);
       return Result.failure(RepositoryException(message: e.toString()));
     }
   }
@@ -387,9 +385,6 @@ class WorkoutRepository extends BaseRepository {
 
       return Result.success(UserProgressModel.fromJson(response));
     } catch (e) {
-      print('object');
-      print(e);
-      print('object');
       return Result.failure(RepositoryException(message: e.toString()));
     }
   }

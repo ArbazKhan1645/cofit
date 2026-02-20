@@ -58,17 +58,12 @@ class NotificationRepository implements INotificationRepository {
     int offset = 0,
   }) async {
     try {
-      print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
       final response = await _supabase
           .from(_table)
           .select()
           .eq('user_id', userId)
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
-
-      print(userId);
-
-      print(response);
 
       return (response as List<dynamic>)
           .map((e) => NotificationModel.fromJson(e as Map<String, dynamic>))

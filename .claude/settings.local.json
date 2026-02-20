@@ -12,7 +12,8 @@
       "Bash(supabase login:*)",
       "Bash(xargs:*)",
       "Bash(findstr:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(flutter pub add:*)"
     ]
   }
 }

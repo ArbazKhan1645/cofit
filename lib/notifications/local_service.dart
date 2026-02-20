@@ -597,17 +597,8 @@ class LocalNotificationService {
   }
 
   String? _getIcon(NotificationChannel channel) {
-    // Apne drawable resources k mutabiq change karo
-    switch (channel) {
-      case NotificationChannel.workoutReminder:
-        return '@drawable/ic_workout';
-      case NotificationChannel.achievementAlert:
-        return '@drawable/ic_achievement';
-      case NotificationChannel.socialActivity:
-        return '@drawable/ic_social';
-      default:
-        return null;
-    }
+    // Uses default @mipmap/ic_launcher (set in AndroidInitializationSettings)
+    return null;
   }
 
   tz.TZDateTime _nextWeekdayTime(int dayOfWeek, int hour, int minute) {

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'supabase_service.dart';
 
@@ -18,17 +20,31 @@ class CrashlyticsService {
   String? _osVersion;
   String? _deviceModel;
 
-  /// Initialize with device info (call once at startup)
-  void init({
-    String? appVersion,
-    String? platform,
-    String? osVersion,
-    String? deviceModel,
-  }) {
-    _appVersion = appVersion;
-    _platform = platform ?? (Platform.isAndroid ? 'android' : 'ios');
-    _osVersion = osVersion ?? Platform.operatingSystemVersion;
-    _deviceModel = deviceModel;
+  /// Initialize with device info (call once at startup).
+  /// Automatically collects app version, platform, OS version, and device model.
+  Future<void> init() async {
+    _platform = Platform.isAndroid ? 'android' : 'ios';
+    _osVersion = Platform.operatingSystemVersion;
+
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      _appVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
+    } catch (_) {
+      _appVersion = 'unknown';
+    }
+
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      if (Platform.isAndroid) {
+        final android = await deviceInfo.androidInfo;
+        _deviceModel = '${android.manufacturer} ${android.model}';
+      } else if (Platform.isIOS) {
+        final ios = await deviceInfo.iosInfo;
+        _deviceModel = ios.utsname.machine;
+      }
+    } catch (_) {
+      _deviceModel = 'unknown';
+    }
   }
 
   /// Record an exception to Supabase
@@ -41,11 +57,10 @@ class CrashlyticsService {
     Map<String, dynamic>? extraData,
   }) async {
     try {
-      // Don't report in debug mode
+      // Always log to console in debug mode
       if (kDebugMode) {
-        debugPrint('🔴 [Crashlytics] ${fatal ? "CRASH" : "Exception"}: $error');
+        debugPrint('${fatal ? "CRASH" : "Exception"}: $error');
         if (stackTrace != null) debugPrint(stackTrace.toString());
-        return;
       }
 
       final supabase = Get.find<SupabaseService>();
@@ -78,7 +93,7 @@ class CrashlyticsService {
       });
     } catch (e) {
       // Silently fail — we can't let crashlytics itself crash the app
-      debugPrint('⚠️ [Crashlytics] Failed to record error: $e');
+      debugPrint('[Crashlytics] Failed to record error: $e');
     }
   }
 

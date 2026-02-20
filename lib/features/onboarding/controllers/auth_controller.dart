@@ -218,31 +218,39 @@ class AuthController extends GetxController {
 
     // Check if onboarding is completed
     if (!_authService.hasCompletedOnboarding) {
-      // Go to journal prompts
       Get.offAllNamed(AppRoutes.journalPrompts);
       return;
     }
 
-    // Onboarding complete - check subscription
+    // Initialize ProgressService + HomeController BEFORE any navigation
+    // (subscription or main) — so data is ready when user reaches home
+    await _ensureHomeReady();
+
     if (!_authService.hasActiveSubscription) {
       Get.offAllNamed(AppRoutes.subscription);
       return;
     }
 
-    // 1. ProgressService MUST be created permanent + initialized BEFORE HomeController
+    Get.offAllNamed(AppRoutes.main);
+  }
+
+  /// Ensure ProgressService + HomeController are initialized.
+  /// Called before navigating to /main or /subscription.
+  static Future<void> ensureHomeReady() async {
     if (!Get.isRegistered<ProgressService>()) {
       Get.put<ProgressService>(ProgressService(), permanent: true);
     }
     await Get.find<ProgressService>().init();
 
-    // 2. Now create HomeController — reads from initialized ProgressService
-    await Get.put<HomeController>(
-      HomeController(),
-      permanent: true,
-    ).oninitialized();
-
-    Get.offAllNamed(AppRoutes.main);
+    if (!Get.isRegistered<HomeController>()) {
+      await Get.put<HomeController>(
+        HomeController(),
+        permanent: true,
+      ).oninitialized();
+    }
   }
+
+  Future<void> _ensureHomeReady() => ensureHomeReady();
 
   void goToSignUp() {
     _clearFields();

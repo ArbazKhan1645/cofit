@@ -6,8 +6,9 @@
 
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'package:cofit_collective/core/services/auth_service.dart';
+import 'package:cofit_collective/core/services/supabase_service.dart';
 import 'package:cofit_collective/notifications/types.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:googleapis_auth/auth_io.dart' as auth;
 
@@ -19,31 +20,30 @@ class FcmNotificationSender {
       FcmNotificationSender._internal();
   factory FcmNotificationSender() => _instance;
 
-  // Firebase Service Account credentials
-  // Firebase Console > Project Settings > Service Accounts > Generate new private key
-  static const String _projectId = 'cofit-400b2';
-  static const Map<String, dynamic> _serviceAccountJson = {
+  // FCM v1 API endpoint
+  static const String _fcmScope =
+      'https://www.googleapis.com/auth/firebase.messaging';
+
+  String get _projectId => dotenv.env['FIREBASE_PROJECT_ID']!;
+
+  String get _fcmEndpoint =>
+      'https://fcm.googleapis.com/v1/projects/$_projectId/messages:send';
+
+  /// Build service account JSON from .env variables
+  Map<String, dynamic> get _serviceAccountJson => {
     "type": "service_account",
-    "project_id": "cofit-400b2",
-    "private_key_id": "d400e38b8bb757e9605be8a05193280764c7e3c5",
-    "private_key":
-        "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDDWl6L+Tdsvjgo\nwmHWbnITjedtUcuWauNd3ZXGzSPF50wwmSHrtF4xlgMYjXNmSXIQorEZIJin9/NZ\nJnlrV/SzawR421MX5Ps2gmC8TTFK+OQTfE4nLfJuCSd/Eb5y8PZQED4GKl6QCqCD\nvcN6+vNMyVRVG0c+KIs2I9YWyocOc1fKbL0A5AA1x7Ylr4fvK3U6d/xnzass5veJ\ngJ9oUS1c1v1j2GA75Ljh3W7X2ewtqN/QH8ilaFGzbAMWAfI0xNV5/LyN0wgKJfw+\nLHH6ShGI3o7d1pP2paNDsoXI/Kxw9Jo2vFBvmLACZALgN30ZOIf4XzEFfhP4M1H3\nCQBwhFy/AgMBAAECggEABGgr/NkcYFdUM1TKLzw33oVkj0uKlU2qDmhlcQQpfhC5\n4Av8UDYC3ucpVh4oYP1f5rtwCLot9DrAwC54ciRPg8TH+JzK0MhYP2BALFfTdDae\n1K6iXRwaVw+Y8IhV6F2PSf7BI7WZtnHP/pSP1ENMRmQTpWMwUJ1KiAGza1MRstUm\nMoM6f3rU8N4/Xt09DW547X5I4tJ8glVgx/+vVfM6hli6qTH6EBQBwJBYYo//hBfP\nguV63PX178q48dx1XZ8LsCaj7cfEcJCg55ZTdYOH5e+R39+c/5APR9IDUxtDxfAC\nhbAtDL4gtcBVbKQ9XD6UVDT8xSRutFXpNT1bhHAd2QKBgQDiW44Xd6FaDWRrOTSj\nIQPAMvuaViNm0Dy4NkFUi1bv/4wL25Jg5uABeOj4rC6ndDVx6P5wzQLUQKoy7kEd\nMIQcPGTsVt4ZDNJAWnnLyx7S0ZWz2CURQBB4EsilP/3Te1g/vu/iKtNQ3M5i5SXZ\nrP94FbeAZUfZ6ab3NRJaBmFU9wKBgQDc72kimwJtdexojfVP9yGRMRxI8V1c6ASE\nVnZWrwcq0ty+21dslwflsyE2y0adzyAeB8n+KR4mbCBifJlpSzjKml1/cIDG4A1G\nsc5kb4nj31XdE0bYb3x5k5umGmKWyk0xfOyeo7XvMAYlZWqJVixYbzb2oi90PLKQ\nBH2F7O1seQKBgQCO8VY3x5ojLhXeCFAPPAgMVaXBfuf4Q0Q06D41T5DlGjGsQ0qa\n2vFWvK4Sa1lC8gXWG1aikTRaKUPRyddgwYSL+C+bd/flRc14Sipj4a9jXmr1GWe/\nDv/Xc7U1dcWqyVefWcpOvtCXXfkPRrmyTqc9hClPcaYAHKcNsXwXUbQhXQKBgQDI\n+X/J2vf6WqsS8Q+WDliamvH/6I/lU6nIOF6tu8npSqdDdoOwZDLq4Gf2UDOMmj29\nE5jLetvSV8mdzXpALg0bQBCNPOnn/ygUhuoYst3cS+zvjfmEKOYyMfQExTupr51I\nxzr3lDSLwEPXAMpI4/qy93goIqDIO+6y02Lb0QqpAQKBgFCW3pIjRvgvL95gRVx3\nnplLCxS3pITUO8NRoK9NrEavsUlPr1ZwUAvToieARqQET/Tqnex3TwZU6BGXyF1t\nJ04574AHz/2sppIEB5cusTMyDxvEfqYNFedPJupgg9/iRFZLENKjBq+nviJhyHqC\nc/uhaNjCA0l3VOyIAEuR2Qg2\n-----END PRIVATE KEY-----\n",
-    "client_email":
-        "firebase-adminsdk-fbsvc@cofit-400b2.iam.gserviceaccount.com",
-    "client_id": "113079221388089212701",
+    "project_id": dotenv.env['FIREBASE_PROJECT_ID']!,
+    "private_key_id": dotenv.env['FCM_PRIVATE_KEY_ID']!,
+    "private_key": dotenv.env['FCM_PRIVATE_KEY']!.replaceAll(r'\n', '\n'),
+    "client_email": dotenv.env['FCM_CLIENT_EMAIL']!,
+    "client_id": dotenv.env['FCM_CLIENT_ID']!,
     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
     "token_uri": "https://oauth2.googleapis.com/token",
     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
     "client_x509_cert_url":
-        "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40cofit-400b2.iam.gserviceaccount.com",
+        "https://www.googleapis.com/robot/v1/metadata/x509/${Uri.encodeComponent(dotenv.env['FCM_CLIENT_EMAIL']!)}",
     "universe_domain": "googleapis.com",
   };
-
-  // FCM v1 API endpoint
-  static const String _fcmScope =
-      'https://www.googleapis.com/auth/firebase.messaging';
-  String get _fcmEndpoint =>
-      'https://fcm.googleapis.com/v1/projects/$_projectId/messages:send';
 
   // OAuth2 access token cache
   String? _accessToken;
@@ -106,9 +106,6 @@ class FcmNotificationSender {
     String? postPreview,
     int totalLikes = 1,
   }) async {
-    final fcmToken = await _getUserFcmToken(postOwnerId);
-    if (fcmToken == null) return;
-
     // Facebook-style body
     String body;
     if (totalLikes <= 1) {
@@ -123,8 +120,8 @@ class FcmNotificationSender {
           : '$likerName and $othersText liked your post';
     }
 
-    await _sendFcmMessage(
-      token: fcmToken,
+    await _sendToUser(
+      userId: postOwnerId,
       notification: {
         'title': '❤️ Post Liked!',
         'body': body,
@@ -149,9 +146,6 @@ class FcmNotificationSender {
     String? postPreview,
     int totalComments = 1,
   }) async {
-    final fcmToken = await _getUserFcmToken(postOwnerId);
-    if (fcmToken == null) return;
-
     // Facebook-style title
     String title;
     if (totalComments <= 1) {
@@ -166,8 +160,8 @@ class FcmNotificationSender {
         ? '${commentText.substring(0, 97)}...'
         : commentText;
 
-    await _sendFcmMessage(
-      token: fcmToken,
+    await _sendToUser(
+      userId: postOwnerId,
       notification: {
         'title': title,
         'body': '"$truncatedComment"',
@@ -190,15 +184,12 @@ class FcmNotificationSender {
     required String saverName,
     String? postPreview,
   }) async {
-    final fcmToken = await _getUserFcmToken(postOwnerId);
-    if (fcmToken == null) return;
-
     final body = postPreview != null
         ? '$saverName saved your post: "$postPreview"'
         : '$saverName saved your post';
 
-    await _sendFcmMessage(
-      token: fcmToken,
+    await _sendToUser(
+      userId: postOwnerId,
       notification: {
         'title': '🔖 Post Saved!',
         'body': body,
@@ -219,11 +210,8 @@ class FcmNotificationSender {
     required String followerName,
     required String followerAvatar,
   }) async {
-    final fcmToken = await _getUserFcmToken(followedUserId);
-    if (fcmToken == null) return;
-
-    await _sendFcmMessage(
-      token: fcmToken,
+    await _sendToUser(
+      userId: followedUserId,
       notification: {
         'title': '👤 $followerName',
         'body': 'Ab tumhe follow karta/karti hai!',
@@ -355,11 +343,8 @@ class FcmNotificationSender {
     required int newRank,
     required int totalParticipants,
   }) async {
-    final fcmToken = await _getUserFcmToken(userId);
-    if (fcmToken == null) return;
-
-    await _sendFcmMessage(
-      token: fcmToken,
+    await _sendToUser(
+      userId: userId,
       notification: {
         'title': '📈 Leaderboard Update!',
         'body':
@@ -384,12 +369,9 @@ class FcmNotificationSender {
     required Map<String, int> userRanks, // userId -> rank
   }) async {
     for (final userId in participantIds) {
-      final fcmToken = await _getUserFcmToken(userId);
-      if (fcmToken == null) continue;
-
       final rank = userRanks[userId] ?? 0;
-      await _sendFcmMessage(
-        token: fcmToken,
+      await _sendToUser(
+        userId: userId,
         notification: {
           'title': '🎉 Challenge Complete!',
           'body': '"$challengeName" complete! Final rank: #$rank 🏆',
@@ -416,11 +398,8 @@ class FcmNotificationSender {
     required String achievementTitle,
     required String achievementBody,
   }) async {
-    final fcmToken = await _getUserFcmToken(userId);
-    if (fcmToken == null) return;
-
-    await _sendFcmMessage(
-      token: fcmToken,
+    await _sendToUser(
+      userId: userId,
       notification: {'title': achievementTitle, 'body': achievementBody},
       data: {
         'channel': NotificationChannel.achievementAlert.channelId,
@@ -439,9 +418,6 @@ class FcmNotificationSender {
     required int daysLeft,
     required String planName,
   }) async {
-    final fcmToken = await _getUserFcmToken(userId);
-    if (fcmToken == null) return;
-
     String title;
     String body;
 
@@ -453,8 +429,8 @@ class FcmNotificationSender {
       body = 'Tumhara $planName plan $daysLeft din mein expire hoga.';
     }
 
-    await _sendFcmMessage(
-      token: fcmToken,
+    await _sendToUser(
+      userId: userId,
       notification: {'title': title, 'body': body},
       data: {
         'channel': NotificationChannel.subscriptionAlert.channelId,
@@ -476,11 +452,8 @@ class FcmNotificationSender {
     required String communityName,
     required String newMemberName,
   }) async {
-    final fcmToken = await _getUserFcmToken(communityOwnerId);
-    if (fcmToken == null) return;
-
-    await _sendFcmMessage(
-      token: fcmToken,
+    await _sendToUser(
+      userId: communityOwnerId,
       notification: {
         'title': '🎉 New Member!',
         'body': '$newMemberName ne $communityName join kar li!',
@@ -507,22 +480,19 @@ class FcmNotificationSender {
     String? postPreview,
   }) async {
     // 1. Post creator ko notify karo
-    final fcmToken = await _getUserFcmToken(postOwnerId);
-    if (fcmToken != null) {
-      await _sendFcmMessage(
-        token: fcmToken,
-        notification: {
-          'title': '✅ Post Approved!',
-          'body': 'Your post has been approved and is now live!',
-        },
-        data: {
-          'channel': NotificationChannel.socialActivity.channelId,
-          'social_type': 'post_approved',
-          'post_id': postId,
-          'action_route': '/community/post/$postId',
-        },
-      );
-    }
+    await _sendToUser(
+      userId: postOwnerId,
+      notification: {
+        'title': '✅ Post Approved!',
+        'body': 'Your post has been approved and is now live!',
+      },
+      data: {
+        'channel': NotificationChannel.socialActivity.channelId,
+        'social_type': 'post_approved',
+        'post_id': postId,
+        'action_route': '/community/post/$postId',
+      },
+    );
 
     // 2. Sab community subscribers ko notify karo via topic
     final body = postPreview != null
@@ -551,15 +521,12 @@ class FcmNotificationSender {
     required String postId,
     String? rejectionReason,
   }) async {
-    final fcmToken = await _getUserFcmToken(postOwnerId);
-    if (fcmToken == null) return;
-
     final body = rejectionReason != null && rejectionReason.isNotEmpty
         ? 'Your post was not approved. Reason: $rejectionReason'
         : 'Your post was not approved. Please review community guidelines.';
 
-    await _sendFcmMessage(
-      token: fcmToken,
+    await _sendToUser(
+      userId: postOwnerId,
       notification: {
         'title': '❌ Post Not Approved',
         'body': body,
@@ -577,45 +544,74 @@ class FcmNotificationSender {
   // PRIVATE HELPER METHODS
   // ============================================================
 
-  /// Single user ka FCM token lo
-  Future<String?> _getUserFcmToken(String userId) async {
+  /// Send notification to ALL devices of a single user.
+  Future<void> _sendToUser({
+    required String userId,
+    required Map<String, String> notification,
+    required Map<String, String> data,
+    String? imageUrl,
+  }) async {
+    final tokens = await _getUserFcmTokens(userId);
+    if (tokens.isEmpty) return;
+    await _sendMulticastMessage(
+      tokens: tokens,
+      notification: notification,
+      data: data,
+      imageUrl: imageUrl,
+    );
+  }
+
+  /// Get ALL FCM tokens for a user (multi-device support).
+  /// Queries `user_devices` table, filters out devices inactive for 30+ days.
+  Future<List<String>> _getUserFcmTokens(String userId) async {
     try {
-      // Supabase se user profile fetch karo
-      final result = await AuthService.to.fetchUserById(userId);
-      if (result != null) {
-        return result.fcmToken;
-      } else {
-        return null;
-      }
+      final cutoff =
+          DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+
+      final rows = await SupabaseService.to.client
+          .from('user_devices')
+          .select('fcm_token')
+          .eq('user_id', userId)
+          .gte('last_active', cutoff);
+
+      return (rows as List)
+          .map((r) => r['fcm_token'] as String)
+          .where((t) => t.isNotEmpty)
+          .toList();
     } catch (e) {
       developer.log(
-        'FCM token fetch failed: $e',
+        'FCM tokens fetch failed: $e',
         name: 'FCMSender',
         level: 900,
       );
-      return null;
+      return [];
     }
   }
 
-  /// Multiple users ke FCM tokens ek saath lo
+  /// Multiple users ke tokens ek saath lo (batch via Supabase .in_())
   Future<List<String>> _getMultipleUserTokens(List<String> userIds) async {
-    final tokens = <String>[];
-
     try {
-      // TODO: Batch fetch optimize karo with Supabase .in() query
-      for (final userId in userIds) {
-        final token = await _getUserFcmToken(userId);
-        if (token != null) tokens.add(token);
-      }
+      final cutoff =
+          DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+
+      final rows = await SupabaseService.to.client
+          .from('user_devices')
+          .select('fcm_token')
+          .inFilter('user_id', userIds)
+          .gte('last_active', cutoff);
+
+      return (rows as List)
+          .map((r) => r['fcm_token'] as String)
+          .where((t) => t.isNotEmpty)
+          .toList();
     } catch (e) {
       developer.log(
         'Batch token fetch failed: $e',
         name: 'FCMSender',
         level: 900,
       );
+      return [];
     }
-
-    return tokens;
   }
 
   /// Single device ko notification bhejo (FCM v1 API)
@@ -672,12 +668,32 @@ class FcmNotificationSender {
           name: 'FCMSender',
           level: 900,
         );
+
+        // Token invalid/unregistered — remove stale device row
+        final bodyStr = response.body.toLowerCase();
+        if (response.statusCode == 404 ||
+            bodyStr.contains('unregistered') ||
+            bodyStr.contains('not_found')) {
+          _removeStaleToken(token);
+        }
+
         return false;
       }
     } catch (e) {
       developer.log('FCM send error: $e', name: 'FCMSender', level: 900);
       return false;
     }
+  }
+
+  /// Remove a stale FCM token from user_devices (fire-and-forget)
+  void _removeStaleToken(String token) {
+    SupabaseService.to.client
+        .from('user_devices')
+        .delete()
+        .eq('fcm_token', token)
+        .then((_) {
+      developer.log('Stale token removed', name: 'FCMSender');
+    }).catchError((_) {});
   }
 
   /// Firebase topic par notification bhejo (sab subscribers ko)

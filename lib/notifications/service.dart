@@ -5,7 +5,7 @@
 // ============================================================
 
 import 'dart:developer' as developer;
-
+import 'package:flutter/foundation.dart';
 import 'package:cofit_collective/data/models/notification_model.dart';
 import 'package:cofit_collective/data/repositories/notification_repository.dart';
 import 'package:cofit_collective/notifications/background_service.dart';
@@ -38,8 +38,12 @@ class NotificationService {
     required void Function(String route) onNavigate,
     required void Function(String fcmToken) onFcmTokenReceived,
   }) async {
-    if (_initialized) return;
+    if (_initialized) {
+      debugPrint('[NotifService] Already initialized, skipping');
+      return;
+    }
 
+    debugPrint('[NotifService] Starting initialization...');
     this.onNavigate = onNavigate;
 
     // Local notifications setup
@@ -49,8 +53,10 @@ class NotificationService {
         if (route != null) onNavigate(route);
       },
     );
+    debugPrint('[NotifService] Local service initialized');
 
     await _local.requestPermissions();
+    debugPrint('[NotifService] Permissions requested');
 
     // Firebase setup
     await _firebase.initialize(
@@ -59,15 +65,13 @@ class NotificationService {
         if (route != null) onNavigate(route);
       },
     );
+    debugPrint('[NotifService] Firebase service initialized');
 
     // User settings load karo
     await _loadSettings();
 
     _initialized = true;
-    developer.log(
-      'NotificationService fully initialized',
-      name: 'Notifications',
-    );
+    debugPrint('[NotifService] Fully initialized');
   }
 
   // ============================================================

@@ -362,24 +362,6 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
               ],
             ),
           ),
-          // Workout elapsed time
-          Obx(
-            () => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                controller.formattedRemaining,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'monospace',
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get/get.dart';
 
@@ -14,21 +16,16 @@ class SupabaseService extends GetxService {
   String? get userId => currentUser?.id;
   bool get isAuthenticated => currentUser != null;
 
-  // Supabase configuration - Replace with your actual values
-  static const String _supabaseUrl = 'https://acoagkctohcvejcfzsna.supabase.co';
-  static const String _supabaseAnonKey =
-      'sb_publishable_qbPwEZc2y1ieI-x64ip-Pg_mEagi7ag';
-
   /// Initialize Supabase
   Future<SupabaseService> init() async {
     await Supabase.initialize(
-      url: _supabaseUrl,
-      anonKey: _supabaseAnonKey,
+      url: dotenv.env['SUPABASE_URL']!,
+      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
       authOptions: const FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce,
       ),
       realtimeClientOptions: const RealtimeClientOptions(
-        logLevel: RealtimeLogLevel.info,
+        logLevel: RealtimeLogLevel.error,
       ),
     );
 
@@ -130,7 +127,7 @@ class SupabaseService extends GetxService {
 
       return _client.storage.from(bucket).getPublicUrl(path);
     } on Exception catch (e) {
-      print(e);
+      debugPrint('Upload error: $e');
       rethrow;
     }
   }

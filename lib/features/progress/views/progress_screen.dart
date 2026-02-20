@@ -340,11 +340,20 @@ class ProgressScreen extends GetView<ProgressController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('This Month', style: Theme.of(context).textTheme.titleLarge),
+        Builder(builder: (context) {
+          const monthNames = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December',
+          ];
+          final now = DateTime.now();
+          return Text(
+            '${monthNames[now.month - 1]} ${now.year}',
+            style: Theme.of(context).textTheme.titleLarge,
+          );
+        }),
         const SizedBox(height: 16),
         Obx(() {
           final now = DateTime.now();
-          final today = DateTime(now.year, now.month, now.day);
           final monthStart = DateTime(now.year, now.month, 1);
           final monthEnd = DateTime(now.year, now.month + 1, 0);
 
@@ -353,7 +362,7 @@ class ProgressScreen extends GetView<ProgressController> {
             Duration(days: (monthStart.weekday - 1) % 7),
           );
 
-          // Build dynamic weeks
+          // Build Monday-to-Sunday weeks for the entire month
           final weekWidgets = <Widget>[];
           var weekStart = firstMonday;
           int weekNum = 1;
@@ -364,9 +373,8 @@ class ProgressScreen extends GetView<ProgressController> {
 
             for (int d = 0; d < 7; d++) {
               final day = weekStart.add(Duration(days: d));
-              if (day.month == now.month &&
-                  day.year == now.year &&
-                  !day.isAfter(today)) {
+              // Count all days of this week that fall within the month
+              if (day.month == now.month && day.year == now.year) {
                 total++;
                 if (controller.workoutDates.any(
                   (wd) =>

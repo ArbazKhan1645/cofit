@@ -296,7 +296,7 @@ class WeeklyScheduleController extends BaseController {
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
-      print(e);
+      debugPrint('Save schedule error: $e');
       Get.snackbar(
         'Error',
         'Failed to save schedule',

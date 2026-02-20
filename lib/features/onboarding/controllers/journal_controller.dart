@@ -7,6 +7,7 @@ import '../../../core/services/fitness_calculation_service.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/widgets/widgets.dart';
+import 'auth_controller.dart';
 
 class JournalController extends BaseController {
   final _storage = GetStorage();
@@ -713,8 +714,9 @@ class JournalController extends BaseController {
     }
   }
 
-  void skipOnboarding() {
+  Future<void> skipOnboarding() async {
     _storage.write('hasCompletedOnboarding', true);
+    await AuthController.ensureHomeReady();
     Get.offAllNamed(AppRoutes.main);
   }
 

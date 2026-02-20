@@ -131,7 +131,7 @@ class AdminWorkoutController extends BaseController {
           .map((json) => WorkoutModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print(e);
+      debugPrint('Load workouts error: $e');
       setError(e.toString());
     }
     setLoading(false);
@@ -978,7 +978,7 @@ class AdminWorkoutController extends BaseController {
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
-      print(e);
+      debugPrint('Save workout error: $e');
       Get.snackbar(
         'Error',
         'Failed to save workout',
