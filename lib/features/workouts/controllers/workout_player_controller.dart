@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:video_player/video_player.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import '../../../core/services/progress_service.dart';
 import '../../../core/services/workout_resume_service.dart';
 import '../../../data/models/workout_model.dart';
@@ -28,8 +29,9 @@ class WorkoutPlayerController extends GetxController {
   final RxInt elapsedSeconds = 0.obs;
   final RxInt completedExerciseCount = 0.obs;
 
-  // Active controller for currently playing exercise
-  VideoPlayerController? videoController;
+  // Active player for currently playing exercise (media_kit)
+  Player? _player;
+  VideoController? videoController;
 
   // Video UI state
   final RxDouble videoProgress = 0.0.obs;
@@ -37,6 +39,13 @@ class WorkoutPlayerController extends GetxController {
   final RxBool isVideoInitialized = false.obs;
   final RxBool isVideoError = false.obs;
   final RxInt videoRemainingSeconds = 0.obs;
+
+  // Stream subscriptions (media_kit)
+  StreamSubscription? _positionSub;
+  StreamSubscription? _durationSub;
+  StreamSubscription? _completedSub;
+  StreamSubscription? _playingSub;
+  Duration _videoDuration = Duration.zero;
 
   // Guards
   bool _exerciseFinishCalled = false;
@@ -91,8 +100,7 @@ class WorkoutPlayerController extends GetxController {
   void onClose() {
     _disposed = true;
     _disposeTimers();
-    videoController?.dispose();
-    videoController = null;
+    _disposeCurrentPlayer();
     _stopwatch.stop();
     super.onClose();
   }
@@ -102,6 +110,22 @@ class WorkoutPlayerController extends GetxController {
     _restTimer?.cancel();
     _elapsedTimer?.cancel();
     _exerciseTimer?.cancel();
+  }
+
+  /// Disposes media_kit Player and cancels stream subscriptions.
+  void _disposeCurrentPlayer() {
+    _positionSub?.cancel();
+    _durationSub?.cancel();
+    _completedSub?.cancel();
+    _playingSub?.cancel();
+    _positionSub = null;
+    _durationSub = null;
+    _completedSub = null;
+    _playingSub = null;
+    _player?.dispose();
+    _player = null;
+    videoController = null;
+    _videoDuration = Duration.zero;
   }
 
   // ============================================
@@ -170,116 +194,71 @@ class WorkoutPlayerController extends GetxController {
   }
 
   // ============================================
-  // VIDEO LOAD + PLAY
+  // VIDEO LOAD + PLAY (media_kit)
   // ============================================
 
   Future<void> _loadAndPlayVideo(int idx, WorkoutExerciseModel exercise) async {
-    // Clean up any previous controller
-    videoController?.dispose();
-    videoController = null;
+    _disposeCurrentPlayer();
     isVideoInitialized.value = false;
     isVideoError.value = false;
 
     final url = exercise.videoUrl!;
-    final vc = VideoPlayerController.networkUrl(Uri.parse(url));
 
     try {
-      await vc.initialize();
+      final player = Player();
+      final vc = VideoController(player);
+
+      _player = player;
+      videoController = vc;
+
+      // Listen to duration changes
+      _durationSub = player.stream.duration.listen((dur) {
+        _videoDuration = dur;
+      });
+
+      // Listen to position → update progress bar
+      _positionSub = player.stream.position.listen((pos) {
+        if (_videoDuration.inMilliseconds > 0) {
+          videoProgress.value =
+              (pos.inMilliseconds / _videoDuration.inMilliseconds)
+                  .clamp(0.0, 1.0);
+        }
+      });
+
+      // Listen to playing state → update play/pause icon
+      _playingSub = player.stream.playing.listen((playing) {
+        isVideoPlaying.value = playing;
+      });
+
+      // Listen to completed → auto-advance to next exercise
+      _completedSub = player.stream.completed.listen((completed) {
+        if (completed &&
+            !_exerciseFinishCalled &&
+            currentExerciseIndex.value == idx) {
+          _exerciseFinishCalled = true;
+          videoProgress.value = 1.0;
+          _onExerciseFinished();
+        }
+      });
+
+      // Open and play (play: true by default)
+      await player.open(Media(url));
 
       // Guard: screen may have moved on (user went back, etc.)
       if (_disposed || currentExerciseIndex.value != idx) {
-        vc.dispose();
+        _disposeCurrentPlayer();
         return;
       }
 
-      videoController = vc;
       isVideoInitialized.value = true;
-
-      debugPrint('[VideoPlayer] Init duration: ${vc.value.duration.inMilliseconds}ms for "${exercise.name}"');
-
       videoProgress.value = 0.0;
-      videoRemainingSeconds.value = vc.value.duration.inSeconds;
-
-      await vc.play();
       isVideoPlaying.value = true;
-
-      _attachVideoListener(vc, idx);
     } catch (e) {
-      vc.dispose();
+      _disposeCurrentPlayer();
       isVideoError.value = true;
       // Fallback: 20-second timer so workout can continue
       _startExerciseCountdownTimer(20);
     }
-  }
-
-  // ============================================
-  // VIDEO LISTENER
-  //
-  // Uses LIVE duration/position from each frame (not captured at init).
-  // Progress only shown if live duration > 1s (avoids 100% jump).
-  // Wall-clock guard prevents any completion within first 3 seconds.
-  // ============================================
-
-  void _attachVideoListener(VideoPlayerController vc, int idx) {
-    final startTime = DateTime.now();
-    bool loggedFirstFrame = false;
-
-    void listener() {
-      // Stop if disposed or a different exercise is active
-      if (_disposed ||
-          currentExerciseIndex.value != idx ||
-          videoController != vc) {
-        vc.removeListener(listener);
-        return;
-      }
-
-      final val = vc.value;
-      if (!val.isInitialized) return;
-
-      final durationMs = val.duration.inMilliseconds;
-      final positionMs = val.position.inMilliseconds;
-      final wallClockMs = DateTime.now().difference(startTime).inMilliseconds;
-
-      // Log first frame for debugging
-      if (!loggedFirstFrame) {
-        loggedFirstFrame = true;
-        debugPrint(
-            '[VideoPlayer] First frame: duration=${durationMs}ms, position=${positionMs}ms, isCompleted=${val.isCompleted}');
-      }
-
-      // Progress: only update if live duration > 1 second
-      if (durationMs > 1000) {
-        videoProgress.value = (positionMs / durationMs).clamp(0.0, 1.0);
-        final remainingMs = (durationMs - positionMs).clamp(0, durationMs);
-        videoRemainingSeconds.value = (remainingMs / 1000).ceil();
-      }
-
-      // Update play/pause icon
-      isVideoPlaying.value = val.isPlaying;
-
-      // Completion detection
-      if (_exerciseFinishCalled) return;
-
-      // GUARD: Must have been playing for at least 3 seconds wall-clock
-      if (wallClockMs < 3000) return;
-
-      // Primary: video player says completed AND position is meaningful
-      final completedByPlayer = val.isCompleted && positionMs > 1000;
-      // Backup: position near end of a valid duration (> 3s)
-      final completedByPosition =
-          durationMs > 3000 && positionMs >= (durationMs - 500);
-
-      if (completedByPlayer || completedByPosition) {
-        debugPrint(
-            '[VideoPlayer] Completed: byPlayer=$completedByPlayer, byPosition=$completedByPosition, '
-            'duration=${durationMs}ms, position=${positionMs}ms, wallClock=${wallClockMs}ms');
-        _exerciseFinishCalled = true;
-        vc.removeListener(listener);
-        _onExerciseFinished();
-      }
-    }
-
-    vc.addListener(listener);
   }
 
   // ============================================
@@ -313,20 +292,19 @@ class WorkoutPlayerController extends GetxController {
   // ============================================
 
   void togglePlayPause() {
-    final vc = videoController;
-    if (vc != null && vc.value.isInitialized) {
-      if (vc.value.isPlaying) {
-        vc.pause();
+    final player = _player;
+    if (player != null) {
+      if (player.state.playing) {
+        player.pause();
         playerState.value = PlayerState.paused;
         _stopwatch.stop();
       } else {
-        vc.play();
+        player.play();
         playerState.value = PlayerState.playing;
         _stopwatch.start();
       }
-      isVideoPlaying.value = vc.value.isPlaying;
     } else {
-      // No video controller (timer-based exercise)
+      // No player (timer-based exercise)
       if (playerState.value == PlayerState.paused) {
         playerState.value = PlayerState.playing;
         _stopwatch.start();
@@ -356,8 +334,7 @@ class WorkoutPlayerController extends GetxController {
 
   void _tearDownCurrentVideo() {
     _exerciseTimer?.cancel();
-    videoController?.dispose();
-    videoController = null;
+    _disposeCurrentPlayer();
     isVideoInitialized.value = false;
     isVideoError.value = false;
     videoRemainingSeconds.value = 0;
@@ -366,8 +343,7 @@ class WorkoutPlayerController extends GetxController {
   }
 
   void _onExerciseFinished() {
-    videoController?.dispose();
-    videoController = null;
+    _disposeCurrentPlayer();
     isVideoInitialized.value = false;
     isVideoError.value = false;
     videoRemainingSeconds.value = 0;
@@ -520,6 +496,7 @@ class WorkoutPlayerController extends GetxController {
     if (confirmed == true) {
       _stopwatch.stop();
       _disposeTimers();
+      _disposeCurrentPlayer();
       _resumeService.saveProgress(
         workoutId: workout.id,
         exerciseIndex: currentExerciseIndex.value,

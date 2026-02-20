@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:video_player/video_player.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_colors.dart';
@@ -139,12 +139,10 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
                   // 1. Video successfully loaded → show video
                   if (controller.isVideoInitialized.value &&
                       controller.videoController != null) {
-                    return Center(
-                      child: AspectRatio(
-                        aspectRatio:
-                            controller.videoController!.value.aspectRatio,
-                        child: VideoPlayer(controller.videoController!),
-                      ),
+                    return Video(
+                      controller: controller.videoController!,
+                      controls: NoVideoControls,
+                      fit: BoxFit.contain,
                     );
                   }
 
@@ -170,6 +168,7 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
                       ),
                     ),
                   ),
+
               ],
             ),
           ),

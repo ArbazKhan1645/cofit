@@ -219,9 +219,9 @@ class WorkoutFormScreen extends GetView<AdminWorkoutController> {
             TextFormField(
               controller: controller.videoUrlController,
               decoration: const InputDecoration(
-                labelText: 'Video URL (optional)',
+                labelText: 'Video URL *',
                 prefixIcon: Icon(Iconsax.link),
-                hintText: 'YouTube, Vimeo, etc.',
+                hintText: 'Direct video link (mp4, etc.)',
               ),
               keyboardType: TextInputType.url,
               validator: AdminWorkoutController.validateVideoUrl,

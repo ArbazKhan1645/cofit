@@ -92,8 +92,18 @@ class ProgressService extends GetxService {
         totalWorkouts.value = stats.totalWorkouts;
         totalMinutes.value = stats.totalMinutes;
         totalCalories.value = stats.totalCalories;
-        currentStreak.value = stats.currentStreak;
         longestStreak.value = stats.longestStreak;
+      },
+    );
+    // Calculate streak from user_progress (source of truth)
+    final streakResult = await _progressRepo.calculateStreakFromProgress();
+    streakResult.fold(
+      (error) {},
+      (streak) {
+        currentStreak.value = streak;
+        if (streak > longestStreak.value) {
+          longestStreak.value = streak;
+        }
       },
     );
   }
@@ -157,11 +167,8 @@ class ProgressService extends GetxService {
 
     unawaited(_progressRepo.callUpdateMonthProgress());
 
-    // 3. Re-read streak from DB after trigger fires
-    unawaited(Future.delayed(
-      const Duration(milliseconds: 500),
-      () => _loadUserStats(),
-    ));
+    // 3. Calculate streak from user_progress and update users table
+    unawaited(_calculateAndUpdateStreak());
   }
 
   void _updateStatsOptimistically(int durationMinutes, int caloriesBurned) {
@@ -205,6 +212,35 @@ class ProgressService extends GetxService {
     // Add today to workout dates
     workoutDates.add(todayDate);
     workoutDates.refresh();
+  }
+
+  // ============================================
+  // STREAK CALCULATION
+  // ============================================
+
+  Future<void> _calculateAndUpdateStreak() async {
+    try {
+      final result = await _progressRepo.calculateStreakFromProgress();
+      result.fold(
+        (error) {},
+        (streak) {
+          currentStreak.value = streak;
+          final longest = streak > longestStreak.value
+              ? streak
+              : longestStreak.value;
+          longestStreak.value = longest;
+
+          // Persist streak + totals to users table
+          _progressRepo.updateUserStats(
+            currentStreak: streak,
+            longestStreak: longest,
+            totalWorkouts: totalWorkouts.value,
+            totalMinutes: totalMinutes.value,
+            totalCalories: totalCalories.value,
+          );
+        },
+      );
+    } catch (_) {}
   }
 
   // ============================================

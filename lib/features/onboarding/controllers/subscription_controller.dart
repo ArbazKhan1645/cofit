@@ -104,15 +104,7 @@ class SubscriptionController extends BaseController {
   Future<void> startFreeTrial() async {
     isProcessing.value = true;
 
-    try {
-      final sender = FcmNotificationSender();
-      await sender.sendPostLikeNotification(
-        postOwnerId: '415064f4-de95-4d64-ba2d-83c886060713',
-        postId: '222',
-        likerName: 'Arbaz Khan',
-        postPreview: 'Aaj ki workout complete...',
-      );
-    } finally {
+    try {} finally {
       isProcessing.value = false;
     }
   }

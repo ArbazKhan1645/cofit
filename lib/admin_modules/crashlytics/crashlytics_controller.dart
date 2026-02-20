@@ -130,8 +130,7 @@ class AdminCrashlyticsController extends BaseController {
             .limit(500);
 
         crashLogs.value = (response as List)
-            .map((json) =>
-                CrashLogModel.fromJson(json as Map<String, dynamic>))
+            .map((json) => CrashLogModel.fromJson(json as Map<String, dynamic>))
             .toList();
         setSuccess();
       } catch (e2) {
@@ -152,6 +151,7 @@ class AdminCrashlyticsController extends BaseController {
     try {
       await _supabase.client.from('crash_logs').delete().eq('id', id);
       crashLogs.removeWhere((c) => c.id == id);
+      Get.back();
       Get.snackbar(
         'Deleted',
         'Crash log removed',
@@ -168,7 +168,10 @@ class AdminCrashlyticsController extends BaseController {
 
   Future<void> clearAllLogs() async {
     try {
-      await _supabase.client.from('crash_logs').delete().neq('id', '');
+      await _supabase.client
+          .from('crash_logs')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000');
       crashLogs.clear();
       Get.snackbar(
         'Cleared',
@@ -176,6 +179,7 @@ class AdminCrashlyticsController extends BaseController {
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
+      print(e);
       Get.snackbar(
         'Error',
         'Failed to clear logs',

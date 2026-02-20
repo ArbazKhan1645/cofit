@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
-
 import 'package:cofit_collective/core/services/crashlytics_service.dart';
 import 'package:cofit_collective/core/services/device_service.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:cofit_collective/core/services/supabase_service.dart';
 import 'package:cofit_collective/data/models/user_model.dart';
 import 'package:cofit_collective/firebase_options.dart';
@@ -20,6 +20,7 @@ void main() async {
   // Crashlytics — puri app ko guarded zone mai run karo
   await CrashlyticsService.runGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+    MediaKit.ensureInitialized();
 
     // 0️⃣ Environment variables load karo (secrets .env file se)
     await dotenv.load(fileName: '.env');
@@ -162,7 +163,8 @@ Future<void> _runStreakCheck(BackgroundNotificationService bgService) async {
     } catch (_) {
       // Session expired — check from lastWorkoutDate
       if (lastWorkoutDate != null) {
-        hasWorkedOutToday = lastWorkoutDate.year == now.year &&
+        hasWorkedOutToday =
+            lastWorkoutDate.year == now.year &&
             lastWorkoutDate.month == now.month &&
             lastWorkoutDate.day == now.day;
       }
@@ -253,8 +255,11 @@ Future<void> _runWeeklyReport(BackgroundNotificationService bgService) async {
     final now = DateTime.now();
 
     // This week: Monday se aaj tak
-    final thisWeekStart = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
+    final thisWeekStart = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
 
     // Last week
     final lastWeekStart = thisWeekStart.subtract(const Duration(days: 7));
@@ -279,8 +284,9 @@ Future<void> _runWeeklyReport(BackgroundNotificationService bgService) async {
     // Weekly report generate karo
     await bgService.generateAndShowWeeklyReport(
       weekWorkouts: List<Map<String, dynamic>>.from(thisWeekWorkouts as List),
-      previousWeekWorkouts:
-          List<Map<String, dynamic>>.from(lastWeekWorkouts as List),
+      previousWeekWorkouts: List<Map<String, dynamic>>.from(
+        lastWeekWorkouts as List,
+      ),
     );
 
     // Monthly report — sirf mahine ki 1 tarikh ko
@@ -301,8 +307,7 @@ Future<void> _runWeeklyReport(BackgroundNotificationService bgService) async {
       await bgService.generateAndShowMonthlyReport(
         month: lastMonth,
         year: lastMonthYear,
-        monthWorkouts:
-            List<Map<String, dynamic>>.from(monthWorkouts as List),
+        monthWorkouts: List<Map<String, dynamic>>.from(monthWorkouts as List),
       );
     }
 

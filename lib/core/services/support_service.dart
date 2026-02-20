@@ -4,6 +4,7 @@ import 'package:iconsax/iconsax.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../../features/support/support_controller.dart';
 import 'supabase_service.dart';
 
 /// Reusable support ticket service.
@@ -13,10 +14,21 @@ class SupportService {
 
   /// Show a bottom sheet to raise a new support ticket.
   /// [screenReference] is an optional tag to track which screen the ticket came from.
+  static const _topics = [
+    'Subscription',
+    'Workouts',
+    'Meals & Recipes',
+    'Challenges',
+    'Account',
+    'App Issues',
+    'Other',
+  ];
+
   static void showRaiseTicketSheet({String? screenReference}) {
     final subjectController = TextEditingController();
     final messageController = TextEditingController();
     final isSubmitting = false.obs;
+    final selectedTopic = RxnString();
 
     Get.bottomSheet(
       Container(
@@ -70,6 +82,54 @@ class SupportService {
                 ],
               ),
               const SizedBox(height: 20),
+              // Topic selection
+              const Text(
+                'Select Topic',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Obx(() => Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _topics
+                        .map((topic) => GestureDetector(
+                              onTap: () {
+                                selectedTopic.value =
+                                    selectedTopic.value == topic ? null : topic;
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: selectedTopic.value == topic
+                                      ? AppColors.primary
+                                      : AppColors.bgCream,
+                                  borderRadius: AppRadius.pill,
+                                  border: Border.all(
+                                    color: selectedTopic.value == topic
+                                        ? AppColors.primary
+                                        : AppColors.borderLight,
+                                  ),
+                                ),
+                                child: Text(
+                                  topic,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: selectedTopic.value == topic
+                                        ? Colors.white
+                                        : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ))
+                        .toList(),
+                  )),
+              const SizedBox(height: 14),
               // Subject
               TextField(
                 controller: subjectController,
@@ -116,6 +176,7 @@ class SupportService {
                                 messageController: messageController,
                                 screenReference: screenReference,
                                 isSubmitting: isSubmitting,
+                                topic: selectedTopic.value,
                               ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
@@ -147,11 +208,12 @@ class SupportService {
     required TextEditingController messageController,
     String? screenReference,
     required RxBool isSubmitting,
+    String? topic,
   }) async {
-    final subject = subjectController.text.trim();
+    final rawSubject = subjectController.text.trim();
     final message = messageController.text.trim();
 
-    if (subject.isEmpty) {
+    if (rawSubject.isEmpty) {
       Get.snackbar('Missing Subject', 'Please enter a subject',
           snackPosition: SnackPosition.BOTTOM);
       return;
@@ -162,6 +224,9 @@ class SupportService {
       return;
     }
 
+    final subject =
+        topic != null ? '[$topic] $rawSubject' : rawSubject;
+
     isSubmitting.value = true;
     try {
       await createTicket(
@@ -170,6 +235,10 @@ class SupportService {
         screenReference: screenReference,
       );
       Get.back(); // close bottom sheet
+      // Refresh ticket list if controller is active
+      if (Get.isRegistered<SupportController>()) {
+        Get.find<SupportController>().loadMyTickets();
+      }
       Get.snackbar('Ticket Submitted', 'We\'ll get back to you soon!',
           snackPosition: SnackPosition.BOTTOM);
     } catch (e) {

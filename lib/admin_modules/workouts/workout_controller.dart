@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/services/media/media_service.dart';
@@ -345,7 +347,7 @@ class AdminWorkoutController extends BaseController {
 
   /// Validate URL format
   static String? validateVideoUrl(String? value) {
-    if (value == null || value.trim().isEmpty) return null; // optional
+    if (value == null || value.trim().isEmpty) return null;
     final url = value.trim();
     final uri = Uri.tryParse(url);
     if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
@@ -355,6 +357,81 @@ class AdminWorkoutController extends BaseController {
       return 'URL must start with http or https';
     }
     return null;
+  }
+
+  /// Validate that a video URL is actually playable using media_kit Player.
+  /// Shows a loading dialog during validation.
+  /// Returns true if the video is valid and playable.
+  static Future<bool> validateVideoPlayback(String url) async {
+    Get.dialog(
+      const PopScope(
+        canPop: false,
+        child: Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Validating video...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+
+    final player = Player();
+    bool isValid = false;
+
+    try {
+      final completer = Completer<bool>();
+
+      final durationSub = player.stream.duration.listen((duration) {
+        if (duration > Duration.zero && !completer.isCompleted) {
+          completer.complete(true);
+        }
+      });
+
+      final errorSub = player.stream.error.listen((error) {
+        if (!completer.isCompleted) {
+          completer.complete(false);
+        }
+      });
+
+      await player.open(Media(url));
+
+      isValid = await completer.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => false,
+      );
+
+      await durationSub.cancel();
+      await errorSub.cancel();
+    } catch (_) {
+      isValid = false;
+    } finally {
+      player.dispose();
+    }
+
+    if (Get.isDialogOpen == true) {
+      Get.back();
+    }
+
+    if (!isValid) {
+      Get.snackbar(
+        'Invalid Video',
+        'Could not play this video. Please provide a valid video source.',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 4),
+      );
+    }
+
+    return isValid;
   }
 
   /// Get resolved video URL for save
@@ -848,17 +925,29 @@ class AdminWorkoutController extends BaseController {
   // ============================================
 
   Future<void> saveWorkout() async {
-    // if (!formKey.currentState!.validate()) return;
-    // if (selectedTrainerId.value.isEmpty) {
-    //   Get.snackbar(
-    //     'Error',
-    //     'Please select a trainer',
-    //     snackPosition: SnackPosition.BOTTOM,
-    //   );
-    //   return;
-    // }
-
     isSaving.value = true;
+
+    // Video is required
+    final videoUrl = resolvedVideoUrl;
+    if (videoUrl.isEmpty) {
+      Get.snackbar(
+        'Error',
+        'Video is required. Please provide a video URL or upload a video.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      isSaving.value = false;
+      return;
+    }
+
+    // Validate video URL playback (only for URL mode, uploads are already valid)
+    if (videoSource.value == 'url') {
+      final isValid = await validateVideoPlayback(videoUrl);
+      if (!isValid) {
+        isSaving.value = false;
+        return;
+      }
+    }
+
     try {
       String? newThumbnailUrl;
       if (selectedImageBytes.value != null) {

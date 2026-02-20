@@ -1,4 +1,3 @@
-import 'package:cofit_collective/core/services/support_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
@@ -10,7 +9,6 @@ import '../controllers/profile_controller.dart';
 import '../../community/controllers/community_controller.dart';
 import '../../community/views/my_posts_screen.dart';
 import '../../community/views/saved_posts_screen.dart';
-import 'help_support_screen.dart';
 import 'about_screen.dart';
 
 class ProfileScreen extends GetView<ProfileController> {
@@ -26,8 +24,7 @@ class ProfileScreen extends GetView<ProfileController> {
           IconButton(
             icon: const Icon(Iconsax.setting_2),
             onPressed: () {
-              SupportService.showRaiseTicketSheet(screenReference: 'AnyScreen');
-              // Get.toNamed(AppRoutes.settings);
+              Get.toNamed(AppRoutes.settings);
             },
           ),
         ],
@@ -287,7 +284,7 @@ class ProfileScreen extends GetView<ProfileController> {
             context,
             icon: Iconsax.message_question,
             title: 'Help & Support',
-            onTap: () => Get.to(() => const HelpSupportScreen()),
+            onTap: () => Get.toNamed(AppRoutes.supportTickets),
           ),
           _buildDivider(),
           _buildMenuItem(

@@ -158,6 +158,87 @@ class ProgressRepository extends BaseRepository {
     }
   }
 
+  /// Calculate current streak from user_progress table.
+  /// Counts consecutive days with at least one workout going backwards from today.
+  Future<Result<int>> calculateStreakFromProgress() async {
+    try {
+      if (userId == null) return Result.success(0);
+
+      // Fetch distinct workout dates descending (last 90 days)
+      final cutoff = DateTime.now().subtract(const Duration(days: 90));
+      final response = await client
+          .from('user_progress')
+          .select('completed_at')
+          .eq('user_id', userId!)
+          .gte('completed_at', cutoff.toIso8601String())
+          .order('completed_at', ascending: false);
+
+      if ((response as List).isEmpty) return Result.success(0);
+
+      // Extract unique dates (date only, no time)
+      final uniqueDates = <DateTime>{};
+      for (final row in response) {
+        final dt = DateTime.parse(row['completed_at'] as String);
+        uniqueDates.add(DateTime(dt.year, dt.month, dt.day));
+      }
+
+      // Sort descending
+      final sortedDates = uniqueDates.toList()
+        ..sort((a, b) => b.compareTo(a));
+
+      final today = DateTime.now();
+      final todayDate = DateTime(today.year, today.month, today.day);
+      final yesterdayDate = todayDate.subtract(const Duration(days: 1));
+
+      // Streak must start from today or yesterday
+      if (sortedDates.first != todayDate &&
+          sortedDates.first != yesterdayDate) {
+        return Result.success(0);
+      }
+
+      // Count consecutive days
+      int streak = 1;
+      for (int i = 1; i < sortedDates.length; i++) {
+        final diff = sortedDates[i - 1].difference(sortedDates[i]).inDays;
+        if (diff == 1) {
+          streak++;
+        } else {
+          break;
+        }
+      }
+
+      return Result.success(streak);
+    } catch (e) {
+      return Result.failure(RepositoryException(message: e.toString()));
+    }
+  }
+
+  /// Update streak + total stats in the users table.
+  Future<Result<void>> updateUserStats({
+    required int currentStreak,
+    required int longestStreak,
+    required int totalWorkouts,
+    required int totalMinutes,
+    required int totalCalories,
+  }) async {
+    try {
+      if (userId == null) return Result.success(null);
+
+      await client.from('users').update({
+        'current_streak': currentStreak,
+        'longest_streak': longestStreak,
+        'total_workouts_completed': totalWorkouts,
+        'total_minutes_worked_out': totalMinutes,
+        'total_calories_burned': totalCalories,
+        'last_workout_date': DateTime.now().toIso8601String(),
+      }).eq('id', userId!);
+
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure(RepositoryException(message: e.toString()));
+    }
+  }
+
   List<DailyProgress> _emptyWeek(DateTime weekStart) {
     return List.generate(
         7, (i) => DailyProgress(date: weekStart.add(Duration(days: i))));

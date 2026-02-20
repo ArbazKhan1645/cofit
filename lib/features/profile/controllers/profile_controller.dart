@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/media/media_service.dart';
+import '../../../core/services/progress_service.dart';
 import '../../../data/models/user_model.dart';
 import '../../../app/routes/app_routes.dart';
 
@@ -45,6 +46,13 @@ class ProfileController extends BaseController {
     _loadSettings();
     // React to user changes from AuthService
     ever(_authService.currentUserRx, _syncFromUser);
+    // React to ProgressService for realtime stats after workout completion
+    if (Get.isRegistered<ProgressService>()) {
+      final ps = Get.find<ProgressService>();
+      ever(ps.totalWorkouts, (_) => totalWorkouts.value = ps.totalWorkouts.value);
+      ever(ps.currentStreak, (_) => currentStreak.value = ps.currentStreak.value);
+      ever(ps.totalMinutes, (_) => totalMinutes.value = ps.totalMinutes.value);
+    }
   }
 
   /// Sync all reactive fields from the UserModel
@@ -67,10 +75,8 @@ class ProfileController extends BaseController {
   void _loadSettings() {
     notificationsEnabled.value =
         _storage.read<bool>('notificationsEnabled') ?? true;
-    workoutReminders.value =
-        _storage.read<bool>('workoutReminders') ?? true;
-    reminderTime.value =
-        _storage.read<String>('reminderTime') ?? '07:00';
+    workoutReminders.value = _storage.read<bool>('workoutReminders') ?? true;
+    reminderTime.value = _storage.read<String>('reminderTime') ?? '07:00';
   }
 
   // ============================================

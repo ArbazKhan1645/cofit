@@ -38,6 +38,7 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
   String _exerciseType = 'timed';
   String _videoSource = 'url';
   bool _isUploadingVideo = false;
+  bool _isSaving = false;
   String _uploadedVideoUrl = '';
 
   @override
@@ -81,7 +82,8 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
+    if (_isSaving) return;
     if (_nameC.text.trim().isEmpty) {
       Get.snackbar(
         'Error',
@@ -102,6 +104,28 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
         return;
       }
       videoUrl = _videoUrlC.text.trim();
+    }
+
+    // Video is required (except for rest type)
+    if (_exerciseType != 'rest' && (videoUrl == null || videoUrl.isEmpty)) {
+      Get.snackbar(
+        'Error',
+        'Video is required for exercises',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    // Validate video URL playback (only for URL mode, uploads are already valid)
+    if (_videoSource == 'url' && videoUrl != null && videoUrl.isNotEmpty) {
+      setState(() => _isSaving = true);
+      final isValid =
+          await AdminWorkoutController.validateVideoPlayback(videoUrl);
+      if (!isValid) {
+        setState(() => _isSaving = false);
+        return;
+      }
+      setState(() => _isSaving = false);
     }
 
     final newEx = WorkoutExerciseModel(
@@ -162,8 +186,8 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
         title: Text(_isEdit ? 'Edit Exercise' : 'Add Exercise'),
         actions: [
           TextButton(
-            onPressed: _isUploadingVideo ? null : _save,
-            child: _isUploadingVideo
+            onPressed: (_isUploadingVideo || _isSaving) ? null : _save,
+            child: (_isUploadingVideo || _isSaving)
                 ? const SizedBox(
                     width: 20,
                     height: 20,
@@ -283,9 +307,9 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
             TextFormField(
               controller: _videoUrlC,
               decoration: const InputDecoration(
-                labelText: 'Video URL (optional)',
+                labelText: 'Video URL *',
                 prefixIcon: Icon(Iconsax.link),
-                hintText: 'YouTube, Vimeo, etc.',
+                hintText: 'Direct video link (mp4, etc.)',
               ),
               keyboardType: TextInputType.url,
             ),

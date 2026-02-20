@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/services/supabase_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../data/models/support_ticket_model.dart';
@@ -96,8 +95,23 @@ class TicketChatScreen extends GetView<SupportController> {
                 );
               }),
             ),
-            // Input bar (only if ticket is active)
-            if (ticket.isActive) _buildInputBar(context, ticket.id),
+            // Input bar — only if ticket is active AND admin has responded
+            Obx(() {
+              final hasAdminReply =
+                  controller.messages.any((m) => m.isAdmin);
+              if (ticket.isActive && hasAdminReply) {
+                return _buildInputBar(context, ticket.id);
+              }
+              if (ticket.isActive && !hasAdminReply) {
+                return _buildInfoBanner(
+                  context,
+                  icon: Iconsax.clock,
+                  text: 'Waiting for support to respond',
+                  color: AppColors.textMuted,
+                );
+              }
+              return const SizedBox.shrink();
+            }),
           ],
         ),
       );
@@ -105,8 +119,7 @@ class TicketChatScreen extends GetView<SupportController> {
   }
 
   Widget _buildMessageBubble(BuildContext context, TicketMessageModel msg) {
-    final currentUserId = SupabaseService.to.userId;
-    final isMe = msg.senderId == currentUserId;
+    final isMe = !msg.isAdmin;
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -174,17 +187,10 @@ class TicketChatScreen extends GetView<SupportController> {
 
   Widget _buildInputBar(BuildContext context, String ticketId) {
     return Container(
-      padding: EdgeInsets.fromLTRB(
-          16, 10, 16, MediaQuery.of(context).padding.bottom + 10),
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
       decoration: const BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 10,
-            offset: Offset(0, -4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
       ),
       child: Row(
         children: [
@@ -193,14 +199,15 @@ class TicketChatScreen extends GetView<SupportController> {
               controller: controller.messageController,
               decoration: InputDecoration(
                 hintText: 'Type a message...',
+                hintStyle: const TextStyle(color: AppColors.textMuted),
                 filled: true,
                 fillColor: AppColors.bgCream,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: AppRadius.pill,
                   borderSide: BorderSide.none,
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               ),
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => controller.sendMessage(ticketId),
@@ -217,9 +224,35 @@ class TicketChatScreen extends GetView<SupportController> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Iconsax.send_15),
-                color: AppColors.primary,
+                    : const Icon(Iconsax.send_1, color: AppColors.primary),
               )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoBanner(
+    BuildContext context, {
+    required IconData icon,
+    required String text,
+    required Color color,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+      color: Colors.white,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
         ],
       ),
     );

@@ -197,13 +197,21 @@ class LocalNotificationService {
     required int id,
     required NotificationPayload payload,
   }) async {
-    await _plugin.show(
-      id: id,
-      title: payload.title,
-      body: payload.body,
-      notificationDetails: _buildDetails(payload.channel),
-      payload: _encodePayload(payload),
-    );
+    if (!_initialized) {
+      await initialize();
+    }
+    try {
+      await _plugin.show(
+        id: id,
+        title: payload.title,
+        body: payload.body,
+        notificationDetails: _buildDetails(payload.channel),
+        payload: _encodePayload(payload),
+      );
+    } catch (e) {
+      developer.log('Failed to show notification: $e',
+          name: 'Notifications', level: 900);
+    }
   }
 
   // ============================================================
