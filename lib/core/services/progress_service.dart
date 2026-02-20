@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:get/get.dart';
 import '../../data/models/progress_model.dart';
 import '../../data/repositories/progress_repository.dart';
 import '../../data/repositories/challenge_repository.dart';
 import '../services/achievement_service.dart';
+import '../services/progress_cache_service.dart';
 import '../../shared/widgets/achievement_unlock_overlay.dart';
 
 /// Central progress tracking service.
@@ -15,6 +17,7 @@ class ProgressService extends GetxService {
 
   final ProgressRepository _progressRepo = ProgressRepository();
   final ChallengeRepository _challengeRepo = ChallengeRepository();
+  ProgressCacheService get _cache => ProgressCacheService.to;
 
   // ============================================
   // REACTIVE STATE
@@ -48,7 +51,13 @@ class ProgressService extends GetxService {
   // ============================================
 
   Future<ProgressService> init() async {
-    await refreshStats();
+    // 1. Show cached stats instantly
+    _loadFromCache();
+
+    // 2. Try fresh data from network
+    if (await _hasInternet()) {
+      await refreshStats();
+    }
     return this;
   }
 
@@ -60,6 +69,41 @@ class ProgressService extends GetxService {
       _loadMonthStats(),
       _loadWorkoutDates(),
     ]);
+    _saveToCache();
+  }
+
+  void _loadFromCache() {
+    final stats = _cache.getCachedStats();
+    if (stats != null) {
+      workoutsThisWeek.value = stats['workouts_this_week'] ?? 0;
+      minutesThisWeek.value = stats['minutes_this_week'] ?? 0;
+      currentStreak.value = stats['current_streak'] ?? 0;
+      longestStreak.value = stats['longest_streak'] ?? 0;
+      totalWorkouts.value = stats['total_workouts'] ?? 0;
+      totalMinutes.value = stats['total_minutes'] ?? 0;
+      totalCalories.value = stats['total_calories'] ?? 0;
+      totalWorkoutsThisMonth.value = stats['total_workouts_this_month'] ?? 0;
+    }
+    final dates = _cache.getCachedWorkoutDates();
+    if (dates != null) {
+      workoutDates.clear();
+      workoutDates.addAll(dates);
+      workoutDates.refresh();
+    }
+  }
+
+  void _saveToCache() {
+    _cache.cacheStats(
+      workoutsThisWeek: workoutsThisWeek.value,
+      minutesThisWeek: minutesThisWeek.value,
+      currentStreak: currentStreak.value,
+      longestStreak: longestStreak.value,
+      totalWorkouts: totalWorkouts.value,
+      totalMinutes: totalMinutes.value,
+      totalCalories: totalCalories.value,
+      totalWorkoutsThisMonth: totalWorkoutsThisMonth.value,
+    );
+    _cache.cacheWorkoutDates(workoutDates.toSet());
   }
 
   // ============================================
@@ -138,6 +182,19 @@ class ProgressService extends GetxService {
   }
 
   // ============================================
+  // CONNECTIVITY
+  // ============================================
+
+  Future<bool> _hasInternet() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    }
+  }
+
+  // ============================================
   // WORKOUT COMPLETED — CENTRAL ORCHESTRATOR
   // ============================================
 
@@ -212,6 +269,9 @@ class ProgressService extends GetxService {
     // Add today to workout dates
     workoutDates.add(todayDate);
     workoutDates.refresh();
+
+    // Persist optimistic update to cache
+    _saveToCache();
   }
 
   // ============================================

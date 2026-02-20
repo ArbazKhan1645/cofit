@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/services/workout_cache_service.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../data/models/workout_model.dart';
 import '../../../data/models/weekly_schedule_model.dart';
@@ -8,6 +11,7 @@ import '../../../data/repositories/workout_repository.dart';
 
 class WorkoutsController extends BaseController {
   final WorkoutRepository _repository = WorkoutRepository();
+  WorkoutCacheService get _cache => WorkoutCacheService.to;
 
   // ============================================
   // STATE
@@ -200,26 +204,66 @@ class WorkoutsController extends BaseController {
   // ============================================
 
   Future<void> loadData() async {
+    // 1. Show cached data instantly
+    _loadFromCache();
     isInitialLoading.value = trainers.isEmpty;
-    await Future.wait([
-      _loadTrainers(),
-      _loadActiveSchedule(),
-      loadSavedWorkoutIds(),
-    ]);
+
+    // 2. Try fresh data from network
+    if (await _hasInternet()) {
+      await Future.wait([
+        _loadTrainers(),
+        _loadActiveSchedule(),
+        loadSavedWorkoutIds(),
+      ]);
+    }
     isInitialLoading.value = false;
   }
 
   Future<void> refreshData() async {
-    await Future.wait([
-      _loadTrainers(),
-      _loadActiveSchedule(),
-      loadSavedWorkoutIds(),
-    ]);
+    if (await _hasInternet()) {
+      await Future.wait([
+        _loadTrainers(),
+        _loadActiveSchedule(),
+        loadSavedWorkoutIds(),
+      ]);
+    } else {
+      Get.snackbar('Offline', 'No internet connection. Showing cached data.',
+          snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  void _loadFromCache() {
+    final cachedTrainers = _cache.getCachedTrainers();
+    if (cachedTrainers != null && cachedTrainers.isNotEmpty) {
+      trainers.value = cachedTrainers;
+    }
+
+    final cachedSchedule = _cache.getCachedSchedule();
+    if (cachedSchedule != null) {
+      activeSchedule.value = cachedSchedule;
+      final cachedItems = _cache.getCachedScheduleItems();
+      if (cachedItems != null) {
+        _initDayItems();
+        for (final item in cachedItems) {
+          dayItems[item.dayOfWeek]?.add(item);
+        }
+        dayItems.refresh();
+      }
+    }
+
+    final cachedIds = _cache.getCachedSavedWorkoutIds();
+    if (cachedIds != null) {
+      savedWorkoutIds.clear();
+      savedWorkoutIds.addAll(cachedIds);
+    }
   }
 
   Future<void> _loadTrainers() async {
     final result = await _repository.getTrainers();
-    result.fold((error) => {}, (data) => trainers.value = data);
+    result.fold((error) => {}, (data) {
+      trainers.value = data;
+      _cache.cacheTrainers(data);
+    });
   }
 
   Future<void> _loadActiveSchedule() async {
@@ -234,6 +278,7 @@ class WorkoutsController extends BaseController {
             dayItems[item.dayOfWeek]?.add(item);
           }
           dayItems.refresh();
+          _cache.cacheSchedule(schedule, items);
         });
       }
     });
@@ -244,24 +289,51 @@ class WorkoutsController extends BaseController {
     result.fold((error) => {}, (ids) {
       savedWorkoutIds.clear();
       savedWorkoutIds.addAll(ids);
+      _cache.cacheSavedWorkoutIds(ids.toList());
     });
   }
 
   Future<void> loadSavedWorkouts() async {
-    isLoadingSaved.value = true;
-    final result = await _repository.getSavedWorkouts();
-    result.fold((error) => {}, (data) => savedWorkouts.value = data);
+    // Show cache first
+    final cached = _cache.getCachedSavedWorkouts();
+    if (cached != null && cached.isNotEmpty) {
+      savedWorkouts.value = cached;
+    }
+
+    isLoadingSaved.value = savedWorkouts.isEmpty;
+    if (await _hasInternet()) {
+      final result = await _repository.getSavedWorkouts();
+      result.fold((error) => {}, (data) {
+        savedWorkouts.value = data;
+        _cache.cacheSavedWorkouts(data);
+      });
+    }
     isLoadingSaved.value = false;
   }
 
   Future<void> loadAllWorkouts() async {
-    if (allWorkouts.isNotEmpty) return;
-    setLoading(true);
-    final result = await _repository.getAllWorkouts();
-    result.fold((error) => setError(error.message), (data) {
-      allWorkouts.value = data;
-      setSuccess();
-    });
+    // Show cache first
+    if (allWorkouts.isEmpty) {
+      final cached = _cache.getCachedAllWorkouts();
+      if (cached != null && cached.isNotEmpty) {
+        allWorkouts.value = cached;
+        setSuccess();
+      }
+    }
+    if (allWorkouts.isNotEmpty && !(await _hasInternet())) return;
+
+    setLoading(allWorkouts.isEmpty);
+    if (await _hasInternet()) {
+      final result = await _repository.getAllWorkouts();
+      result.fold((error) {
+        if (allWorkouts.isEmpty) setError(error.message);
+      }, (data) {
+        allWorkouts.value = data;
+        _cache.cacheAllWorkouts(data);
+        setSuccess();
+      });
+    }
+    setLoading(false);
   }
 
   // ============================================
@@ -353,5 +425,18 @@ class WorkoutsController extends BaseController {
 
   void selectDay(int dayIndex) {
     selectedDayIndex.value = dayIndex;
+  }
+
+  // ============================================
+  // CONNECTIVITY
+  // ============================================
+
+  Future<bool> _hasInternet() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    }
   }
 }

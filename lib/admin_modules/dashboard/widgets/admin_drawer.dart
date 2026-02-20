@@ -60,6 +60,13 @@ class AdminDrawer extends StatelessWidget {
                     color: AppColors.lavender,
                     route: AppRoutes.adminTrainerList,
                   ),
+                  _buildDrawerItem(
+                    context,
+                    title: 'Notifications',
+                    icon: Iconsax.notification,
+                    color: AppColors.skyBlue,
+                    route: AppRoutes.adminNotifications,
+                  ),
                   const SizedBox(height: 8),
                   _buildSectionLabel(context, 'CONTENT'),
                   _buildDrawerItem(

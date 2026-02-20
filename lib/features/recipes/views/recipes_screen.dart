@@ -6,6 +6,7 @@ import '../../../app/routes/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/models/diet_plan_model.dart';
+import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/widgets/cofit_image.dart';
 import '../controllers/recipe_controller.dart';
 
@@ -19,10 +20,13 @@ class RecipesScreen extends GetView<RecipeController> {
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value && controller.allPlans.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
           }
           return RefreshIndicator(
             onRefresh: controller.refreshPlans,
+            color: AppColors.primary,
             child: CustomScrollView(
               slivers: [
                 // Header
@@ -31,15 +35,36 @@ class RecipesScreen extends GetView<RecipeController> {
                 SliverToBoxAdapter(child: _buildSearch(context)),
                 // Category filters
                 SliverToBoxAdapter(child: _buildCategoryChips(context)),
-                // Featured section
-                if (controller.featuredPlans.isNotEmpty)
-                  SliverToBoxAdapter(child: _buildFeaturedSection(context)),
-                // All plans
-                SliverToBoxAdapter(
-                  child: _buildSectionTitle(context, 'All Plans'),
-                ),
-                _buildPlansList(context),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+                // Error state
+                if (controller.viewState.value == ViewState.error &&
+                    controller.allPlans.isEmpty)
+                  SliverFillRemaining(child: _buildErrorState(context)),
+
+                // Empty state — no data at all
+                if (controller.viewState.value == ViewState.empty ||
+                    (controller.allPlans.isEmpty &&
+                        !controller.isLoading.value &&
+                        controller.viewState.value != ViewState.error))
+                  SliverFillRemaining(child: _buildEmptyState(context)),
+
+                // Normal content
+                if (controller.allPlans.isNotEmpty) ...[
+                  // Featured section
+                  if (controller.featuredPlans.isNotEmpty)
+                    SliverToBoxAdapter(
+                        child: _buildFeaturedSection(context)),
+                  // All plans
+                  SliverToBoxAdapter(
+                    child: _buildSectionTitle(context, 'All Plans'),
+                  ),
+                  if (controller.filteredPlans.isNotEmpty)
+                    _buildPlansList(context)
+                  else
+                    SliverToBoxAdapter(
+                        child: _buildNoFilterResults(context)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                ],
               ],
             ),
           );
@@ -109,7 +134,7 @@ class RecipesScreen extends GetView<RecipeController> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemCount: categories.length,
         itemBuilder: (context, index) {
           final cat = categories[index];
@@ -474,6 +499,120 @@ class RecipesScreen extends GetView<RecipeController> {
           color: color,
           fontSize: 10,
           fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  // ============================================
+  // EMPTY / ERROR STATES
+  // ============================================
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Iconsax.note_21, size: 64, color: AppColors.textMuted),
+            const SizedBox(height: 16),
+            Text(
+              'No Diet Plans Available',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Check back later for new meal plans.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: controller.refreshPlans,
+              icon: const Icon(Iconsax.refresh, size: 18),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.pill),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Iconsax.wifi_square, size: 64, color: AppColors.textMuted),
+            const SizedBox(height: 16),
+            Text(
+              'Something Went Wrong',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Please check your internet connection\nand try again.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: controller.loadPlans,
+              icon: const Icon(Iconsax.refresh, size: 18),
+              label: const Text('Try Again'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.pill),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoFilterResults(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(Iconsax.search_status, size: 48, color: AppColors.textMuted),
+            const SizedBox(height: 12),
+            Text(
+              'No plans found',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Try a different search or category.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+            ),
+          ],
         ),
       ),
     );

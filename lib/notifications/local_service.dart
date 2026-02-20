@@ -5,8 +5,13 @@
 // ============================================================
 
 import 'dart:developer' as developer;
+import 'dart:io';
+import 'dart:math';
+
 import 'package:cofit_collective/notifications/types.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:http/http.dart' as http;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 
@@ -201,11 +206,19 @@ class LocalNotificationService {
       await initialize();
     }
     try {
+      NotificationDetails details;
+      if (payload.imageUrl != null && payload.imageUrl!.isNotEmpty) {
+        details = await _buildDetailsWithImage(
+            payload.channel, payload.imageUrl!);
+      } else {
+        details = _buildDetails(payload.channel);
+      }
+
       await _plugin.show(
         id: id,
         title: payload.title,
         body: payload.body,
-        notificationDetails: _buildDetails(payload.channel),
+        notificationDetails: details,
         payload: _encodePayload(payload),
       );
     } catch (e) {
@@ -530,6 +543,189 @@ class LocalNotificationService {
   }
 
   // ============================================================
+  // DAILY SCHEDULED NOTIFICATIONS (7 days — random times)
+  // Login/init par schedule hoti hain — har baar reschedule
+  // ============================================================
+
+  static const int _dailyScheduledBaseId = 7000;
+
+  // Workout reminder messages
+  static const List<Map<String, String>> _workoutMessages = [
+    {
+      'title': 'Time to Move!',
+      'body': 'Your workout is waiting! Even 15 minutes makes a difference.',
+    },
+    {
+      'title': 'Workout Reminder',
+      'body': 'Don\'t skip today! Consistency is the key to results.',
+    },
+    {
+      'title': 'Let\'s Get Moving!',
+      'body': 'Your body will thank you! Open CoFit and start your session.',
+    },
+    {
+      'title': 'Today\'s Workout Awaits',
+      'body': 'You\'re one workout closer to your goals. Let\'s go!',
+    },
+    {
+      'title': 'Fitness Check-In',
+      'body': 'Have you done your workout today? Your streak depends on it!',
+    },
+    {
+      'title': 'Crush It Today!',
+      'body': 'No excuses! Open the app and get your sweat on.',
+    },
+    {
+      'title': 'Your Muscles Are Calling',
+      'body': 'They want to grow! Give them a reason to — workout now.',
+    },
+  ];
+
+  // Random greeting / motivation messages
+  static const List<Map<String, String>> _greetingMessages = [
+    {
+      'title': 'Hey Queen!',
+      'body': 'You\'re doing amazing! Keep showing up for yourself.',
+    },
+    {
+      'title': 'Good Vibes Only',
+      'body': 'Remember: progress, not perfection. You\'ve got this!',
+    },
+    {
+      'title': 'Stay Strong!',
+      'body': 'Every step counts. Your future self will thank you.',
+    },
+    {
+      'title': 'You\'re a Warrior!',
+      'body': 'The hardest part is starting. Everything else is momentum.',
+    },
+    {
+      'title': 'Believe in Yourself',
+      'body': 'You\'re stronger than you think. CoFit believes in you!',
+    },
+    {
+      'title': 'Self-Care Reminder',
+      'body': 'Taking care of your body is the best investment. Keep going!',
+    },
+    {
+      'title': 'Fitness is a Journey',
+      'body': 'Not a destination. Enjoy every rep, every stretch, every step.',
+    },
+    {
+      'title': 'Hello Sunshine!',
+      'body': 'A healthy body = a happy mind. Move a little today!',
+    },
+    {
+      'title': 'You\'re Glowing!',
+      'body': 'Keep up the amazing work. Your consistency is inspiring!',
+    },
+    {
+      'title': 'Daily Dose of Motivation',
+      'body': 'Champions aren\'t made in gyms — they\'re made from something deep inside. Let\'s go!',
+    },
+  ];
+
+  /// Schedule random notifications for the next 7 days
+  /// Called on login/init — cancels old ones and reschedules fresh
+  Future<void> scheduleNext7DaysNotifications() async {
+    if (!_initialized) await initialize();
+
+    // Cancel old daily scheduled notifications
+    await _cancelDailyScheduled();
+
+    final random = Random();
+    final now = tz.TZDateTime.now(tz.local);
+    final storage = GetStorage();
+
+    // Check if already scheduled today — avoid duplicate scheduling on app restart
+    final lastScheduled = storage.read<String>('last_notif_schedule_date');
+    final todayStr = '${now.year}-${now.month}-${now.day}';
+    if (lastScheduled == todayStr) {
+      developer.log(
+        'Daily notifications already scheduled today — skipping',
+        name: 'Notifications',
+      );
+      return;
+    }
+
+    int notifIndex = 0;
+
+    for (int day = 0; day < 7; day++) {
+      final targetDate = now.add(Duration(days: day + 1));
+
+      // Random time between 8:00 AM and 8:00 PM
+      final hour = 8 + random.nextInt(12); // 8-19
+      final minute = random.nextInt(60); // 0-59
+
+      final scheduledTime = tz.TZDateTime(
+        tz.local,
+        targetDate.year,
+        targetDate.month,
+        targetDate.day,
+        hour,
+        minute,
+      );
+
+      // Skip if time is in the past (edge case for today)
+      if (scheduledTime.isBefore(now)) continue;
+
+      // Pick random message — alternate between workout & greeting
+      final Map<String, String> message;
+      final NotificationChannel channel;
+
+      if (day.isEven) {
+        // Workout reminder
+        message = _workoutMessages[random.nextInt(_workoutMessages.length)];
+        channel = NotificationChannel.workoutReminder;
+      } else {
+        // Motivational greeting
+        message = _greetingMessages[random.nextInt(_greetingMessages.length)];
+        channel = NotificationChannel.dailyGoalReminder;
+      }
+
+      try {
+        await _plugin.zonedSchedule(
+          id: _dailyScheduledBaseId + notifIndex,
+          title: message['title'],
+          body: message['body'],
+          scheduledDate: scheduledTime,
+          notificationDetails: _buildDetails(channel),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          payload: _encodePayload(
+            NotificationPayload(
+              title: message['title']!,
+              body: message['body']!,
+              channel: channel,
+              actionRoute: '/home',
+            ),
+          ),
+        );
+        notifIndex++;
+      } catch (e) {
+        developer.log(
+          'Failed to schedule notification for day $day: $e',
+          name: 'Notifications',
+          level: 900,
+        );
+      }
+    }
+
+    // Save today's date so we don't re-schedule on every app restart
+    await storage.write('last_notif_schedule_date', todayStr);
+
+    developer.log(
+      'Scheduled $notifIndex notifications for next 7 days',
+      name: 'Notifications',
+    );
+  }
+
+  Future<void> _cancelDailyScheduled() async {
+    for (int i = 0; i < 14; i++) {
+      await _plugin.cancel(id: _dailyScheduledBaseId + i);
+    }
+  }
+
+  // ============================================================
   // CANCEL METHODS
   // ============================================================
 
@@ -548,6 +744,59 @@ class LocalNotificationService {
   // ============================================================
   // PRIVATE HELPERS
   // ============================================================
+
+  Future<NotificationDetails> _buildDetailsWithImage(
+    NotificationChannel channel,
+    String imageUrl,
+  ) async {
+    try {
+      final response = await http.get(Uri.parse(imageUrl));
+      if (response.statusCode == 200) {
+        final bytes = response.bodyBytes;
+
+        final androidDetails = AndroidNotificationDetails(
+          channel.channelId,
+          channel.channelName,
+          importance: _getImportance(channel),
+          priority: _getPriority(channel),
+          styleInformation: BigPictureStyleInformation(
+            ByteArrayAndroidBitmap(bytes),
+            hideExpandedLargeIcon: true,
+          ),
+          enableVibration: _shouldVibrate(channel),
+          icon: _getIcon(channel),
+        );
+
+        // iOS — save to temp file for attachment
+        DarwinNotificationDetails iosDetails;
+        try {
+          final tempDir = Directory.systemTemp;
+          final filePath =
+              '${tempDir.path}/notif_img_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          await File(filePath).writeAsBytes(bytes);
+          iosDetails = DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+            attachments: [DarwinNotificationAttachment(filePath)],
+          );
+        } catch (_) {
+          iosDetails = const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          );
+        }
+
+        return NotificationDetails(android: androidDetails, iOS: iosDetails);
+      }
+    } catch (e) {
+      developer.log('Failed to download notification image: $e',
+          name: 'Notifications', level: 900);
+    }
+    // Fallback to no-image details
+    return _buildDetails(channel);
+  }
 
   NotificationDetails _buildDetails(NotificationChannel channel) {
     final androidDetails = AndroidNotificationDetails(

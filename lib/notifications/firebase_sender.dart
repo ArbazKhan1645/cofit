@@ -133,6 +133,7 @@ class FcmNotificationSender {
         'actor_name': likerName,
         'action_route': '/community/post/$postId',
       },
+      settingField: 'social_notifications',
     );
   }
 
@@ -174,6 +175,7 @@ class FcmNotificationSender {
         'comment_text': commentText,
         'action_route': '/community/post/$postId',
       },
+      settingField: 'social_notifications',
     );
   }
 
@@ -201,6 +203,7 @@ class FcmNotificationSender {
         'actor_name': saverName,
         'action_route': '/community/post/$postId',
       },
+      settingField: 'social_notifications',
     );
   }
 
@@ -222,6 +225,7 @@ class FcmNotificationSender {
         'actor_name': followerName,
         'action_route': '/profile/$followerName',
       },
+      settingField: 'social_notifications',
     );
   }
 
@@ -233,7 +237,10 @@ class FcmNotificationSender {
     String? postPreview,
     String? imageUrl,
   }) async {
-    final tokens = await _getMultipleUserTokens(followerIds);
+    final tokens = await _getMultipleUserTokens(
+      followerIds,
+      settingField: 'social_notifications',
+    );
     if (tokens.isEmpty) return;
 
     await _sendMulticastMessage(
@@ -260,7 +267,10 @@ class FcmNotificationSender {
     required String postId,
     required String context,
   }) async {
-    final tokens = await _getMultipleUserTokens(mentionedUserIds);
+    final tokens = await _getMultipleUserTokens(
+      mentionedUserIds,
+      settingField: 'social_notifications',
+    );
     if (tokens.isEmpty) return;
 
     await _sendMulticastMessage(
@@ -290,7 +300,10 @@ class FcmNotificationSender {
     required String challengeName,
     required String inviterName,
   }) async {
-    final tokens = await _getMultipleUserTokens(invitedUserIds);
+    final tokens = await _getMultipleUserTokens(
+      invitedUserIds,
+      settingField: 'challenge_updates',
+    );
     if (tokens.isEmpty) return;
 
     await _sendMulticastMessage(
@@ -316,7 +329,10 @@ class FcmNotificationSender {
     required String challengeId,
     required String challengeName,
   }) async {
-    final tokens = await _getMultipleUserTokens(participantIds);
+    final tokens = await _getMultipleUserTokens(
+      participantIds,
+      settingField: 'challenge_updates',
+    );
     if (tokens.isEmpty) return;
 
     await _sendMulticastMessage(
@@ -358,6 +374,7 @@ class FcmNotificationSender {
         'total_participants': totalParticipants.toString(),
         'action_route': '/challenges/$challengeId',
       },
+      settingField: 'challenge_updates',
     );
   }
 
@@ -383,6 +400,7 @@ class FcmNotificationSender {
           'current_rank': rank.toString(),
           'action_route': '/challenges/$challengeId',
         },
+        settingField: 'challenge_updates',
       );
     }
   }
@@ -406,6 +424,7 @@ class FcmNotificationSender {
         'achievement_id': achievementId,
         'action_route': '/achievements/$achievementId',
       },
+      settingField: 'achievement_alerts',
     );
   }
 
@@ -438,6 +457,7 @@ class FcmNotificationSender {
         'days_remaining': daysLeft.toString(),
         'action_route': '/settings/subscription',
       },
+      settingField: 'subscription_alerts',
     );
   }
 
@@ -465,6 +485,7 @@ class FcmNotificationSender {
         'actor_name': newMemberName,
         'action_route': '/community/$communityId',
       },
+      settingField: 'social_notifications',
     );
   }
 
@@ -492,6 +513,7 @@ class FcmNotificationSender {
         'post_id': postId,
         'action_route': '/community/post/$postId',
       },
+      settingField: 'social_notifications',
     );
 
     // 2. Sab community subscribers ko notify karo via topic
@@ -537,6 +559,7 @@ class FcmNotificationSender {
         'post_id': postId,
         'action_route': '/community/post/$postId',
       },
+      settingField: 'social_notifications',
     );
   }
 
@@ -544,13 +567,41 @@ class FcmNotificationSender {
   // PRIVATE HELPER METHODS
   // ============================================================
 
+  /// Fetch a recipient's notification settings from Supabase.
+  /// Returns null on failure (fail-open: allow the notification).
+  Future<Map<String, dynamic>?> _getUserSettings(String userId) async {
+    try {
+      final row = await SupabaseService.to.client
+          .from('user_notification_settings')
+          .select(
+            'push_enabled, social_notifications, challenge_updates, achievement_alerts, subscription_alerts, marketing_notifications',
+          )
+          .eq('user_id', userId)
+          .maybeSingle();
+      return row;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Send notification to ALL devices of a single user.
+  /// [settingField] — if provided, checks recipient's settings before sending.
   Future<void> _sendToUser({
     required String userId,
     required Map<String, String> notification,
     required Map<String, String> data,
     String? imageUrl,
+    String? settingField,
   }) async {
+    // Check recipient's settings before sending
+    if (settingField != null) {
+      final settings = await _getUserSettings(userId);
+      if (settings != null) {
+        if (settings['push_enabled'] == false) return;
+        if (settings[settingField] == false) return;
+      }
+    }
+
     final tokens = await _getUserFcmTokens(userId);
     if (tokens.isEmpty) return;
     await _sendMulticastMessage(
@@ -589,15 +640,42 @@ class FcmNotificationSender {
   }
 
   /// Multiple users ke tokens ek saath lo (batch via Supabase .in_())
-  Future<List<String>> _getMultipleUserTokens(List<String> userIds) async {
+  /// [settingField] — if provided, filters out users who have that setting or
+  /// push_enabled set to false.
+  Future<List<String>> _getMultipleUserTokens(
+    List<String> userIds, {
+    String? settingField,
+  }) async {
     try {
+      var filteredIds = userIds;
+
+      // Filter out users who disabled this notification type
+      if (settingField != null && userIds.isNotEmpty) {
+        final settingsRows = await SupabaseService.to.client
+            .from('user_notification_settings')
+            .select('user_id, push_enabled, $settingField')
+            .inFilter('user_id', userIds);
+
+        final disabledIds = (settingsRows as List)
+            .where(
+              (r) =>
+                  r['push_enabled'] == false || r[settingField] == false,
+            )
+            .map((r) => r['user_id'] as String)
+            .toSet();
+
+        filteredIds =
+            userIds.where((id) => !disabledIds.contains(id)).toList();
+        if (filteredIds.isEmpty) return [];
+      }
+
       final cutoff =
           DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
 
       final rows = await SupabaseService.to.client
           .from('user_devices')
           .select('fcm_token')
-          .inFilter('user_id', userIds)
+          .inFilter('user_id', filteredIds)
           .gte('last_active', cutoff);
 
       return (rows as List)
@@ -778,5 +856,84 @@ class FcmNotificationSender {
     );
 
     await Future.wait(futures);
+  }
+
+  // ============================================================
+  // 📢 ADMIN BROADCAST — Marketing / Promotional Notifications
+  // ============================================================
+
+  /// Get ALL active FCM tokens from user_devices (for broadcast).
+  /// Filters out users who have push_enabled = false.
+  Future<List<String>> _getAllActiveTokens() async {
+    try {
+      final cutoff =
+          DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+
+      // Get all active device tokens with user_id
+      final rows = await SupabaseService.to.client
+          .from('user_devices')
+          .select('fcm_token, user_id')
+          .gte('last_active', cutoff);
+
+      if ((rows as List).isEmpty) return [];
+
+      // Get users who have push disabled
+      final disabledRows = await SupabaseService.to.client
+          .from('user_notification_settings')
+          .select('user_id')
+          .eq('push_enabled', false);
+
+      final disabledIds = (disabledRows as List)
+          .map((r) => r['user_id'] as String)
+          .toSet();
+
+      return rows
+          .where((r) => !disabledIds.contains(r['user_id']))
+          .map((r) => r['fcm_token'] as String)
+          .where((t) => t.isNotEmpty)
+          .toList();
+    } catch (e) {
+      developer.log(
+        'All tokens fetch failed: $e',
+        name: 'FCMSender',
+        level: 900,
+      );
+      return [];
+    }
+  }
+
+  /// Admin broadcast — send to all users or specific user IDs.
+  /// Returns the number of tokens the notification was sent to.
+  Future<int> sendAdminBroadcast({
+    required String title,
+    required String body,
+    String? imageUrl,
+    List<String>? targetUserIds,
+  }) async {
+    List<String> tokens;
+    if (targetUserIds != null && targetUserIds.isNotEmpty) {
+      tokens = await _getMultipleUserTokens(targetUserIds);
+    } else {
+      tokens = await _getAllActiveTokens();
+    }
+
+    if (tokens.isEmpty) return 0;
+
+    // Send in chunks of 500 (parallel within each chunk)
+    for (int i = 0; i < tokens.length; i += 500) {
+      final end = (i + 500 < tokens.length) ? i + 500 : tokens.length;
+      final chunk = tokens.sublist(i, end);
+      await _sendMulticastMessage(
+        tokens: chunk,
+        notification: {'title': title, 'body': body},
+        data: {
+          'channel': NotificationChannel.subscriptionAlert.channelId,
+          'type': 'admin_broadcast',
+        },
+        imageUrl: imageUrl,
+      );
+    }
+
+    return tokens.length;
   }
 }

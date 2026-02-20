@@ -1,10 +1,14 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/feed_cache_service.dart';
 import '../../../core/services/media/media_service.dart';
 import '../../../core/services/progress_service.dart';
+import '../../../core/services/supabase_service.dart';
+import '../../../core/services/today_workout_cache_service.dart';
 import '../../../data/models/user_model.dart';
 import '../../../app/routes/app_routes.dart';
 
@@ -33,6 +37,9 @@ class ProfileController extends BaseController {
 
   // Profile image upload
   final RxBool isUploadingImage = false.obs;
+
+  // Delete account
+  final RxBool isDeleting = false.obs;
 
   // Settings (local only)
   final RxBool notificationsEnabled = true.obs;
@@ -127,5 +134,105 @@ class ProfileController extends BaseController {
   Future<void> signOut() async {
     await _authService.signOut();
     Get.offAllNamed(AppRoutes.signIn);
+  }
+
+  // ============================================
+  // DELETE ACCOUNT
+  // ============================================
+
+  void showDeleteAccountDialog() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'Kya aap sure hain? Aapka sara data permanently delete ho jayega. '
+          'Yeh action undo nahi ho sakta.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              _confirmDeleteAccount();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete Account'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteAccount() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Final Confirmation'),
+        content: const Text(
+          'Last warning! Account delete hone ke baad wapas nahi aayega. '
+          'All workouts, progress, streaks — sab khatam.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Keep Account'),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              deleteAccount();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Yes, Delete Forever'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> deleteAccount() async {
+    isDeleting.value = true;
+
+    try {
+      // Delete all data + user row via RPC (bypasses RLS)
+      await SupabaseService.to.rpc('delete_own_account');
+
+      // 4. Clear all local data
+      await _clearAllLocalData();
+
+      // 5. Sign out
+      await _authService.signOut();
+
+      isDeleting.value = false;
+
+      // 6. Navigate to sign-in
+      Get.offAllNamed(AppRoutes.signIn);
+
+      Get.snackbar(
+        'Account Deleted',
+        'Your account has been permanently deleted',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      isDeleting.value = false;
+      debugPrint('Delete account error: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to delete account. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  Future<void> _clearAllLocalData() async {
+    try {
+      _authService.clearUserCache();
+      await FeedCacheService.to.clearCache();
+      TodayWorkoutCacheService().clearCache();
+      await MediaService.to.clearImageCache();
+      await GetStorage().erase();
+    } catch (_) {}
   }
 }

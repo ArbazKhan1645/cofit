@@ -261,6 +261,15 @@ class UserSummary {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'full_name': fullName,
+      'username': username,
+      'avatar_url': avatarUrl,
+    };
+  }
+
   String get displayName {
     if (fullName != null && fullName!.isNotEmpty) return fullName!;
     if (username != null && username!.isNotEmpty) return username!;

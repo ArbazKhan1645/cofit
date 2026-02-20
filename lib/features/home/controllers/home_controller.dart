@@ -1,8 +1,11 @@
 import 'dart:io';
 
 import 'package:get/get.dart';
+import '../../../notifications/local_service.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/supabase_service.dart';
+import '../../../core/services/challenge_cache_service.dart';
 import '../../../core/services/progress_service.dart';
 import '../../../core/services/today_workout_cache_service.dart';
 import '../../../core/services/variant_resolution_service.dart';
@@ -69,6 +72,9 @@ class HomeController extends BaseController {
 
     // 3. Setup reactive listeners AFTER initial data is loaded
     _setupReactiveListeners();
+
+    // 4. Schedule local notifications for next 7 days (fire-and-forget)
+    _scheduleLocalNotifications();
   }
 
   /// Public refresh - called when returning from admin mode to reload all data
@@ -153,6 +159,37 @@ class HomeController extends BaseController {
     } else {
       final user = _authService.currentUser;
       currentStreak.value = user?.currentStreak ?? 0;
+    }
+  }
+
+  // ============================================
+  // LOCAL NOTIFICATIONS
+  // ============================================
+
+  /// Schedule 7 days of random local notifications (fire-and-forget).
+  /// Checks user's notification settings before scheduling.
+  void _scheduleLocalNotifications() async {
+    try {
+      // Check if user has push/workout reminders enabled
+      final uid = SupabaseService.to.userId;
+      if (uid != null) {
+        final settings = await SupabaseService.to.client
+            .from('user_notification_settings')
+            .select('push_enabled, workout_reminders')
+            .eq('user_id', uid)
+            .maybeSingle();
+        if (settings != null) {
+          if (settings['push_enabled'] == false ||
+              settings['workout_reminders'] == false) return;
+        }
+      }
+
+      final localService = LocalNotificationService();
+      await localService.initialize();
+      localService.requestPermissions();
+      localService.scheduleNext7DaysNotifications();
+    } catch (_) {
+      // Silent fail — notifications are not critical
     }
   }
 
@@ -427,6 +464,26 @@ class HomeController extends BaseController {
   // ============================================
 
   Future<void> loadHomeChallenges() async {
+    final hasInternet = await _hasInternet();
+    final cache = ChallengeCacheService.to;
+
+    if (!hasInternet) {
+      // Offline: use cached data
+      final cachedMy = cache.getCachedMyChallenges();
+      final cachedActive = cache.getCachedActiveChallenges();
+      if (cachedMy != null) myChallenges.value = cachedMy;
+      if (cachedActive != null) activeChallenges.value = cachedActive;
+      return;
+    }
+
+    // Show cached data instantly
+    if (myChallenges.isEmpty && activeChallenges.isEmpty) {
+      final cachedMy = cache.getCachedMyChallenges();
+      final cachedActive = cache.getCachedActiveChallenges();
+      if (cachedMy != null) myChallenges.value = cachedMy;
+      if (cachedActive != null) activeChallenges.value = cachedActive;
+    }
+
     isLoadingChallenges.value = true;
 
     final results = await Future.wait([
@@ -436,12 +493,20 @@ class HomeController extends BaseController {
 
     results[0].fold(
       (error) {},
-      (data) => myChallenges.value = data as List<UserChallengeModel>,
+      (data) {
+        final list = data as List<UserChallengeModel>;
+        myChallenges.value = list;
+        cache.cacheMyChallenges(list);
+      },
     );
 
     results[1].fold(
       (error) {},
-      (data) => activeChallenges.value = data as List<ChallengeModel>,
+      (data) {
+        final list = data as List<ChallengeModel>;
+        activeChallenges.value = list;
+        cache.cacheActiveChallenges(list);
+      },
     );
 
     isLoadingChallenges.value = false;

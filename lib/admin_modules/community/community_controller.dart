@@ -5,8 +5,9 @@ import '../../core/services/supabase_service.dart';
 import '../../data/models/community_model.dart';
 import '../../notifications/firebase_sender.dart';
 import '../../shared/controllers/base_controller.dart';
+import '../../shared/mixins/connectivity_mixin.dart';
 
-class AdminCommunityController extends BaseController {
+class AdminCommunityController extends BaseController with ConnectivityMixin {
   final SupabaseService _supabase = SupabaseService.to;
   final FcmNotificationSender _fcmSender = FcmNotificationSender();
 
@@ -90,6 +91,7 @@ class AdminCommunityController extends BaseController {
   // ============================================
 
   Future<void> loadDashboardData() async {
+    if (!await ensureConnectivity()) return;
     setLoading(true);
     try {
       await Future.wait([
@@ -183,6 +185,7 @@ class AdminCommunityController extends BaseController {
   // ============================================
 
   Future<void> approvePost(PostModel post) async {
+    if (!await ensureConnectivity()) return;
     try {
       await _supabase
           .from('posts')
@@ -218,6 +221,7 @@ class AdminCommunityController extends BaseController {
   }
 
   Future<void> rejectPost(PostModel post, {String? reason}) async {
+    if (!await ensureConnectivity()) return;
     try {
       await _supabase
           .from('posts')
@@ -311,6 +315,7 @@ class AdminCommunityController extends BaseController {
       ),
     );
     if (confirmed != true) return;
+    if (!await ensureConnectivity()) return;
 
     try {
       await _supabase.from('posts').delete().eq('id', post.id);
@@ -329,6 +334,7 @@ class AdminCommunityController extends BaseController {
   // ============================================
 
   Future<void> togglePin(PostModel post) async {
+    if (!await ensureConnectivity()) return;
     final newPinned = !post.isPinned;
     try {
       await _supabase

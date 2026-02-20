@@ -82,6 +82,10 @@ import '../../admin_modules/recipes/recipe_day_editor_screen.dart';
 import '../../features/recipes/controllers/recipe_controller.dart';
 import '../../features/recipes/views/recipe_detail_screen.dart';
 
+// Admin Notifications
+import '../../admin_modules/notifications/notification_controller.dart';
+import '../../admin_modules/notifications/notification_send_screen.dart';
+
 // Crashlytics
 import '../../admin_modules/crashlytics/crashlytics_controller.dart';
 import '../../admin_modules/crashlytics/crashlytics_list_screen.dart';
@@ -407,6 +411,16 @@ class AppPages {
         if (!Get.isRegistered<RecipeController>()) {
           Get.lazyPut(() => RecipeController());
         }
+      }),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Admin Notifications
+    GetPage(
+      name: AppRoutes.adminNotifications,
+      page: () => const NotificationSendScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => AdminNotificationController());
       }),
       transition: Transition.rightToLeft,
     ),

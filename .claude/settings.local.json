@@ -13,7 +13,10 @@
       "Bash(xargs:*)",
       "Bash(findstr:*)",
       "Bash(wc:*)",
-      "Bash(flutter pub add:*)"
+      "Bash(flutter pub add:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(keytool:*)"
     ]
   }
 }

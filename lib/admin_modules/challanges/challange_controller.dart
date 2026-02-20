@@ -9,8 +9,9 @@ import '../../core/services/supabase_service.dart';
 import '../../data/models/challenge_model.dart';
 import '../../data/repositories/challenge_repository.dart';
 import '../../shared/controllers/base_controller.dart';
+import '../../shared/mixins/connectivity_mixin.dart';
 
-class ChallangeController extends BaseController {
+class ChallangeController extends BaseController with ConnectivityMixin {
   final SupabaseService _supabase = SupabaseService.to;
   final ChallengeRepository _repository = ChallengeRepository();
 
@@ -90,6 +91,7 @@ class ChallangeController extends BaseController {
   }
 
   Future<void> loadChallenges() async {
+    if (!await ensureConnectivity()) return;
     setLoading(true);
     try {
       final response = await _supabase
@@ -277,6 +279,7 @@ class ChallangeController extends BaseController {
       );
       return;
     }
+    if (!await ensureConnectivity()) return;
 
     isSaving.value = true;
     try {
@@ -358,6 +361,7 @@ class ChallangeController extends BaseController {
       ),
     );
     if (confirmed != true) return;
+    if (!await ensureConnectivity()) return;
 
     try {
       await _supabase.from('challenges').delete().eq('id', id);
@@ -381,6 +385,7 @@ class ChallangeController extends BaseController {
   // ============================================
 
   Future<void> loadChallengeDetail(String challengeId) async {
+    if (!await ensureConnectivity()) return;
     isLoadingDetail.value = true;
     participants.clear();
     leaderboard.clear();

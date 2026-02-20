@@ -7,8 +7,9 @@ import '../../core/services/media/media_service.dart';
 import '../../data/models/diet_plan_model.dart';
 import '../../data/repositories/diet_plan_repository.dart';
 import '../../shared/controllers/base_controller.dart';
+import '../../shared/mixins/connectivity_mixin.dart';
 
-class AdminRecipeController extends BaseController {
+class AdminRecipeController extends BaseController with ConnectivityMixin {
   final DietPlanRepository _repository = DietPlanRepository();
 
   // ============================================
@@ -142,6 +143,7 @@ class AdminRecipeController extends BaseController {
   // ============================================
 
   Future<void> loadPlans() async {
+    if (!await ensureConnectivity()) return;
     setLoading(true);
     final result = await _repository.getAllPlans(adminMode: true);
     result.fold((error) => setError(error.message), (data) {
@@ -222,6 +224,7 @@ class AdminRecipeController extends BaseController {
       return;
     }
 
+    if (!await ensureConnectivity()) return;
     isSaving.value = true;
     try {
       String? newImageUrl;
@@ -299,6 +302,7 @@ class AdminRecipeController extends BaseController {
     );
     if (confirmed != true) return;
 
+    if (!await ensureConnectivity()) return;
     try {
       await _repository.deletePlan(planId);
       allPlans.removeWhere((p) => p.id == planId);
@@ -317,6 +321,7 @@ class AdminRecipeController extends BaseController {
   }
 
   Future<void> togglePublish(DietPlanModel plan) async {
+    if (!await ensureConnectivity()) return;
     try {
       final newStatus = !plan.isPublished;
       await _repository.updatePlan(plan.id, {'is_published': newStatus});
@@ -339,6 +344,7 @@ class AdminRecipeController extends BaseController {
   // ============================================
 
   Future<void> loadPlanDays(DietPlanModel plan) async {
+    if (!await ensureConnectivity()) return;
     currentPlan.value = plan;
     isLoadingDays.value = true;
     selectedDayIndex.value = 0;
@@ -378,6 +384,7 @@ class AdminRecipeController extends BaseController {
 
   /// Copy meals from previous day → "Same as previous day" feature
   Future<void> copyFromPreviousDay(int targetDayIndex) async {
+    if (!await ensureConnectivity()) return;
     if (targetDayIndex <= 0 || targetDayIndex >= planDays.length) return;
 
     final sourceDay = planDays[targetDayIndex - 1];
@@ -411,6 +418,7 @@ class AdminRecipeController extends BaseController {
 
   /// Copy meals from any specific day
   Future<void> copyFromDay(int sourceDayIndex, int targetDayIndex) async {
+    if (!await ensureConnectivity()) return;
     if (sourceDayIndex < 0 ||
         sourceDayIndex >= planDays.length ||
         targetDayIndex < 0 ||
@@ -510,6 +518,7 @@ class AdminRecipeController extends BaseController {
     final day = selectedDay;
     if (day == null) return;
 
+    if (!await ensureConnectivity()) return;
     isSavingMeal.value = true;
     try {
       final data = {
@@ -579,6 +588,7 @@ class AdminRecipeController extends BaseController {
     );
     if (confirmed != true) return;
 
+    if (!await ensureConnectivity()) return;
     try {
       await _repository.deleteMeal(meal.id);
       await _repository.recalculateDayTotals(meal.dayId);

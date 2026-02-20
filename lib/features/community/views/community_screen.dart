@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../shared/widgets/cofit_image.dart';
 import '../../../shared/widgets/cofit_avatar.dart';
+import '../../../shared/widgets/full_screen_image_viewer.dart';
 import '../../../data/models/community_model.dart';
 import '../controllers/community_controller.dart';
 import '../widgets/approval_badge.dart';
@@ -450,11 +451,17 @@ class CommunityScreen extends GetView<CommunityController> {
           ),
         if (post.imageUrls.isNotEmpty) ...[
           const SizedBox(height: 12),
-          CofitImage(
-            imageUrl: post.imageUrls.first,
-            width: double.infinity,
-            height: 200,
-            borderRadius: AppRadius.medium,
+          GestureDetector(
+            onTap: () => FullScreenImageViewer.open(
+              context,
+              post.imageUrls.first,
+            ),
+            child: CofitImage(
+              imageUrl: post.imageUrls.first,
+              width: double.infinity,
+              height: 200,
+              borderRadius: AppRadius.medium,
+            ),
           ),
         ],
       ],

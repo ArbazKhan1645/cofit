@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/cofit_image.dart';
 import '../../../shared/widgets/cofit_avatar.dart';
+import '../../../shared/widgets/full_screen_image_viewer.dart';
 import '../../../data/models/community_model.dart';
 import '../controllers/community_controller.dart';
 import '../views/post_detail_screen.dart';
@@ -89,11 +90,18 @@ class UserProfileSheet extends GetView<CommunityController> {
       child: Column(
         children: [
           // Avatar
-          CofitAvatar(
-            imageUrl: user.avatarUrl,
-            userId: user.id,
-            userName: user.displayName,
-            radius: 45,
+          GestureDetector(
+            onTap: () {
+              if (user.avatarUrl != null && user.avatarUrl!.isNotEmpty) {
+                FullScreenImageViewer.open(context, user.avatarUrl!);
+              }
+            },
+            child: CofitAvatar(
+              imageUrl: user.avatarUrl,
+              userId: user.id,
+              userName: user.displayName,
+              radius: 45,
+            ),
           ).animate().scale(duration: 300.ms, curve: Curves.easeOut),
           const SizedBox(height: 12),
 

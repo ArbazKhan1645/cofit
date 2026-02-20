@@ -5,8 +5,9 @@ import '../../core/services/supabase_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/crash_log_model.dart';
 import '../../shared/controllers/base_controller.dart';
+import '../../shared/mixins/connectivity_mixin.dart';
 
-class AdminCrashlyticsController extends BaseController {
+class AdminCrashlyticsController extends BaseController with ConnectivityMixin {
   final SupabaseService _supabase = SupabaseService.to;
 
   // ============================================
@@ -106,6 +107,7 @@ class AdminCrashlyticsController extends BaseController {
   // ============================================
 
   Future<void> loadCrashLogs() async {
+    if (!await ensureConnectivity()) return;
     setLoading(true);
     try {
       // Try with user join first (needs FK to public.users)
@@ -148,6 +150,7 @@ class AdminCrashlyticsController extends BaseController {
   // ============================================
 
   Future<void> deleteCrashLog(String id) async {
+    if (!await ensureConnectivity()) return;
     try {
       await _supabase.client.from('crash_logs').delete().eq('id', id);
       crashLogs.removeWhere((c) => c.id == id);
@@ -167,6 +170,7 @@ class AdminCrashlyticsController extends BaseController {
   }
 
   Future<void> clearAllLogs() async {
+    if (!await ensureConnectivity()) return;
     try {
       await _supabase.client
           .from('crash_logs')

@@ -791,11 +791,36 @@ class _WorkoutVideoAppBar extends StatefulWidget {
   State<_WorkoutVideoAppBar> createState() => _WorkoutVideoAppBarState();
 }
 
-class _WorkoutVideoAppBarState extends State<_WorkoutVideoAppBar> {
+class _WorkoutVideoAppBarState extends State<_WorkoutVideoAppBar>
+    with WidgetsBindingObserver {
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   bool _isVideoInitialized = false;
   bool _showVideo = false;
+  Worker? _pauseWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _pauseWorker = ever(
+      Get.find<WorkoutDetailController>().shouldPausePreview,
+      (shouldPause) {
+        if (shouldPause && _isVideoInitialized) {
+          _videoController?.pause();
+        }
+      },
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!_isVideoInitialized) return;
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _videoController?.pause();
+    }
+  }
 
   void _initializeVideo() async {
     setState(() => _showVideo = true);
@@ -830,6 +855,8 @@ class _WorkoutVideoAppBarState extends State<_WorkoutVideoAppBar> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pauseWorker?.dispose();
     _videoController?.dispose();
     _chewieController?.dispose();
     super.dispose();

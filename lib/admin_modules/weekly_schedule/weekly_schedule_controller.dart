@@ -4,9 +4,11 @@ import 'package:get/get.dart';
 import '../../core/services/supabase_service.dart';
 import '../../data/models/weekly_schedule_model.dart';
 import '../../data/models/workout_model.dart';
+import '../../notifications/firebase_sender.dart';
 import '../../shared/controllers/base_controller.dart';
+import '../../shared/mixins/connectivity_mixin.dart';
 
-class WeeklyScheduleController extends BaseController {
+class WeeklyScheduleController extends BaseController with ConnectivityMixin {
   final SupabaseService _supabase = SupabaseService.to;
 
   // ============================================
@@ -96,6 +98,7 @@ class WeeklyScheduleController extends BaseController {
   // ============================================
 
   Future<void> loadActiveSchedule() async {
+    if (!await ensureConnectivity()) return;
     setLoading(true);
     try {
       final scheduleResponse = await _supabase
@@ -146,6 +149,7 @@ class WeeklyScheduleController extends BaseController {
   }
 
   Future<void> loadAllWorkouts() async {
+    if (!await ensureConnectivity()) return;
     try {
       final response = await _supabase
           .from('workouts')
@@ -224,12 +228,14 @@ class WeeklyScheduleController extends BaseController {
       );
       return;
     }
+    if (!await ensureConnectivity()) return;
 
     isSaving.value = true;
     try {
+      final isNewSchedule = activeSchedule.value == null;
       String scheduleId;
 
-      if (activeSchedule.value != null) {
+      if (!isNewSchedule) {
         scheduleId = activeSchedule.value!.id;
         await _supabase
             .from('weekly_schedules')
@@ -290,6 +296,17 @@ class WeeklyScheduleController extends BaseController {
           .eq('id', scheduleId);
 
       await loadActiveSchedule();
+
+      // Send push notification to all users on new schedule (unawaited)
+      if (isNewSchedule) {
+        final schedTitle = titleController.text.trim();
+        FcmNotificationSender().sendAdminBroadcast(
+          title: 'This Week\'s Schedule is Ready!',
+          body: '$schedTitle — $totalAssignedWorkouts workouts assigned.'
+              ' Check out your plan for the week!',
+        );
+      }
+
       Get.snackbar(
         'Success',
         'Weekly schedule saved',

@@ -22,20 +22,86 @@ class WorkoutPlayerScreen extends GetView<WorkoutPlayerController> {
         backgroundColor: Colors.black,
         body: SafeArea(
           child: Obx(() {
-            switch (controller.playerState.value) {
-              case PlayerState.countdown:
-                return _buildCountdownView(context);
-              case PlayerState.playing:
-              case PlayerState.paused:
-                return _buildPlayingView(context);
-              case PlayerState.resting:
-                return _buildRestingView(context);
-              case PlayerState.completing:
-                return _buildCompletingView(context);
-              case PlayerState.completed:
-                return _buildCompletedView(context);
-            }
+            final child = switch (controller.playerState.value) {
+              PlayerState.countdown => _buildCountdownView(context),
+              PlayerState.playing || PlayerState.paused =>
+                _buildPlayingView(context),
+              PlayerState.resting => _buildRestingView(context),
+              PlayerState.completing => _buildCompletingView(context),
+              PlayerState.completed => _buildCompletedView(context),
+            };
+
+            return Stack(
+              children: [
+                child,
+                // No internet overlay
+                if (controller.isOffline.value)
+                  _buildNoInternetOverlay(context),
+              ],
+            );
           }),
+        ),
+      ),
+    );
+  }
+
+  // ============================================
+  // NO INTERNET OVERLAY
+  // ============================================
+
+  Widget _buildNoInternetOverlay(BuildContext context) {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.85),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.red.shade600.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Iconsax.wifi_square,
+                color: Colors.red.shade400,
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No Internet Connection',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Workout is paused. It will resume\nautomatically when connected.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Waiting for connection...',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
+            ),
+          ],
         ),
       ),
     );

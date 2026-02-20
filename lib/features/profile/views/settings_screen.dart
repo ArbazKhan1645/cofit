@@ -33,8 +33,6 @@ class SettingsScreen extends GetView<SettingsController> {
               _buildDataSection(context),
               const SizedBox(height: 24),
               _buildAppSection(context),
-              const SizedBox(height: 24),
-              _buildDangerZoneSection(context),
               const SizedBox(height: 32),
             ],
           ),
@@ -305,62 +303,6 @@ class SettingsScreen extends GetView<SettingsController> {
               )),
         ),
       ],
-    );
-  }
-
-  // ============================================
-  // DANGER ZONE
-  // ============================================
-
-  Widget _buildDangerZoneSection(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: AppRadius.large,
-        boxShadow: AppShadows.subtle,
-        border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Text(
-              'Danger Zone',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600, color: Colors.red),
-            ),
-          ),
-          Obx(() => ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
-                    borderRadius: AppRadius.small,
-                  ),
-                  child: controller.isDeleting.value
-                      ? const Padding(
-                          padding: EdgeInsets.all(10),
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.red),
-                        )
-                      : const Icon(Iconsax.trash, color: Colors.red, size: 20),
-                ),
-                title: const Text('Delete Account',
-                    style: TextStyle(color: Colors.red)),
-                subtitle: Text('Permanently delete your account & all data',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: AppColors.textMuted)),
-                enabled: !controller.isDeleting.value,
-                onTap: controller.showDeleteAccountDialog,
-              )),
-        ],
-      ),
     );
   }
 

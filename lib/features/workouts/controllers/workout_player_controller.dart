@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:media_kit/media_kit.dart';
@@ -51,6 +52,11 @@ class WorkoutPlayerController extends GetxController {
   bool _exerciseFinishCalled = false;
   bool _disposed = false;
 
+  // Connectivity
+  final RxBool isOffline = false.obs;
+  Timer? _connectivityTimer;
+  bool _wasPausedByConnectivity = false;
+
   // Timers
   Timer? _countdownTimer;
   Timer? _restTimer;
@@ -93,6 +99,7 @@ class WorkoutPlayerController extends GetxController {
     }
 
     _startElapsedTimer();
+    _startConnectivityMonitor();
     _startCountdown();
   }
 
@@ -110,6 +117,64 @@ class WorkoutPlayerController extends GetxController {
     _restTimer?.cancel();
     _elapsedTimer?.cancel();
     _exerciseTimer?.cancel();
+    _connectivityTimer?.cancel();
+  }
+
+  // ============================================
+  // CONNECTIVITY MONITORING
+  // ============================================
+
+  Future<bool> _hasInternet() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _startConnectivityMonitor() {
+    _connectivityTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+      if (_disposed) return;
+      final hasInternet = await _hasInternet();
+      if (_disposed) return;
+
+      if (!hasInternet && !isOffline.value) {
+        // Internet just dropped
+        isOffline.value = true;
+        _pauseForConnectivity();
+      } else if (hasInternet && isOffline.value) {
+        // Internet restored
+        isOffline.value = false;
+        _resumeAfterConnectivity();
+      }
+    });
+  }
+
+  void _pauseForConnectivity() {
+    final state = playerState.value;
+    if (state == PlayerState.playing) {
+      _wasPausedByConnectivity = true;
+      // Pause video if playing
+      if (_player != null && _player!.state.playing) {
+        _player!.pause();
+      }
+      playerState.value = PlayerState.paused;
+      _stopwatch.stop();
+    }
+  }
+
+  void _resumeAfterConnectivity() {
+    if (_wasPausedByConnectivity) {
+      _wasPausedByConnectivity = false;
+      if (playerState.value == PlayerState.paused) {
+        if (_player != null) {
+          _player!.play();
+        }
+        playerState.value = PlayerState.playing;
+        _stopwatch.start();
+      }
+    }
   }
 
   /// Disposes media_kit Player and cancels stream subscriptions.
@@ -393,7 +458,25 @@ class WorkoutPlayerController extends GetxController {
   // COMPLETION
   // ============================================
 
-  void _startCompleting() {
+  Future<void> _startCompleting() async {
+    // Check internet before completing
+    final hasInternet = await _hasInternet();
+    if (!hasInternet) {
+      isOffline.value = true;
+      _wasPausedByConnectivity = true;
+      playerState.value = PlayerState.paused;
+      _stopwatch.stop();
+      Get.snackbar(
+        'No Internet',
+        'Connect to the internet to complete your workout.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
     playerState.value = PlayerState.completing;
     _stopwatch.stop();
     _elapsedTimer?.cancel();

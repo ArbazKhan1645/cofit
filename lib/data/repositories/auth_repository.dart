@@ -57,11 +57,12 @@ class AuthRepository extends BaseRepository {
   }
 
   /// Sign in with Google
-  Future<Result<bool>> signInWithGoogle() async {
+  Future<Result<UserModel>> signInWithGoogle() async {
     try {
-      final success = await supabase.signInWithGoogle();
-      if (success) {
-        return Result.success(true);
+      final response = await supabase.signInWithGoogle();
+      if (response.user != null) {
+        final profile = await getProfile(response.user!.id);
+        return profile;
       }
       return Result.failure(
           RepositoryException(message: 'Google sign in failed'));

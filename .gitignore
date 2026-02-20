@@ -1,6 +1,11 @@
 # Environment variables (secrets)
 .env
 
+# Release keystore properties
+android/key.properties
+*.keystore
+*.jks
+
 # Miscellaneous
 *.class
 *.log

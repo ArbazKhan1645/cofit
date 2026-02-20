@@ -42,6 +42,17 @@ class WeeklyScheduleModel {
     };
   }
 
+  Map<String, dynamic> toCacheJson() {
+    return {
+      'id': id,
+      'title': title,
+      'disabled_days': disabledDays,
+      'is_active': isActive,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
   WeeklyScheduleModel copyWith({
     String? id,
     String? title,
@@ -105,6 +116,18 @@ class WeeklyScheduleItemModel {
       'day_of_week': dayOfWeek,
       'workout_id': workoutId,
       'sort_order': sortOrder,
+    };
+  }
+
+  Map<String, dynamic> toCacheJson() {
+    return {
+      'id': id,
+      'schedule_id': scheduleId,
+      'day_of_week': dayOfWeek,
+      'workout_id': workoutId,
+      'sort_order': sortOrder,
+      'created_at': createdAt.toIso8601String(),
+      if (workout != null) 'workouts': workout!.toCacheJson(),
     };
   }
 

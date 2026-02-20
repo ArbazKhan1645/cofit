@@ -23,6 +23,7 @@ class CofitAvatar extends StatefulWidget {
   final String? userName;
   final double radius;
   final VoidCallback? onTap;
+  final VoidCallback? onEditTap;
   final bool showEditIcon;
   final Color? backgroundColor;
 
@@ -33,6 +34,7 @@ class CofitAvatar extends StatefulWidget {
     this.userName,
     this.radius = 20,
     this.onTap,
+    this.onEditTap,
     this.showEditIcon = false,
     this.backgroundColor,
   });
@@ -72,24 +74,28 @@ class _CofitAvatarState extends State<CofitAvatar> {
     Widget avatar = _buildAvatar();
 
     if (widget.showEditIcon) {
+      final editIcon = Container(
+        padding: const EdgeInsets.all(4),
+        decoration: const BoxDecoration(
+          color: AppColors.primary,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          Iconsax.camera,
+          size: widget.radius * 0.5,
+          color: Colors.white,
+        ),
+      );
+
       avatar = Stack(
         children: [
           avatar,
           Positioned(
             bottom: 0,
             right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Iconsax.camera,
-                size: widget.radius * 0.5,
-                color: Colors.white,
-              ),
-            ),
+            child: widget.onEditTap != null
+                ? GestureDetector(onTap: widget.onEditTap, child: editIcon)
+                : editIcon,
           ),
         ],
       );

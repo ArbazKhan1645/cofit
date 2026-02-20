@@ -9,10 +9,12 @@ import 'package:uuid/uuid.dart';
 import '../../core/services/media/media_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../data/models/workout_model.dart';
+import '../../notifications/firebase_sender.dart';
 import '../../shared/controllers/base_controller.dart';
+import '../../shared/mixins/connectivity_mixin.dart';
 import 'exercise_form_screen.dart';
 
-class AdminWorkoutController extends BaseController {
+class AdminWorkoutController extends BaseController with ConnectivityMixin {
   final SupabaseService _supabase = SupabaseService.to;
   final _uuid = const Uuid();
 
@@ -123,6 +125,7 @@ class AdminWorkoutController extends BaseController {
   }
 
   Future<void> loadWorkouts() async {
+    if (!await ensureConnectivity()) return;
     setLoading(true);
     try {
       final response = await _supabase
@@ -140,6 +143,7 @@ class AdminWorkoutController extends BaseController {
   }
 
   Future<void> loadTrainers() async {
+    if (!await ensureConnectivity()) return;
     try {
       final response = await _supabase
           .from('trainers')
@@ -159,6 +163,7 @@ class AdminWorkoutController extends BaseController {
   // ============================================
 
   Future<void> loadWorkoutForView(WorkoutModel workout) async {
+    if (!await ensureConnectivity()) return;
     viewingWorkout.value = workout;
     viewExercises.clear();
     viewVariants.clear();
@@ -237,6 +242,7 @@ class AdminWorkoutController extends BaseController {
   }
 
   Future<void> initFormForEdit(WorkoutModel workout) async {
+    if (!await ensureConnectivity()) return;
     editingWorkout.value = workout;
     selectedImageBytes.value = null;
     selectedVideoBytes.value = null;
@@ -316,6 +322,7 @@ class AdminWorkoutController extends BaseController {
   // ============================================
 
   Future<void> pickVideo() async {
+    if (!await ensureConnectivity()) return;
     final bytes = await MediaService.to.pickVideoFromGallery();
     if (bytes == null) return;
     selectedVideoBytes.value = bytes;
@@ -925,6 +932,7 @@ class AdminWorkoutController extends BaseController {
   // ============================================
 
   Future<void> saveWorkout() async {
+    if (!await ensureConnectivity()) return;
     isSaving.value = true;
 
     // Video is required
@@ -978,8 +986,9 @@ class AdminWorkoutController extends BaseController {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
+      final isNewWorkout = editingWorkout.value == null;
       String workoutId;
-      if (editingWorkout.value != null) {
+      if (!isNewWorkout) {
         workoutId = editingWorkout.value!.id;
         await _supabase.from('workouts').update(data).eq('id', workoutId);
       } else {
@@ -991,6 +1000,22 @@ class AdminWorkoutController extends BaseController {
             .select('id')
             .single();
         workoutId = response['id'] as String;
+
+        // Send push notification to all users on new workout (unawaited)
+        final title = titleController.text.trim();
+        final dur = int.tryParse(durationController.text) ?? 0;
+        final diff = difficulty.value;
+        final trainerName = allTrainers
+            .firstWhereOrNull((t) => t.id == selectedTrainerId.value)
+            ?.fullName;
+        final imgUrl = data['thumbnail_url'] as String?;
+
+        FcmNotificationSender().sendAdminBroadcast(
+          title: 'New Workout Added!',
+          body: '$title — ${dur > 0 ? '$dur min, ' : ''}$diff.'
+              '${trainerName != null ? ' By $trainerName.' : ''}',
+          imageUrl: (imgUrl != null && imgUrl.isNotEmpty) ? imgUrl : null,
+        );
       }
 
       // Delete removed variants (cascade deletes variant exercises)
@@ -1063,7 +1088,7 @@ class AdminWorkoutController extends BaseController {
       Get.back();
       Get.snackbar(
         'Success',
-        editingWorkout.value != null ? 'Workout updated' : 'Workout added',
+        isNewWorkout ? 'Workout added' : 'Workout updated',
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
@@ -1095,6 +1120,7 @@ class AdminWorkoutController extends BaseController {
       ),
     );
     if (confirmed != true) return;
+    if (!await ensureConnectivity()) return;
 
     try {
       await _supabase.from('workout_exercises').delete().eq('workout_id', id);

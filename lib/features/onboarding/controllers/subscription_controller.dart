@@ -3,7 +3,6 @@ import 'package:get_storage/get_storage.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/supabase_service.dart';
-import '../../../notifications/firebase_sender.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/widgets/widgets.dart';
 import 'auth_controller.dart';

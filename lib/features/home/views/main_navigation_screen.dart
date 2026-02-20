@@ -74,22 +74,37 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         controller.handleBackPress();
       },
       child: Scaffold(
-      body: Obx(() => IndexedStack(
+        body: Obx(
+          () => IndexedStack(
             index: controller.currentIndex.value,
-            children: const [
+            children: [
               HomeScreen(),
-              WorkoutsScreen(),
-              RecipesScreen(),
-              ProgressScreen(),
-              CommunityScreen(),
-              ProfileScreen(),
+              controller.currentIndex.value != 1
+                  ? SizedBox.shrink()
+                  : WorkoutsScreen(),
+              controller.currentIndex.value != 2
+                  ? SizedBox.shrink()
+                  : RecipesScreen(),
+              controller.currentIndex.value != 3
+                  ? SizedBox.shrink()
+                  : ProgressScreen(),
+              controller.currentIndex.value != 4
+                  ? SizedBox.shrink()
+                  : CommunityScreen(),
+              controller.currentIndex.value != 5
+                  ? SizedBox.shrink()
+                  : ProfileScreen(),
             ],
-          )),
-      bottomNavigationBar: Obx(() => Container(
+          ),
+        ),
+        bottomNavigationBar: Obx(
+          () => Container(
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: AppShadows.bottomNav,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
             ),
             child: SafeArea(
               child: Padding(
@@ -137,8 +152,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 ),
               ),
             ),
-          )),
-    ),
+          ),
+        ),
+      ),
     );
   }
 

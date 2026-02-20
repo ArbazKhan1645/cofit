@@ -227,6 +227,15 @@ class UserAchievementModel {
     };
   }
 
+  /// Cache-friendly JSON — includes joined achievement data
+  Map<String, dynamic> toCacheJson() {
+    final json = toJson();
+    if (achievement != null) {
+      json['achievements'] = achievement!.toJson();
+    }
+    return json;
+  }
+
   UserAchievementModel copyWith({
     String? id,
     String? userId,

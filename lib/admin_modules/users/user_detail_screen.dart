@@ -22,20 +22,23 @@ class UserDetailScreen extends GetView<AdminUsersController> {
         );
       }
 
+      final isSelf = user.id == controller.currentUserId;
+
       return Scaffold(
         backgroundColor: AppColors.bgCream,
         appBar: AppBar(
           title: const Text('User Details'),
           actions: [
-            // Ban/Unban
-            IconButton(
-              icon: Icon(
-                user.isBanned ? Iconsax.shield_tick : Iconsax.slash,
-                color: user.isBanned ? AppColors.success : AppColors.warning,
+            // Ban/Unban — hide for self
+            if (!isSelf)
+              IconButton(
+                icon: Icon(
+                  user.isBanned ? Iconsax.shield_tick : Iconsax.slash,
+                  color: user.isBanned ? AppColors.success : AppColors.warning,
+                ),
+                onPressed: () => controller.toggleBan(user),
+                tooltip: user.isBanned ? 'Unban' : 'Ban',
               ),
-              onPressed: () => controller.toggleBan(user),
-              tooltip: user.isBanned ? 'Unban' : 'Ban',
-            ),
             // Delete
             IconButton(
               icon: const Icon(Iconsax.trash, color: AppColors.error),
@@ -204,29 +207,55 @@ class UserDetailScreen extends GetView<AdminUsersController> {
                 ]),
               ],
               const SizedBox(height: 40),
-              // Ban button at bottom
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => controller.toggleBan(user),
-                  icon: Icon(
-                    user.isBanned ? Iconsax.shield_tick : Iconsax.slash,
-                    size: 20,
-                  ),
-                  label: Text(user.isBanned ? 'Unban User' : 'Ban User'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor:
-                        user.isBanned ? AppColors.success : AppColors.error,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: BorderSide(
-                      color: user.isBanned ? AppColors.success : AppColors.error,
+              // Role toggle button — hide for self
+              if (!isSelf)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => controller.toggleRole(user),
+                      icon: Icon(
+                        user.isAdmin ? Iconsax.user : Iconsax.shield_tick,
+                        size: 20,
+                      ),
+                      label: Text(user.isAdmin ? 'Remove Admin' : 'Make Admin'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.lavender,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: AppColors.lavender),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.large),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.large),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
+              // Ban button — hide for self
+              if (!isSelf)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => controller.toggleBan(user),
+                      icon: Icon(
+                        user.isBanned ? Iconsax.shield_tick : Iconsax.slash,
+                        size: 20,
+                      ),
+                      label: Text(user.isBanned ? 'Unban User' : 'Ban User'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor:
+                            user.isBanned ? AppColors.success : AppColors.error,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: BorderSide(
+                          color: user.isBanned ? AppColors.success : AppColors.error,
+                        ),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.large),
+                      ),
+                    ),
+                  ),
+                ),
               // Delete button
               SizedBox(
                 width: double.infinity,

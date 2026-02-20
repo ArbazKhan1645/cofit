@@ -4,6 +4,7 @@ import 'package:iconsax/iconsax.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/cofit_avatar.dart';
+import '../../../shared/widgets/full_screen_image_viewer.dart';
 import '../../../app/routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
 import '../../community/controllers/community_controller.dart';
@@ -51,6 +52,8 @@ class ProfileScreen extends GetView<ProfileController> {
                   : const SizedBox.shrink(),
             ),
             const SizedBox(height: 24),
+            _buildDangerZoneSection(context),
+            const SizedBox(height: 24),
             _buildSignOutButton(context),
             const SizedBox(height: 32),
           ],
@@ -80,7 +83,13 @@ class ProfileScreen extends GetView<ProfileController> {
                   userName: controller.userName.value,
                   radius: 50,
                   showEditIcon: true,
-                  onTap: () => controller.uploadProfileImage(),
+                  onTap: () {
+                    final url = controller.userAvatar.value;
+                    if (url.isNotEmpty) {
+                      FullScreenImageViewer.open(context, url);
+                    }
+                  },
+                  onEditTap: () => controller.uploadProfileImage(),
                 ),
                 if (controller.isUploadingImage.value)
                   Container(
@@ -359,6 +368,45 @@ class ProfileScreen extends GetView<ProfileController> {
 
   Widget _buildDivider() {
     return const Divider(height: 1, indent: 56);
+  }
+
+  Widget _buildDangerZoneSection(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: AppRadius.large,
+        boxShadow: AppShadows.subtle,
+        border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+      ),
+      child: Obx(() => ListTile(
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: AppRadius.small,
+              ),
+              child: controller.isDeleting.value
+                  ? const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.red),
+                    )
+                  : const Icon(Iconsax.trash, color: Colors.red, size: 20),
+            ),
+            title: const Text('Delete Account',
+                style: TextStyle(color: Colors.red)),
+            subtitle: Text('Permanently delete your account & all data',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: AppColors.textMuted)),
+            trailing: const Icon(Iconsax.arrow_right_3,
+                size: 20, color: AppColors.textMuted),
+            enabled: !controller.isDeleting.value,
+            onTap: controller.showDeleteAccountDialog,
+          )),
+    );
   }
 
   Widget _buildSignOutButton(BuildContext context) {

@@ -5,8 +5,9 @@ import '../../core/services/supabase_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/support_ticket_model.dart';
 import '../../shared/controllers/base_controller.dart';
+import '../../shared/mixins/connectivity_mixin.dart';
 
-class AdminSupportController extends BaseController {
+class AdminSupportController extends BaseController with ConnectivityMixin {
   final SupabaseService _supabase = SupabaseService.to;
 
   // ============================================
@@ -75,6 +76,7 @@ class AdminSupportController extends BaseController {
   // ============================================
 
   Future<void> loadAllTickets() async {
+    if (!await ensureConnectivity()) return;
     setLoading(true);
     try {
       final response = await _supabase
@@ -101,6 +103,7 @@ class AdminSupportController extends BaseController {
   // ============================================
 
   Future<void> loadMessages(String ticketId) async {
+    if (!await ensureConnectivity()) return;
     try {
       final response = await _supabase
           .from('ticket_messages')
@@ -121,6 +124,7 @@ class AdminSupportController extends BaseController {
   }
 
   Future<void> sendReply(String ticketId) async {
+    if (!await ensureConnectivity()) return;
     final text = messageController.text.trim();
     if (text.isEmpty) return;
 
@@ -167,6 +171,7 @@ class AdminSupportController extends BaseController {
   // ============================================
 
   Future<void> updateStatus(String ticketId, String newStatus) async {
+    if (!await ensureConnectivity()) return;
     try {
       await _supabase.from('support_tickets').update({
         'status': newStatus,

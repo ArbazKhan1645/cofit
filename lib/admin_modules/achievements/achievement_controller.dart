@@ -5,9 +5,10 @@ import '../../core/services/supabase_service.dart';
 import '../../data/models/badge_model.dart';
 import '../../data/repositories/achievement_repository.dart';
 import '../../shared/controllers/base_controller.dart';
+import '../../shared/mixins/connectivity_mixin.dart';
 import 'widgets/material_icon_picker.dart';
 
-class AchievementController extends BaseController {
+class AchievementController extends BaseController with ConnectivityMixin {
   final SupabaseService _supabase = SupabaseService.to;
   final AchievementRepository _repository = AchievementRepository();
 
@@ -78,6 +79,7 @@ class AchievementController extends BaseController {
   // ============================================
 
   Future<void> loadAchievements() async {
+    if (!await ensureConnectivity()) return;
     setLoading(true);
     try {
       final response = await _supabase
@@ -171,6 +173,7 @@ class AchievementController extends BaseController {
 
   Future<void> saveAchievement() async {
     if (!formKey.currentState!.validate()) return;
+    if (!await ensureConnectivity()) return;
 
     isSaving.value = true;
     try {
@@ -239,6 +242,7 @@ class AchievementController extends BaseController {
       ),
     );
     if (confirmed != true) return;
+    if (!await ensureConnectivity()) return;
 
     try {
       await _supabase.from('achievements').delete().eq('id', id);
@@ -262,6 +266,7 @@ class AchievementController extends BaseController {
   // ============================================
 
   Future<void> loadAchievementDetail(String id) async {
+    if (!await ensureConnectivity()) return;
     isLoadingDetail.value = true;
     achievementUsers.clear();
     achievementStats.value = null;

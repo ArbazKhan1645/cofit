@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:get/get.dart';
 import '../../../shared/controllers/base_controller.dart';
+import '../../../core/services/achievement_cache_service.dart';
 import '../../../core/services/progress_service.dart';
 import '../../../data/models/badge_model.dart';
 import '../../../data/repositories/achievement_repository.dart';
@@ -56,6 +59,26 @@ class ProgressController extends BaseController {
   }
 
   Future<void> loadAchievements() async {
+    final hasInternet = await _hasInternet();
+    final cache = AchievementCacheService.to;
+
+    if (!hasInternet) {
+      // Offline: use cached data
+      final cachedAll = cache.getCachedAllAchievements();
+      final cachedUser = cache.getCachedUserAchievements();
+      if (cachedAll != null) allAchievements.value = cachedAll;
+      if (cachedUser != null) userAchievements.value = cachedUser;
+      return;
+    }
+
+    // Show cached data instantly while loading fresh
+    if (allAchievements.isEmpty) {
+      final cachedAll = cache.getCachedAllAchievements();
+      final cachedUser = cache.getCachedUserAchievements();
+      if (cachedAll != null) allAchievements.value = cachedAll;
+      if (cachedUser != null) userAchievements.value = cachedUser;
+    }
+
     isLoadingAchievements.value = true;
 
     final results = await Future.wait([
@@ -65,15 +88,32 @@ class ProgressController extends BaseController {
 
     results[0].fold(
       (error) {},
-      (data) => allAchievements.value = data as List<AchievementModel>,
+      (data) {
+        final list = data as List<AchievementModel>;
+        allAchievements.value = list;
+        cache.cacheAllAchievements(list);
+      },
     );
 
     results[1].fold(
       (error) {},
-      (data) => userAchievements.value = data as List<UserAchievementModel>,
+      (data) {
+        final list = data as List<UserAchievementModel>;
+        userAchievements.value = list;
+        cache.cacheUserAchievements(list);
+      },
     );
 
     isLoadingAchievements.value = false;
+  }
+
+  Future<bool> _hasInternet() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    }
   }
 
   /// Sorted display list: in-progress first (by % desc), completed, then locked

@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../shared/widgets/cofit_image.dart';
 import '../../../shared/widgets/cofit_avatar.dart';
+import '../../../shared/widgets/full_screen_image_viewer.dart';
 import '../../../data/models/community_model.dart';
 import '../controllers/community_controller.dart';
 import '../widgets/approval_badge.dart';
@@ -131,11 +132,19 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             },
             child: Row(
               children: [
-                CofitAvatar(
-                  imageUrl: post.authorAvatar,
-                  userId: post.author?.id,
-                  userName: post.authorName,
-                  radius: 24,
+                GestureDetector(
+                  onTap: () {
+                    if (post.authorAvatar != null &&
+                        post.authorAvatar!.isNotEmpty) {
+                      FullScreenImageViewer.open(context, post.authorAvatar!);
+                    }
+                  },
+                  child: CofitAvatar(
+                    imageUrl: post.authorAvatar,
+                    userId: post.author?.id,
+                    userName: post.authorName,
+                    radius: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -258,7 +267,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           Text(post.content, style: Theme.of(context).textTheme.bodyLarge),
         if (post.imageUrls.isNotEmpty) ...[
           const SizedBox(height: 16),
-          CofitImage(imageUrl: post.imageUrls.first, width: double.infinity, borderRadius: AppRadius.medium),
+          GestureDetector(
+            onTap: () => FullScreenImageViewer.open(
+              context,
+              post.imageUrls.first,
+            ),
+            child: CofitImage(imageUrl: post.imageUrls.first, width: double.infinity, borderRadius: AppRadius.medium),
+          ),
         ],
       ],
     );

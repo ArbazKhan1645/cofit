@@ -113,6 +113,15 @@ class ChallengeModel {
     };
   }
 
+  /// Cache-friendly JSON — includes client-side fields (isJoined, userProgress, userRank)
+  Map<String, dynamic> toCacheJson() {
+    final json = toJson();
+    json['is_joined'] = isJoined;
+    json['user_progress'] = userProgress;
+    json['user_rank'] = userRank;
+    return json;
+  }
+
   ChallengeModel copyWith({
     String? id,
     String? title,
@@ -322,6 +331,18 @@ class UserChallengeModel {
       'joined_at': joinedAt.toIso8601String(),
       'last_updated': lastUpdated.toIso8601String(),
     };
+  }
+
+  /// Cache-friendly JSON — includes joined challenge data
+  Map<String, dynamic> toCacheJson() {
+    final json = toJson();
+    if (challenge != null) {
+      json['challenges'] = challenge!.toCacheJson();
+    }
+    if (user != null) {
+      json['users'] = user!.toJson();
+    }
+    return json;
   }
 
   UserChallengeModel copyWith({

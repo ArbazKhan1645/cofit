@@ -205,7 +205,7 @@ class WorkoutsScreen extends GetView<WorkoutsController> {
                   end: Alignment.bottomCenter,
                 ),
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
+                  top: Radius.circular(10),
                 ),
               ),
               child: Column(

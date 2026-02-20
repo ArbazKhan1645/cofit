@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../app/routes/app_routes.dart';
 import '../../data/models/models.dart';
 import 'device_service.dart';
 import 'supabase_service.dart';
@@ -96,6 +97,16 @@ class AuthService extends GetxService {
       case AuthChangeEvent.tokenRefreshed:
       case AuthChangeEvent.userUpdated:
         await _fetchCurrentUser();
+        // Auto-logout if user got banned while app was open
+        if (_currentUser.value?.isBanned == true) {
+          await signOut();
+          Get.offAllNamed(AppRoutes.signIn);
+          Get.snackbar(
+            'Account Banned',
+            'Your account has been banned. Contact support for help.',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        }
         break;
       case AuthChangeEvent.signedOut:
         _currentUser.value = null;
@@ -106,6 +117,10 @@ class AuthService extends GetxService {
       case AuthChangeEvent.initialSession:
         if (_supabase.isAuthenticated) {
           await _fetchCurrentUser();
+          // Ban check on initial session restore
+          if (_currentUser.value?.isBanned == true) {
+            await signOut();
+          }
         }
         break;
       default:
@@ -118,7 +133,8 @@ class AuthService extends GetxService {
     }
   }
 
-  /// Fetch current user profile from database
+  /// Fetch current user profile from database.
+  /// Does NOT auto-signout on ban — callers handle ban checks themselves.
   Future<void> _fetchCurrentUser() async {
     if (_supabase.userId == null) return;
 
@@ -130,12 +146,25 @@ class AuthService extends GetxService {
           .maybeSingle();
 
       if (response != null) {
-        _currentUser.value = UserModel.fromJson(response);
-        _cacheUser(_currentUser.value);
+        final user = UserModel.fromJson(response);
+        _currentUser.value = user;
+        _cacheUser(user);
       }
     } catch (e) {
       _error.value = e.toString();
     }
+  }
+
+  /// Check if current user is banned → sign out + return ban message.
+  /// Returns null if not banned, error message if banned.
+  Future<String?> _checkBanAndSignOut() async {
+    if (_currentUser.value?.isBanned == true) {
+      await _supabase.signOut();
+      _currentUser.value = null;
+      _cacheUser(null);
+      return 'Your account has been banned. Contact support for help.';
+    }
+    return null;
   }
 
   // ============================================
@@ -255,6 +284,14 @@ class AuthService extends GetxService {
 
       if (response.user != null) {
         await _fetchCurrentUser();
+
+        // Ban check — block banned users immediately
+        final banMsg = await _checkBanAndSignOut();
+        if (banMsg != null) {
+          _isLoading.value = false;
+          return AuthResult.failure(banMsg);
+        }
+
         _isLoading.value = false;
         return AuthResult.success();
       }
@@ -272,22 +309,37 @@ class AuthService extends GetxService {
     }
   }
 
-  /// Sign in with Google
+  /// Sign in with Google (native flow)
   Future<AuthResult> signInWithGoogle() async {
     _isLoading.value = true;
     _error.value = null;
 
     try {
-      final success = await _supabase.signInWithGoogle();
-      _isLoading.value = false;
+      final response = await _supabase.signInWithGoogle();
 
-      if (success) {
+      if (response.user != null) {
+        await _fetchCurrentUser();
+
+        // Ban check — block banned users immediately
+        final banMsg = await _checkBanAndSignOut();
+        if (banMsg != null) {
+          _isLoading.value = false;
+          return AuthResult.failure(banMsg);
+        }
+
+        _isLoading.value = false;
         return AuthResult.success();
       }
-      return AuthResult.failure('Google sign in cancelled');
+
+      _isLoading.value = false;
+      return AuthResult.failure('Google sign in failed');
     } catch (e) {
       _isLoading.value = false;
-      _error.value = e.toString();
+      final msg = e.toString();
+      if (msg.contains('cancelled')) {
+        return AuthResult.failure('Google sign in cancelled');
+      }
+      _error.value = msg;
       return AuthResult.failure('Google sign in failed');
     }
   }
@@ -299,11 +351,22 @@ class AuthService extends GetxService {
 
     try {
       final success = await _supabase.signInWithApple();
-      _isLoading.value = false;
 
       if (success) {
+        await _fetchCurrentUser();
+
+        // Ban check — block banned users immediately
+        final banMsg = await _checkBanAndSignOut();
+        if (banMsg != null) {
+          _isLoading.value = false;
+          return AuthResult.failure(banMsg);
+        }
+
+        _isLoading.value = false;
         return AuthResult.success();
       }
+
+      _isLoading.value = false;
       return AuthResult.failure('Apple sign in cancelled');
     } catch (e) {
       _isLoading.value = false;

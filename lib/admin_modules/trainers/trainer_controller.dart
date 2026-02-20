@@ -6,9 +6,11 @@ import 'package:get/get.dart';
 import '../../core/services/media/media_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../data/models/workout_model.dart';
+import '../../notifications/firebase_sender.dart';
 import '../../shared/controllers/base_controller.dart';
+import '../../shared/mixins/connectivity_mixin.dart';
 
-class TrainerController extends BaseController {
+class TrainerController extends BaseController with ConnectivityMixin {
   final SupabaseService _supabase = SupabaseService.to;
 
   // List state
@@ -65,6 +67,7 @@ class TrainerController extends BaseController {
   }
 
   Future<void> loadTrainers() async {
+    if (!await ensureConnectivity()) return;
     setLoading(true);
     try {
       final response = await _supabase
@@ -146,6 +149,7 @@ class TrainerController extends BaseController {
 
   Future<void> saveTrainer() async {
     if (!formKey.currentState!.validate()) return;
+    if (!await ensureConnectivity()) return;
 
     isSaving.value = true;
     try {
@@ -179,7 +183,9 @@ class TrainerController extends BaseController {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      if (editingTrainer.value != null) {
+      final isNewTrainer = editingTrainer.value == null;
+
+      if (!isNewTrainer) {
         await _supabase
             .from('trainers')
             .update(data)
@@ -189,11 +195,29 @@ class TrainerController extends BaseController {
         await _supabase.from('trainers').insert(data);
       }
 
+      // Send push notification to all users on new trainer (unawaited)
+      if (isNewTrainer) {
+        final name = fullNameController.text.trim();
+        final specs = specialties.isNotEmpty
+            ? specialties.take(2).join(', ')
+            : 'Fitness';
+        final years = int.tryParse(yearsExperienceController.text) ?? 0;
+        final imgUrl = data['avatar_url'] as String?;
+
+        FcmNotificationSender().sendAdminBroadcast(
+          title: 'New Trainer Joined!',
+          body: '$name — $specs specialist.'
+              '${years > 0 ? ' $years+ years experience.' : ''}'
+              ' Check out their profile!',
+          imageUrl: imgUrl,
+        );
+      }
+
       await loadTrainers();
       Get.back();
       Get.snackbar(
         'Success',
-        editingTrainer.value != null ? 'Trainer updated' : 'Trainer added',
+        isNewTrainer ? 'Trainer added' : 'Trainer updated',
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
@@ -225,6 +249,7 @@ class TrainerController extends BaseController {
       ),
     );
     if (confirmed != true) return;
+    if (!await ensureConnectivity()) return;
 
     try {
       await _supabase.from('trainers').delete().eq('id', id);

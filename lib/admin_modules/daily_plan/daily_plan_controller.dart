@@ -5,8 +5,9 @@ import '../../core/services/supabase_service.dart';
 import '../../data/models/daily_plan_model.dart';
 import '../../data/models/workout_model.dart';
 import '../../shared/controllers/base_controller.dart';
+import '../../shared/mixins/connectivity_mixin.dart';
 
-class DailyPlanController extends BaseController {
+class DailyPlanController extends BaseController with ConnectivityMixin {
   final SupabaseService _supabase = SupabaseService.to;
 
   // ============================================
@@ -84,6 +85,7 @@ class DailyPlanController extends BaseController {
   // ============================================
 
   Future<void> loadActivePlan() async {
+    if (!await ensureConnectivity()) return;
     setLoading(true);
     try {
       final planResponse = await _supabase
@@ -142,6 +144,7 @@ class DailyPlanController extends BaseController {
   }
 
   Future<void> loadAllWorkouts() async {
+    if (!await ensureConnectivity()) return;
     try {
       final response = await _supabase
           .from('workouts')
@@ -238,6 +241,7 @@ class DailyPlanController extends BaseController {
       return;
     }
 
+    if (!await ensureConnectivity()) return;
     isSaving.value = true;
     try {
       String planId;

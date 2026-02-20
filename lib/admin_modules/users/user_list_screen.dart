@@ -223,31 +223,50 @@ class UserListScreen extends GetView<AdminUsersController> {
               PopupMenuButton<String>(
                 onSelected: (val) => _handleMenuAction(val, user),
                 itemBuilder: (_) => [
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     value: 'view',
                     child: Row(children: [
-                      const Icon(Iconsax.eye, size: 18),
-                      const SizedBox(width: 8),
-                      const Text('View Details'),
+                      Icon(Iconsax.eye, size: 18),
+                      SizedBox(width: 8),
+                      Text('View Details'),
                     ]),
                   ),
-                  PopupMenuItem(
-                    value: 'ban',
-                    child: Row(children: [
-                      Icon(
-                        user.isBanned ? Iconsax.shield_tick : Iconsax.slash,
-                        size: 18,
-                        color:
-                            user.isBanned ? AppColors.success : AppColors.warning,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(user.isBanned ? 'Unban' : 'Ban',
-                          style: TextStyle(
-                              color: user.isBanned
-                                  ? AppColors.success
-                                  : AppColors.warning)),
-                    ]),
-                  ),
+                  // Role toggle — hide for self
+                  if (user.id != controller.currentUserId)
+                    PopupMenuItem(
+                      value: 'role',
+                      child: Row(children: [
+                        Icon(
+                          user.isAdmin ? Iconsax.user : Iconsax.shield_tick,
+                          size: 18,
+                          color: AppColors.lavender,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          user.isAdmin ? 'Remove Admin' : 'Make Admin',
+                          style: const TextStyle(color: AppColors.lavender),
+                        ),
+                      ]),
+                    ),
+                  // Ban — hide for self
+                  if (user.id != controller.currentUserId)
+                    PopupMenuItem(
+                      value: 'ban',
+                      child: Row(children: [
+                        Icon(
+                          user.isBanned ? Iconsax.shield_tick : Iconsax.slash,
+                          size: 18,
+                          color:
+                              user.isBanned ? AppColors.success : AppColors.warning,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(user.isBanned ? 'Unban' : 'Ban',
+                            style: TextStyle(
+                                color: user.isBanned
+                                    ? AppColors.success
+                                    : AppColors.warning)),
+                      ]),
+                    ),
                   const PopupMenuItem(
                     value: 'delete',
                     child: Row(children: [
@@ -324,6 +343,9 @@ class UserListScreen extends GetView<AdminUsersController> {
       case 'view':
         controller.selectedUser.value = user;
         Get.toNamed(AppRoutes.adminUserDetail);
+        break;
+      case 'role':
+        controller.toggleRole(user);
         break;
       case 'ban':
         controller.toggleBan(user);

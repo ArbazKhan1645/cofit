@@ -3,8 +3,9 @@ import 'package:get/get.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../shared/controllers/base_controller.dart';
+import '../../shared/mixins/connectivity_mixin.dart';
 
-class AdminDashboardController extends BaseController {
+class AdminDashboardController extends BaseController with ConnectivityMixin {
   final SupabaseService _supabase = SupabaseService.to;
 
   // ============================================
@@ -87,6 +88,7 @@ class AdminDashboardController extends BaseController {
   // ============================================
 
   Future<void> loadDashboardData() async {
+    if (!await ensureConnectivity()) return;
     setLoading(true);
     try {
       await Future.wait([

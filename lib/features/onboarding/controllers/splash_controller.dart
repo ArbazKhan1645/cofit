@@ -1,7 +1,12 @@
+import 'package:cofit_collective/core/services/achievement_cache_service.dart';
 import 'package:cofit_collective/core/services/auth_service.dart';
+import 'package:cofit_collective/core/services/challenge_cache_service.dart';
+import 'package:cofit_collective/core/services/diet_plan_cache_service.dart';
 import 'package:cofit_collective/core/services/feed_cache_service.dart';
 import 'package:cofit_collective/core/services/media/media_service.dart';
+import 'package:cofit_collective/core/services/progress_cache_service.dart';
 import 'package:cofit_collective/core/services/progress_service.dart';
+import 'package:cofit_collective/core/services/workout_cache_service.dart';
 import 'package:cofit_collective/core/services/supabase_service.dart';
 import 'package:cofit_collective/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -66,6 +71,26 @@ class SplashController extends GetxController {
         () => FeedCacheService().init(),
         permanent: true,
       ),
+      Get.putAsync<DietPlanCacheService>(
+        () => DietPlanCacheService().init(),
+        permanent: true,
+      ),
+      Get.putAsync<ProgressCacheService>(
+        () => ProgressCacheService().init(),
+        permanent: true,
+      ),
+      Get.putAsync<WorkoutCacheService>(
+        () => WorkoutCacheService().init(),
+        permanent: true,
+      ),
+      Get.putAsync<ChallengeCacheService>(
+        () => ChallengeCacheService().init(),
+        permanent: true,
+      ),
+      Get.putAsync<AchievementCacheService>(
+        () => AchievementCacheService().init(),
+        permanent: true,
+      ),
       Get.putAsync<MediaService>(
         () => MediaService().init(),
         permanent: true,
@@ -86,6 +111,19 @@ class SplashController extends GetxController {
       Get.offAllNamed(AppRoutes.signIn);
       return;
     }
+
+    // Ban check — if user is banned, sign out and show message
+    if (authService.currentUser?.isBanned == true) {
+      await authService.signOut();
+      Get.offAllNamed(AppRoutes.signIn);
+      Get.snackbar(
+        'Account Banned',
+        'Your account has been banned. Contact support for help.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
     if (!authService.hasCompletedOnboarding) {
       Get.offAllNamed(AppRoutes.journalPrompts);
       return;

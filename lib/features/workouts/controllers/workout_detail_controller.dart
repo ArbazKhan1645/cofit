@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../shared/controllers/base_controller.dart';
@@ -25,6 +27,9 @@ class WorkoutDetailController extends BaseController {
 
   // Saved / favorite state
   final RxBool isWorkoutSaved = false.obs;
+
+  // Signal to pause preview video on navigation
+  final RxBool shouldPausePreview = false.obs;
 
   @override
   void onInit() {
@@ -104,7 +109,30 @@ class WorkoutDetailController extends BaseController {
     resumeData.value = _resumeService.getResumeData(workout.id);
   }
 
-  void startWorkout() {
+  Future<bool> _hasInternet() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> startWorkout() async {
+    final hasInternet = await _hasInternet();
+    if (!hasInternet) {
+      Get.snackbar(
+        'No Internet',
+        'You need an internet connection to start a workout.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    shouldPausePreview.value = true;
     Get.toNamed(
       AppRoutes.workoutPlayer,
       arguments: {
@@ -114,7 +142,7 @@ class WorkoutDetailController extends BaseController {
         if (hasResumeData) 'resumeData': resumeData.value,
       },
     )?.then((_) {
-      // Refresh resume data when returning from player
+      shouldPausePreview.value = false;
       refreshResumeData();
     });
   }

@@ -124,6 +124,14 @@ class WorkoutModel {
     };
   }
 
+  Map<String, dynamic> toCacheJson() {
+    final json = toJson();
+    if (trainer != null) {
+      json['trainers'] = trainer!.toJson();
+    }
+    return json;
+  }
+
   WorkoutModel copyWith({
     String? id,
     String? trainerId,
@@ -386,6 +394,14 @@ class SavedWorkoutModel {
       'saved_at': savedAt.toIso8601String(),
       'note': note,
     };
+  }
+
+  Map<String, dynamic> toCacheJson() {
+    final json = toJson();
+    if (workout != null) {
+      json['workouts'] = workout!.toCacheJson();
+    }
+    return json;
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get/get.dart';
 
@@ -54,12 +55,37 @@ class SupabaseService extends GetxService {
     return await auth.signInWithPassword(email: email, password: password);
   }
 
-  /// Sign in with Google
-  Future<bool> signInWithGoogle() async {
-    final response = await auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: 'io.supabase.cofitcollective://login-callback/',
+  /// Sign in with Google (native flow + Supabase ID token)
+  Future<AuthResponse> signInWithGoogle() async {
+    final webClientId = dotenv.env['GOOGLE_WEB_CLIENT_ID']!;
+
+    final googleSignIn = GoogleSignIn(serverClientId: webClientId);
+
+    // Sign out first to allow account selection
+    await googleSignIn.signOut();
+
+    // Trigger the native Google Sign-In flow
+    final googleUser = await googleSignIn.signIn();
+    if (googleUser == null) {
+      throw Exception('Google sign in cancelled');
+    }
+
+    // Obtain the auth details
+    final googleAuth = await googleUser.authentication;
+    final idToken = googleAuth.idToken;
+    final accessToken = googleAuth.accessToken;
+
+    if (idToken == null) {
+      throw Exception('No ID token received from Google');
+    }
+
+    // Sign in to Supabase with the Google ID token
+    final response = await auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: idToken,
+      accessToken: accessToken,
     );
+
     return response;
   }
 

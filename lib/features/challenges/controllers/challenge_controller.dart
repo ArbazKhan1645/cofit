@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:get/get.dart';
 
+import '../../../core/services/challenge_cache_service.dart';
 import '../../../data/models/challenge_model.dart';
 import '../../../data/repositories/challenge_repository.dart';
 import '../../../shared/controllers/base_controller.dart';
@@ -55,6 +58,35 @@ class ChallengeController extends BaseController {
   // ============================================
 
   Future<void> loadChallenges() async {
+    final hasInternet = await _hasInternet();
+    final cache = ChallengeCacheService.to;
+
+    if (!hasInternet) {
+      // Offline: use cached data
+      final cachedActive = cache.getCachedActiveChallenges();
+      final cachedFeatured = cache.getCachedFeaturedChallenges();
+      final cachedUpcoming = cache.getCachedUpcomingChallenges();
+      final cachedMy = cache.getCachedMyChallenges();
+      if (cachedActive != null) activeChallenges.value = cachedActive;
+      if (cachedFeatured != null) featuredChallenges.value = cachedFeatured;
+      if (cachedUpcoming != null) upcomingChallenges.value = cachedUpcoming;
+      if (cachedMy != null) myChallenges.value = cachedMy;
+      setSuccess();
+      return;
+    }
+
+    // Show cached data instantly while loading fresh
+    if (activeChallenges.isEmpty) {
+      final cachedActive = cache.getCachedActiveChallenges();
+      final cachedFeatured = cache.getCachedFeaturedChallenges();
+      final cachedUpcoming = cache.getCachedUpcomingChallenges();
+      final cachedMy = cache.getCachedMyChallenges();
+      if (cachedActive != null) activeChallenges.value = cachedActive;
+      if (cachedFeatured != null) featuredChallenges.value = cachedFeatured;
+      if (cachedUpcoming != null) upcomingChallenges.value = cachedUpcoming;
+      if (cachedMy != null) myChallenges.value = cachedMy;
+    }
+
     setLoading(true);
 
     final results = await Future.wait([
@@ -66,25 +98,50 @@ class ChallengeController extends BaseController {
 
     results[0].fold(
       (error) {},
-      (data) => activeChallenges.value = data as List<ChallengeModel>,
+      (data) {
+        final list = data as List<ChallengeModel>;
+        activeChallenges.value = list;
+        cache.cacheActiveChallenges(list);
+      },
     );
 
     results[1].fold(
       (error) {},
-      (data) => featuredChallenges.value = data as List<ChallengeModel>,
+      (data) {
+        final list = data as List<ChallengeModel>;
+        featuredChallenges.value = list;
+        cache.cacheFeaturedChallenges(list);
+      },
     );
 
     results[2].fold(
       (error) {},
-      (data) => upcomingChallenges.value = data as List<ChallengeModel>,
+      (data) {
+        final list = data as List<ChallengeModel>;
+        upcomingChallenges.value = list;
+        cache.cacheUpcomingChallenges(list);
+      },
     );
 
     results[3].fold(
       (error) {},
-      (data) => myChallenges.value = data as List<UserChallengeModel>,
+      (data) {
+        final list = data as List<UserChallengeModel>;
+        myChallenges.value = list;
+        cache.cacheMyChallenges(list);
+      },
     );
 
     setSuccess();
+  }
+
+  Future<bool> _hasInternet() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    }
   }
 
   Future<void> refreshChallenges() async => loadChallenges();

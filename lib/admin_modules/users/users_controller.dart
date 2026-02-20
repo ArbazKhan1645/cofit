@@ -4,8 +4,9 @@ import 'package:get/get.dart';
 import '../../core/services/supabase_service.dart';
 import '../../data/models/user_model.dart';
 import '../../shared/controllers/base_controller.dart';
+import '../../shared/mixins/connectivity_mixin.dart';
 
-class AdminUsersController extends BaseController {
+class AdminUsersController extends BaseController with ConnectivityMixin {
   final SupabaseService _supabase = SupabaseService.to;
 
   // ============================================
@@ -53,10 +54,12 @@ class AdminUsersController extends BaseController {
     if (searchQuery.value.isNotEmpty) {
       final q = searchQuery.value.toLowerCase();
       list = list
-          .where((u) =>
-              u.displayName.toLowerCase().contains(q) ||
-              u.email.toLowerCase().contains(q) ||
-              (u.username?.toLowerCase().contains(q) ?? false))
+          .where(
+            (u) =>
+                u.displayName.toLowerCase().contains(q) ||
+                u.email.toLowerCase().contains(q) ||
+                (u.username?.toLowerCase().contains(q) ?? false),
+          )
           .toList();
     }
 
@@ -72,6 +75,7 @@ class AdminUsersController extends BaseController {
   // ============================================
 
   Future<void> loadUsers() async {
+    if (!await ensureConnectivity()) return;
     setLoading(true);
     try {
       final response = await _supabase
@@ -90,11 +94,96 @@ class AdminUsersController extends BaseController {
 
   Future<void> refreshUsers() async => loadUsers();
 
+  /// Current admin's user ID — used for self-protection checks
+  String? get currentUserId => _supabase.userId;
+
+  // ============================================
+  // ROLE TOGGLE
+  // ============================================
+
+  Future<void> toggleRole(UserModel user) async {
+    // Self-protection
+    if (user.id == currentUserId) {
+      Get.snackbar(
+        'Not Allowed',
+        'You cannot change your own role',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    final newRole = user.userType == 'admin' ? 'user' : 'admin';
+    final action = newRole == 'admin' ? 'Make Admin' : 'Remove Admin';
+
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text('$action?'),
+        content: Text(
+          newRole == 'admin'
+              ? '${user.displayName} will get admin access to manage the app.'
+              : '${user.displayName} will lose admin access.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Get.back(result: true),
+            child: Text(action),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (!await ensureConnectivity()) return;
+
+    try {
+      // Use RPC to bypass RLS
+      await _supabase.rpc('admin_update_user_role', params: {
+        'p_user_id': user.id,
+        'p_user_type': newRole,
+      });
+
+      // Update local state
+      final index = users.indexWhere((u) => u.id == user.id);
+      if (index != -1) {
+        users[index] = users[index].copyWith(userType: newRole);
+        users.refresh();
+      }
+      if (selectedUser.value?.id == user.id) {
+        selectedUser.value = selectedUser.value!.copyWith(userType: newRole);
+      }
+
+      Get.snackbar(
+        'Success',
+        '${user.displayName} is now ${newRole == 'admin' ? 'an admin' : 'a regular user'}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to update role',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
   // ============================================
   // BAN / UNBAN
   // ============================================
 
   Future<void> toggleBan(UserModel user) async {
+    // Self-protection
+    if (user.id == currentUserId) {
+      Get.snackbar(
+        'Not Allowed',
+        'You cannot ban yourself',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
     final newBanned = !user.isBanned;
     final action = newBanned ? 'Ban' : 'Unban';
 
@@ -103,7 +192,7 @@ class AdminUsersController extends BaseController {
         title: Text('$action ${user.displayName}?'),
         content: Text(
           newBanned
-              ? 'This user will be banned and unable to access the app.'
+              ? 'This user will be banned. All their data (workouts, progress, posts) will be deleted. They will be logged out immediately.'
               : 'This user will be unbanned and can access the app again.',
         ),
         actions: [
@@ -122,15 +211,21 @@ class AdminUsersController extends BaseController {
       ),
     );
     if (confirmed != true) return;
+    if (!await ensureConnectivity()) return;
 
     try {
-      await _supabase
-          .from('users')
-          .update({
-            'is_banned': newBanned,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', user.id);
+      // 1. Set ban flag via RPC (bypasses RLS)
+      await _supabase.rpc('admin_update_user_ban', params: {
+        'p_user_id': user.id,
+        'p_is_banned': newBanned,
+      });
+
+      // 2. If banning — delete all user data (keep users row)
+      if (newBanned) {
+        await _supabase.rpc('admin_delete_user_data', params: {
+          'p_user_id': user.id,
+        });
+      }
 
       // Update local state
       final index = users.indexWhere((u) => u.id == user.id);
@@ -148,8 +243,11 @@ class AdminUsersController extends BaseController {
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to $action user',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to $action user',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -178,9 +276,12 @@ class AdminUsersController extends BaseController {
       ),
     );
     if (confirmed != true) return;
+    if (!await ensureConnectivity()) return;
 
     try {
-      await _supabase.from('users').delete().eq('id', user.id);
+      await _supabase.rpc('admin_delete_user', params: {
+        'p_user_id': user.id,
+      });
       users.removeWhere((u) => u.id == user.id);
 
       Get.snackbar(
@@ -189,8 +290,11 @@ class AdminUsersController extends BaseController {
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete user',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to delete user',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 }

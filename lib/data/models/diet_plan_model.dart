@@ -123,6 +123,14 @@ class DietPlanMealModel {
         'sort_order': sortOrder,
       };
 
+  /// Full serialization for local cache (includes id, timestamps)
+  Map<String, dynamic> toCacheJson() => {
+        'id': id,
+        ...toJson(),
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt.toIso8601String(),
+      };
+
   DietPlanMealModel copyWith({
     String? id,
     String? dayId,
@@ -275,6 +283,15 @@ class DietPlanDayModel {
         'total_fat_g': totalFatG,
       };
 
+  /// Full serialization for local cache (includes id, timestamps, meals)
+  Map<String, dynamic> toCacheJson() => {
+        'id': id,
+        ...toJson(),
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt.toIso8601String(),
+        'diet_plan_meals': meals.map((m) => m.toCacheJson()).toList(),
+      };
+
   DietPlanDayModel copyWith({
     String? id,
     String? planId,
@@ -403,6 +420,16 @@ class DietPlanModel {
         'is_published': isPublished,
         'is_featured': isFeatured,
         'updated_at': DateTime.now().toIso8601String(),
+      };
+
+  /// Full serialization for local cache (includes id, timestamps, days)
+  Map<String, dynamic> toCacheJson() => {
+        'id': id,
+        ...toJson(),
+        'created_by': createdBy,
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt.toIso8601String(),
+        'diet_plan_days': days.map((d) => d.toCacheJson()).toList(),
       };
 
   DietPlanModel copyWith({
