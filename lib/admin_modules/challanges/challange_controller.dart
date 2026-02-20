@@ -54,8 +54,9 @@ class ChallangeController extends BaseController {
       <ChallengeParticipantModel>[].obs;
   final RxList<ChallengeLeaderboardEntry> leaderboard =
       <ChallengeLeaderboardEntry>[].obs;
-  final Rx<ChallengeStatsModel?> challengeStats =
-      Rx<ChallengeStatsModel?>(null);
+  final Rx<ChallengeStatsModel?> challengeStats = Rx<ChallengeStatsModel?>(
+    null,
+  );
   final RxBool isLoadingDetail = false.obs;
 
   final _dateFormat = DateFormat('MMM d, yyyy');
@@ -77,9 +78,13 @@ class ChallangeController extends BaseController {
     }
     if (searchQuery.value.isNotEmpty) {
       final q = searchQuery.value.toLowerCase();
-      list = list.where((c) =>
-          c.title.toLowerCase().contains(q) ||
-          c.description.toLowerCase().contains(q)).toList();
+      list = list
+          .where(
+            (c) =>
+                c.title.toLowerCase().contains(q) ||
+                c.description.toLowerCase().contains(q),
+          )
+          .toList();
     }
     return list;
   }
@@ -92,8 +97,7 @@ class ChallangeController extends BaseController {
           .select()
           .order('created_at', ascending: false);
       challenges.value = (response as List)
-          .map((json) =>
-              ChallengeModel.fromJson(json as Map<String, dynamic>))
+          .map((json) => ChallengeModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       setError(e.toString());
@@ -207,58 +211,70 @@ class ChallangeController extends BaseController {
     final descC = TextEditingController();
     final xpC = TextEditingController();
 
-    Get.dialog(AlertDialog(
-      title: const Text('Add Prize'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Add Prize'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
                 controller: rankC,
                 decoration: const InputDecoration(
-                    labelText: 'Rank (0 = all completers)'),
-                keyboardType: TextInputType.number),
-            const SizedBox(height: 12),
-            TextField(
+                  labelText: 'Rank (0 = all completers)',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 12),
+              TextField(
                 controller: titleC,
-                decoration: const InputDecoration(labelText: 'Title')),
-            const SizedBox(height: 12),
-            TextField(
+                decoration: const InputDecoration(labelText: 'Title'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
                 controller: descC,
-                decoration: const InputDecoration(labelText: 'Description')),
-            const SizedBox(height: 12),
-            TextField(
+                decoration: const InputDecoration(labelText: 'Description'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
                 controller: xpC,
                 decoration: const InputDecoration(labelText: 'XP Reward'),
-                keyboardType: TextInputType.number),
-          ],
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
         ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              if (titleC.text.trim().isNotEmpty) {
+                addPrize(
+                  ChallengePrize(
+                    rank: int.tryParse(rankC.text) ?? 0,
+                    title: titleC.text.trim(),
+                    description: descC.text.trim(),
+                    xpReward: int.tryParse(xpC.text) ?? 0,
+                  ),
+                );
+                Get.back();
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
-        ElevatedButton(
-          onPressed: () {
-            if (titleC.text.trim().isNotEmpty) {
-              addPrize(ChallengePrize(
-                rank: int.tryParse(rankC.text) ?? 0,
-                title: titleC.text.trim(),
-                description: descC.text.trim(),
-                xpReward: int.tryParse(xpC.text) ?? 0,
-              ));
-              Get.back();
-            }
-          },
-          child: const Text('Add'),
-        ),
-      ],
-    ));
+    );
   }
 
   Future<void> saveChallenge() async {
     if (!formKey.currentState!.validate()) return;
     if (endDate.value.isBefore(startDate.value)) {
-      Get.snackbar('Error', 'End date must be after start date',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'End date must be after start date',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
 
@@ -266,20 +282,22 @@ class ChallangeController extends BaseController {
     try {
       String? newImageUrl;
       if (selectedImageBytes.value != null) {
-        newImageUrl = await MediaService.to
-            .uploadChallengeImage(selectedImageBytes.value!);
+        newImageUrl = await MediaService.to.uploadChallengeImage(
+          selectedImageBytes.value!,
+        );
       }
 
       final data = <String, dynamic>{
         'title': titleController.text.trim(),
         'description': descriptionController.text.trim(),
-        'image_url': newImageUrl ??
-            (imageUrl.value.isNotEmpty ? imageUrl.value : null),
+        'image_url':
+            newImageUrl ?? (imageUrl.value.isNotEmpty ? imageUrl.value : null),
         'challenge_type': challengeType.value,
         'target_value': int.tryParse(targetValueController.text) ?? 0,
         'target_unit': targetUnit.value,
-        'target_category':
-            targetCategory.value.isNotEmpty ? targetCategory.value : null,
+        'target_category': targetCategory.value.isNotEmpty
+            ? targetCategory.value
+            : null,
         'start_date': startDate.value.toIso8601String(),
         'end_date': endDate.value.toIso8601String(),
         'status': status.value,
@@ -306,14 +324,18 @@ class ChallangeController extends BaseController {
       await loadChallenges();
       Get.back();
       Get.snackbar(
-          'Success',
-          editingChallenge.value != null
-              ? 'Challenge updated'
-              : 'Challenge added',
-          snackPosition: SnackPosition.BOTTOM);
+        'Success',
+        editingChallenge.value != null
+            ? 'Challenge updated'
+            : 'Challenge added',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to save challenge',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to save challenge',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
     isSaving.value = false;
   }
@@ -322,15 +344,16 @@ class ChallangeController extends BaseController {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
         title: const Text('Delete Challenge'),
-        content:
-            const Text('Are you sure you want to delete this challenge?'),
+        content: const Text('Are you sure you want to delete this challenge?'),
         actions: [
           TextButton(
-              onPressed: () => Get.back(result: false),
-              child: const Text('Cancel')),
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-              onPressed: () => Get.back(result: true),
-              child: const Text('Delete')),
+            onPressed: () => Get.back(result: true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -339,11 +362,17 @@ class ChallangeController extends BaseController {
     try {
       await _supabase.from('challenges').delete().eq('id', id);
       challenges.removeWhere((c) => c.id == id);
-      Get.snackbar('Success', 'Challenge deleted',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Success',
+        'Challenge deleted',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete challenge',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to delete challenge',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -358,8 +387,9 @@ class ChallangeController extends BaseController {
     challengeStats.value = null;
 
     // Find in loaded challenges or fetch
-    selectedChallenge.value =
-        challenges.firstWhereOrNull((c) => c.id == challengeId);
+    selectedChallenge.value = challenges.firstWhereOrNull(
+      (c) => c.id == challengeId,
+    );
     if (selectedChallenge.value == null) {
       final result = await _repository.getChallenge(challengeId);
       result.fold(
@@ -380,36 +410,27 @@ class ChallangeController extends BaseController {
 
   Future<void> _loadParticipants(String challengeId) async {
     final result = await _repository.getParticipants(challengeId);
-    result.fold(
-      (error) {},
-      (data) => participants.value = data,
-    );
+    result.fold((error) {}, (data) => participants.value = data);
   }
 
   Future<void> _loadLeaderboard(String challengeId) async {
     final result = await _repository.getLeaderboard(challengeId, limit: 100);
-    result.fold(
-      (error) {},
-      (data) => leaderboard.value = data,
-    );
+    result.fold((error) {}, (data) => leaderboard.value = data);
   }
 
   Future<void> _loadStats(String challengeId) async {
     final result = await _repository.getChallengeStats(challengeId);
-    result.fold(
-      (error) {},
-      (data) => challengeStats.value = data,
-    );
+    result.fold((error) {}, (data) => challengeStats.value = data);
   }
 
   @override
   void onClose() {
-    titleController.dispose();
-    descriptionController.dispose();
-    targetValueController.dispose();
-    maxParticipantsController.dispose();
-    startDateController.dispose();
-    endDateController.dispose();
+    // titleController.dispose();
+    // descriptionController.dispose();
+    // targetValueController.dispose();
+    // maxParticipantsController.dispose();
+    // startDateController.dispose();
+    // endDateController.dispose();
     super.onClose();
   }
 }

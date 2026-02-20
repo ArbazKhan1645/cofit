@@ -7,6 +7,9 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/cofit_avatar.dart';
 import '../../../app/routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
+import '../../community/controllers/community_controller.dart';
+import '../../community/views/my_posts_screen.dart';
+import '../../community/views/saved_posts_screen.dart';
 import 'help_support_screen.dart';
 import 'about_screen.dart';
 
@@ -218,14 +221,20 @@ class ProfileScreen extends GetView<ProfileController> {
             context,
             icon: Iconsax.document,
             title: 'My Posts',
-            onTap: () {},
+            onTap: () {
+              Get.find<CommunityController>().loadMyPosts();
+              Get.to(() => const MyPostsScreen());
+            },
           ),
           _buildDivider(),
           _buildMenuItem(
             context,
             icon: Iconsax.bookmark,
             title: 'Saved Posts',
-            onTap: () {},
+            onTap: () {
+              Get.find<CommunityController>().loadSavedPosts();
+              Get.to(() => const SavedPostsScreen());
+            },
           ),
         ],
       ),
@@ -271,7 +280,7 @@ class ProfileScreen extends GetView<ProfileController> {
                 ),
               ),
             ),
-            onTap: () {},
+            onTap: () => Get.toNamed(AppRoutes.subscription),
           ),
           _buildDivider(),
           _buildMenuItem(

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:workmanager/workmanager.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../main.dart' show callbackDispatcher;
+import '../../../notifications/service.dart';
 import '../controllers/navigation_controller.dart';
 import 'home_screen.dart';
 import '../../workouts/views/workouts_screen.dart';
@@ -11,12 +15,66 @@ import '../../community/views/community_screen.dart';
 import '../../profile/views/profile_screen.dart';
 import '../../recipes/views/recipes_screen.dart';
 
-class MainNavigationScreen extends GetView<NavigationController> {
+class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
   @override
+  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  final controller = Get.find<NavigationController>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Notification + Workmanager — home view load hone ke baad init
+    _initBackgroundServices();
+  }
+
+  Future<void> _initBackgroundServices() async {
+    try {
+      final authService = Get.find<AuthService>();
+
+      await NotificationService().initialize(
+        onNavigate: (route) {
+          debugPrint('notification route: $route');
+        },
+        onFcmTokenReceived: (token) async {
+          await authService.updateProfile(fcm_token: token);
+          debugPrint('fcm token: $token');
+        },
+      );
+
+      await Workmanager().initialize(callbackDispatcher);
+      await Workmanager().registerPeriodicTask(
+        'streak-check',
+        'streakCheckTask',
+        frequency: const Duration(hours: 3),
+        constraints: Constraints(networkType: NetworkType.notRequired),
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+      );
+      await Workmanager().registerPeriodicTask(
+        'weekly-report',
+        'weeklyReportTask',
+        frequency: const Duration(days: 7),
+        constraints: Constraints(networkType: NetworkType.connected),
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+      );
+    } catch (e) {
+      debugPrint('Background services init error: $e');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        controller.handleBackPress();
+      },
+      child: Scaffold(
       body: Obx(() => IndexedStack(
             index: controller.currentIndex.value,
             children: const [
@@ -81,6 +139,7 @@ class MainNavigationScreen extends GetView<NavigationController> {
               ),
             ),
           )),
+    ),
     );
   }
 

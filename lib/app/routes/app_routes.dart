@@ -75,6 +75,10 @@ abstract class AppRoutes {
   static const adminRecipeForm = '/admin/recipes/form';
   static const adminRecipeDayEditor = '/admin/recipes/days';
 
+  // Crashlytics (Admin)
+  static const adminCrashlytics = '/admin/crashlytics';
+  static const adminCrashlyticsDetail = '/admin/crashlytics/detail';
+
   // Support (User)
   static const supportTickets = '/support';
   static const supportChat = '/support/chat';

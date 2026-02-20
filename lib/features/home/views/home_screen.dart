@@ -63,37 +63,47 @@ class HomeScreen extends GetView<HomeController> {
       padding: AppPadding.horizontal,
       child: Row(
         children: [
-          // Avatar
-          Obx(() {
-            final user = AuthService.to.currentUser;
-            return CofitAvatar(
-              imageUrl: user?.avatarUrl,
-              userId: user?.id,
-              userName: controller.userName.value,
-              radius: 26,
-            );
-          }),
-          const SizedBox(width: 14),
-          // Greeting
+          // Avatar + Greeting — tap to go to Profile tab
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  controller.getGreeting(),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                ),
-                Obx(() => Text(
-                      controller.userName.value,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    )),
-              ],
+            child: GestureDetector(
+              onTap: () => Get.find<NavigationController>().goToProfile(),
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  Obx(() {
+                    final user = AuthService.to.currentUser;
+                    return CofitAvatar(
+                      imageUrl: user?.avatarUrl,
+                      userId: user?.id,
+                      userName: controller.userName.value,
+                      radius: 26,
+                    );
+                  }),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          controller.getGreeting(),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textMuted,
+                              ),
+                        ),
+                        Obx(() => Text(
+                              controller.userName.value,
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            )),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
+          const SizedBox(width: 12),
           // Notification
           GestureDetector(
             onTap: () => Get.toNamed(AppRoutes.notifications),

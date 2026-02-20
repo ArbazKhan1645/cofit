@@ -99,19 +99,20 @@ class AdminDrawer extends StatelessWidget {
                     color: AppColors.peach,
                     route: AppRoutes.adminSupport,
                   ),
+                  _buildDrawerItem(
+                    context,
+                    title: 'Crashlytics',
+                    icon: Iconsax.danger,
+                    color: AppColors.error,
+                    route: AppRoutes.adminCrashlytics,
+                  ),
                 ],
               ),
             ),
-            // Footer
+            // Footer — "Back to App" clears admin stack & refreshes user data
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: _buildDrawerItem(
-                context,
-                title: 'Back to App',
-                icon: Iconsax.home_2,
-                color: AppColors.textMuted,
-                route: AppRoutes.main,
-              ),
+              child: _buildBackToAppItem(context),
             ),
           ],
         ),
@@ -176,6 +177,55 @@ class AdminDrawer extends StatelessWidget {
           color: AppColors.textMuted,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackToAppItem(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 0),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: AppRadius.medium,
+        child: InkWell(
+          borderRadius: AppRadius.medium,
+          onTap: () {
+            Get.back(); // close drawer
+            // Clear entire admin route stack, dispose admin controllers,
+            // navigate fresh to main — MainBinding will refresh HomeController
+            Get.offAllNamed(AppRoutes.main);
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.textMuted.withValues(alpha: 0.12),
+                    borderRadius: AppRadius.medium,
+                  ),
+                  child: const Icon(Iconsax.home_2, color: AppColors.textMuted, size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    'Back to App',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Iconsax.arrow_right_3,
+                  size: 16,
+                  color: AppColors.textDisabled,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

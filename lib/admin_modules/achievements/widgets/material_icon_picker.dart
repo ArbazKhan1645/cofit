@@ -31,7 +31,7 @@ class _MaterialIconPickerState extends State<MaterialIconPicker> {
 
   @override
   void dispose() {
-    searchController.dispose();
+    // searchController.dispose();
     super.dispose();
   }
 

@@ -82,6 +82,11 @@ import '../../admin_modules/recipes/recipe_day_editor_screen.dart';
 import '../../features/recipes/controllers/recipe_controller.dart';
 import '../../features/recipes/views/recipe_detail_screen.dart';
 
+// Crashlytics
+import '../../admin_modules/crashlytics/crashlytics_controller.dart';
+import '../../admin_modules/crashlytics/crashlytics_list_screen.dart';
+import '../../admin_modules/crashlytics/crashlytics_detail_screen.dart';
+
 class AppPages {
   AppPages._();
 
@@ -403,6 +408,21 @@ class AppPages {
           Get.lazyPut(() => RecipeController());
         }
       }),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Admin Crashlytics
+    GetPage(
+      name: AppRoutes.adminCrashlytics,
+      page: () => const CrashlyticsListScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => AdminCrashlyticsController());
+      }),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.adminCrashlyticsDetail,
+      page: () => const CrashlyticsDetailScreen(),
       transition: Transition.rightToLeft,
     ),
 

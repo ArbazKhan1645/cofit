@@ -26,9 +26,11 @@ class AchievementController extends BaseController {
     if (searchQuery.value.isNotEmpty) {
       final q = searchQuery.value.toLowerCase();
       list = list
-          .where((a) =>
-              a.name.toLowerCase().contains(q) ||
-              a.description.toLowerCase().contains(q))
+          .where(
+            (a) =>
+                a.name.toLowerCase().contains(q) ||
+                a.description.toLowerCase().contains(q),
+          )
           .toList();
     }
     return list;
@@ -39,8 +41,7 @@ class AchievementController extends BaseController {
   // ============================================
   final formKey = GlobalKey<FormState>();
   final RxBool isSaving = false.obs;
-  final Rx<AchievementModel?> editingAchievement =
-      Rx<AchievementModel?>(null);
+  final Rx<AchievementModel?> editingAchievement = Rx<AchievementModel?>(null);
 
   // Text controllers
   final nameController = TextEditingController();
@@ -59,8 +60,7 @@ class AchievementController extends BaseController {
   // ============================================
   // DETAIL / ANALYTICS STATE
   // ============================================
-  final Rx<AchievementModel?> selectedAchievement =
-      Rx<AchievementModel?>(null);
+  final Rx<AchievementModel?> selectedAchievement = Rx<AchievementModel?>(null);
   final Rx<AchievementStatsModel?> achievementStats =
       Rx<AchievementStatsModel?>(null);
   final RxList<UserAchievementModel> achievementUsers =
@@ -86,8 +86,9 @@ class AchievementController extends BaseController {
           .order('sort_order')
           .order('created_at', ascending: false);
       achievements.value = (response as List)
-          .map((json) =>
-              AchievementModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => AchievementModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
     } catch (e) {
       setError(e.toString());
@@ -209,8 +210,11 @@ class AchievementController extends BaseController {
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to save achievement',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to save achievement',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
     isSaving.value = false;
   }
@@ -219,15 +223,18 @@ class AchievementController extends BaseController {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
         title: const Text('Delete Achievement'),
-        content:
-            const Text('Are you sure you want to delete this achievement?'),
+        content: const Text(
+          'Are you sure you want to delete this achievement?',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Get.back(result: false),
-              child: const Text('Cancel')),
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-              onPressed: () => Get.back(result: true),
-              child: const Text('Delete')),
+            onPressed: () => Get.back(result: true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -236,11 +243,17 @@ class AchievementController extends BaseController {
     try {
       await _supabase.from('achievements').delete().eq('id', id);
       achievements.removeWhere((a) => a.id == id);
-      Get.snackbar('Success', 'Achievement deleted',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Success',
+        'Achievement deleted',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete achievement',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to delete achievement',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -253,8 +266,9 @@ class AchievementController extends BaseController {
     achievementUsers.clear();
     achievementStats.value = null;
 
-    selectedAchievement.value =
-        achievements.firstWhereOrNull((a) => a.id == id);
+    selectedAchievement.value = achievements.firstWhereOrNull(
+      (a) => a.id == id,
+    );
     if (selectedAchievement.value == null) {
       final result = await _repository.getAchievement(id);
       result.fold(
@@ -263,36 +277,27 @@ class AchievementController extends BaseController {
       );
     }
 
-    await Future.wait([
-      _loadStats(id),
-      _loadUsers(id),
-    ]);
+    await Future.wait([_loadStats(id), _loadUsers(id)]);
 
     isLoadingDetail.value = false;
   }
 
   Future<void> _loadStats(String id) async {
     final result = await _repository.getAchievementStats(id);
-    result.fold(
-      (error) {},
-      (data) => achievementStats.value = data,
-    );
+    result.fold((error) {}, (data) => achievementStats.value = data);
   }
 
   Future<void> _loadUsers(String id) async {
     final result = await _repository.getAchievementUsers(id);
-    result.fold(
-      (error) {},
-      (data) => achievementUsers.value = data,
-    );
+    result.fold((error) {}, (data) => achievementUsers.value = data);
   }
 
   @override
   void onClose() {
-    nameController.dispose();
-    descriptionController.dispose();
-    targetValueController.dispose();
-    sortOrderController.dispose();
+    // nameController.dispose();
+    // descriptionController.dispose();
+    // targetValueController.dispose();
+    // sortOrderController.dispose();
     super.onClose();
   }
 }

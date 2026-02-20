@@ -32,6 +32,10 @@ class CommunityController extends BaseController {
   final RxList<PostModel> myPosts = <PostModel>[].obs;
   final RxBool isLoadingMyPosts = false.obs;
 
+  // Saved posts
+  final RxList<PostModel> savedPosts = <PostModel>[].obs;
+  final RxBool isLoadingSavedPosts = false.obs;
+
   // Challenges posts
   final RxList<PostModel> challengePosts = <PostModel>[].obs;
   final RxBool isLoadingChallenges = false.obs;
@@ -360,14 +364,15 @@ class CommunityController extends BaseController {
 
       // Send FCM notification on LIKE (not unlike) to post owner
       if (newLikedState && originalPost.userId != _supabase.userId) {
-        final currentUserName = _supabase.client.auth.currentUser
-                ?.userMetadata?['full_name'] as String? ??
+        final currentUserName =
+            _supabase.client.auth.currentUser?.userMetadata?['full_name']
+                as String? ??
             'Someone';
         final preview = originalPost.content.length > 50
             ? '${originalPost.content.substring(0, 47)}...'
             : originalPost.content.isNotEmpty
-                ? originalPost.content
-                : null;
+            ? originalPost.content
+            : null;
 
         _fcmSender.sendPostLikeNotification(
           postOwnerId: originalPost.userId,
@@ -473,14 +478,15 @@ class CommunityController extends BaseController {
 
       // Send FCM notification on SAVE (not unsave) to post owner
       if (newSavedState && originalPost.userId != _supabase.userId) {
-        final currentUserName = _supabase.client.auth.currentUser
-                ?.userMetadata?['full_name'] as String? ??
+        final currentUserName =
+            _supabase.client.auth.currentUser?.userMetadata?['full_name']
+                as String? ??
             'Someone';
         final preview = originalPost.content.length > 50
             ? '${originalPost.content.substring(0, 47)}...'
             : originalPost.content.isNotEmpty
-                ? originalPost.content
-                : null;
+            ? originalPost.content
+            : null;
 
         _fcmSender.sendPostSavedNotification(
           postOwnerId: originalPost.userId,
@@ -912,6 +918,26 @@ class CommunityController extends BaseController {
   }
 
   // ============================================
+  // SAVED POSTS
+  // ============================================
+
+  /// Load current user's saved posts
+  Future<void> loadSavedPosts() async {
+    isLoadingSavedPosts.value = true;
+
+    final result = await _repository.getSavedPosts(limit: 50);
+
+    if (result.isSuccess) {
+      savedPosts.value = result.data!
+          .where((sp) => sp.post != null)
+          .map((sp) => sp.post!)
+          .toList();
+    }
+
+    isLoadingSavedPosts.value = false;
+  }
+
+  // ============================================
   // CHALLENGE POSTS
   // ============================================
 
@@ -1160,11 +1186,12 @@ class CommunityController extends BaseController {
       }
 
       // Send FCM notification to post owner
-      final post = posts.firstWhereOrNull((p) => p.id == postId) ??
-          currentPost.value;
+      final post =
+          posts.firstWhereOrNull((p) => p.id == postId) ?? currentPost.value;
       if (post != null && post.userId != _supabase.userId) {
-        final currentUserName = _supabase.client.auth.currentUser
-                ?.userMetadata?['full_name'] as String? ??
+        final currentUserName =
+            _supabase.client.auth.currentUser?.userMetadata?['full_name']
+                as String? ??
             'Someone';
 
         _fcmSender.sendCommentNotification(
@@ -1221,18 +1248,18 @@ class CommunityController extends BaseController {
 
   @override
   void onClose() {
-    searchController.dispose();
-    postContentController.dispose();
-    commentController.dispose();
-    recipeNameController.dispose();
-    recipeIngredientsController.dispose();
-    recipeInstructionsController.dispose();
-    challengeNameController.dispose();
-    challengeDescriptionController.dispose();
-    challengeMessageController.dispose();
-    recipeTitleController.dispose();
-    recipeNotesController.dispose();
-    recipeDurationController.dispose();
+    // searchController.dispose();
+    // postContentController.dispose();
+    // commentController.dispose();
+    // recipeNameController.dispose();
+    // recipeIngredientsController.dispose();
+    // recipeInstructionsController.dispose();
+    // challengeNameController.dispose();
+    // challengeDescriptionController.dispose();
+    // challengeMessageController.dispose();
+    // recipeTitleController.dispose();
+    // recipeNotesController.dispose();
+    // recipeDurationController.dispose();
     super.onClose();
   }
 }

@@ -15,7 +15,14 @@ class AdminHomeScreen extends GetView<AdminDashboardController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        // Back from admin → clear admin stack, go fresh to main with data refresh
+        Get.offAllNamed(AppRoutes.main);
+      },
+      child: Scaffold(
       backgroundColor: AppColors.bgCream,
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -75,6 +82,7 @@ class AdminHomeScreen extends GetView<AdminDashboardController> {
           ),
         );
       }),
+    ),
     );
   }
 
@@ -954,48 +962,40 @@ class AdminHomeScreen extends GetView<AdminDashboardController> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    '${controller.totalChallenges.value}',
-                    'Total Challenges',
-                    Iconsax.cup,
-                    AppColors.lavender,
-                  ),
+                _buildStatCard(
+                  context,
+                  '${controller.totalChallenges.value}',
+                  'Total Challenges',
+                  Iconsax.cup,
+                  AppColors.lavender,
                 ),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    '${controller.activeChallengesCount.value}',
-                    'Active',
-                    Iconsax.flag,
-                    AppColors.success,
-                  ),
+                _buildStatCard(
+                  context,
+                  '${controller.activeChallengesCount.value}',
+                  'Active',
+                  Iconsax.flag,
+                  AppColors.success,
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    '${controller.totalChallengeParticipants.value}',
-                    'Participants',
-                    Iconsax.people,
-                    AppColors.skyBlue,
-                  ),
+                _buildStatCard(
+                  context,
+                  '${controller.totalChallengeParticipants.value}',
+                  'Participants',
+                  Iconsax.people,
+                  AppColors.skyBlue,
                 ),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    '${controller.totalChallengeCompletions.value}',
-                    'Completions',
-                    Iconsax.tick_circle,
-                    AppColors.mintFresh,
-                  ),
+                _buildStatCard(
+                  context,
+                  '${controller.totalChallengeCompletions.value}',
+                  'Completions',
+                  Iconsax.tick_circle,
+                  AppColors.mintFresh,
                 ),
               ],
             ),
@@ -1020,48 +1020,40 @@ class AdminHomeScreen extends GetView<AdminDashboardController> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    '${controller.totalAchievements.value}',
-                    'Total',
-                    Iconsax.medal_star,
-                    AppColors.lavender,
-                  ),
+                _buildStatCard(
+                  context,
+                  '${controller.totalAchievements.value}',
+                  'Total',
+                  Iconsax.medal_star,
+                  AppColors.lavender,
                 ),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    '${controller.activeAchievementsCount.value}',
-                    'Active',
-                    Iconsax.tick_circle,
-                    AppColors.success,
-                  ),
+                _buildStatCard(
+                  context,
+                  '${controller.activeAchievementsCount.value}',
+                  'Active',
+                  Iconsax.tick_circle,
+                  AppColors.success,
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    '${controller.totalAchievementCompletions.value}',
-                    'Completions',
-                    Iconsax.star_1,
-                    AppColors.skyBlue,
-                  ),
+                _buildStatCard(
+                  context,
+                  '${controller.totalAchievementCompletions.value}',
+                  'Completions',
+                  Iconsax.star_1,
+                  AppColors.skyBlue,
                 ),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    '${controller.totalUsersWithProgress.value}',
-                    'Users Tracking',
-                    Iconsax.people,
-                    AppColors.mintFresh,
-                  ),
+                _buildStatCard(
+                  context,
+                  '${controller.totalUsersWithProgress.value}',
+                  'Users Tracking',
+                  Iconsax.people,
+                  AppColors.mintFresh,
                 ),
               ],
             ),

@@ -80,19 +80,19 @@ class AdminRecipeController extends BaseController {
 
   @override
   void onClose() {
-    titleController.dispose();
-    descriptionController.dispose();
-    durationController.dispose();
-    caloriesController.dispose();
-    mealTitleController.dispose();
-    mealDescriptionController.dispose();
-    mealCaloriesController.dispose();
-    mealProteinController.dispose();
-    mealCarbsController.dispose();
-    mealFatController.dispose();
-    mealFiberController.dispose();
-    mealInstructionsController.dispose();
-    mealPrepTimeController.dispose();
+    // titleController.dispose();
+    // descriptionController.dispose();
+    // durationController.dispose();
+    // caloriesController.dispose();
+    // mealTitleController.dispose();
+    // mealDescriptionController.dispose();
+    // mealCaloriesController.dispose();
+    // mealProteinController.dispose();
+    // mealCarbsController.dispose();
+    // mealFatController.dispose();
+    // mealFiberController.dispose();
+    // mealInstructionsController.dispose();
+    // mealPrepTimeController.dispose();
     super.onClose();
   }
 
@@ -119,9 +119,11 @@ class AdminRecipeController extends BaseController {
     if (searchQuery.value.isNotEmpty) {
       final q = searchQuery.value.toLowerCase();
       list = list
-          .where((p) =>
-              p.title.toLowerCase().contains(q) ||
-              (p.description?.toLowerCase().contains(q) ?? false))
+          .where(
+            (p) =>
+                p.title.toLowerCase().contains(q) ||
+                (p.description?.toLowerCase().contains(q) ?? false),
+          )
           .toList();
     }
 
@@ -142,13 +144,10 @@ class AdminRecipeController extends BaseController {
   Future<void> loadPlans() async {
     setLoading(true);
     final result = await _repository.getAllPlans(adminMode: true);
-    result.fold(
-      (error) => setError(error.message),
-      (data) {
-        allPlans.value = data;
-        setSuccess();
-      },
-    );
+    result.fold((error) => setError(error.message), (data) {
+      allPlans.value = data;
+      setSuccess();
+    });
     setLoading(false);
   }
 
@@ -215,8 +214,11 @@ class AdminRecipeController extends BaseController {
 
     final duration = int.tryParse(durationController.text) ?? 7;
     if (duration < 1 || duration > 365) {
-      Get.snackbar('Error', 'Duration must be between 1 and 365 days',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Duration must be between 1 and 365 days',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
 
@@ -224,8 +226,9 @@ class AdminRecipeController extends BaseController {
     try {
       String? newImageUrl;
       if (selectedImageBytes.value != null) {
-        newImageUrl =
-            await MediaService.to.uploadChallengeImage(selectedImageBytes.value!);
+        newImageUrl = await MediaService.to.uploadChallengeImage(
+          selectedImageBytes.value!,
+        );
       }
 
       final data = <String, dynamic>{
@@ -233,8 +236,8 @@ class AdminRecipeController extends BaseController {
         'description': descriptionController.text.trim().isNotEmpty
             ? descriptionController.text.trim()
             : null,
-        'cover_image_url': newImageUrl ??
-            (imageUrl.value.isNotEmpty ? imageUrl.value : null),
+        'cover_image_url':
+            newImageUrl ?? (imageUrl.value.isNotEmpty ? imageUrl.value : null),
         'plan_type': planType.value,
         'duration_days': duration,
         'category': category.value,
@@ -252,12 +255,9 @@ class AdminRecipeController extends BaseController {
       } else {
         // Create new + auto-create days
         final result = await _repository.createPlan(data);
-        result.fold(
-          (error) => throw Exception(error.message),
-          (plan) async {
-            await _repository.createDays(plan.id, duration);
-          },
-        );
+        result.fold((error) => throw Exception(error.message), (plan) async {
+          await _repository.createDays(plan.id, duration);
+        });
       }
 
       await loadPlans();
@@ -268,8 +268,11 @@ class AdminRecipeController extends BaseController {
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to save diet plan: ${e.toString()}',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to save diet plan: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
     isSaving.value = false;
   }
@@ -279,15 +282,18 @@ class AdminRecipeController extends BaseController {
       AlertDialog(
         title: const Text('Delete Diet Plan'),
         content: const Text(
-            'Are you sure? This will delete the plan and all its meals. This cannot be undone.'),
+          'Are you sure? This will delete the plan and all its meals. This cannot be undone.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Get.back(result: false),
-              child: const Text('Cancel')),
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-              onPressed: () => Get.back(result: true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Delete')),
+            onPressed: () => Get.back(result: true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -296,11 +302,17 @@ class AdminRecipeController extends BaseController {
     try {
       await _repository.deletePlan(planId);
       allPlans.removeWhere((p) => p.id == planId);
-      Get.snackbar('Success', 'Diet plan deleted',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Success',
+        'Diet plan deleted',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete plan',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to delete plan',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -314,8 +326,11 @@ class AdminRecipeController extends BaseController {
         allPlans.refresh();
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to update status',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to update status',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -331,8 +346,11 @@ class AdminRecipeController extends BaseController {
     final result = await _repository.getPlanDays(plan.id);
     result.fold(
       (error) {
-        Get.snackbar('Error', error.message,
-            snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar(
+          'Error',
+          error.message,
+          snackPosition: SnackPosition.BOTTOM,
+        );
       },
       (days) {
         if (days.isEmpty) {
@@ -349,19 +367,13 @@ class AdminRecipeController extends BaseController {
 
   Future<void> _createMissingDays(DietPlanModel plan) async {
     final result = await _repository.createDays(plan.id, plan.durationDays);
-    result.fold(
-      (error) {},
-      (days) => planDays.value = days,
-    );
+    result.fold((error) {}, (days) => planDays.value = days);
   }
 
   Future<void> refreshDays() async {
     if (currentPlan.value == null) return;
     final result = await _repository.getPlanDays(currentPlan.value!.id);
-    result.fold(
-      (error) {},
-      (days) => planDays.value = days,
-    );
+    result.fold((error) {}, (days) => planDays.value = days);
   }
 
   /// Copy meals from previous day → "Same as previous day" feature
@@ -372,19 +384,28 @@ class AdminRecipeController extends BaseController {
     final targetDay = planDays[targetDayIndex];
 
     if (sourceDay.meals.isEmpty) {
-      Get.snackbar('Info', 'Previous day has no meals to copy',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Info',
+        'Previous day has no meals to copy',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
 
     try {
       await _repository.copyDayMeals(sourceDay.id, targetDay.id);
       await refreshDays();
-      Get.snackbar('Success', 'Meals copied from Day ${sourceDay.dayNumber}',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Success',
+        'Meals copied from Day ${sourceDay.dayNumber}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to copy meals',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to copy meals',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -403,11 +424,17 @@ class AdminRecipeController extends BaseController {
     try {
       await _repository.copyDayMeals(sourceDay.id, targetDay.id);
       await refreshDays();
-      Get.snackbar('Success', 'Meals copied from Day ${sourceDay.dayNumber}',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Success',
+        'Meals copied from Day ${sourceDay.dayNumber}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to copy meals',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to copy meals',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -434,14 +461,19 @@ class AdminRecipeController extends BaseController {
     editingMeal.value = meal;
     mealTitleController.text = meal.title;
     mealDescriptionController.text = meal.description ?? '';
-    mealCaloriesController.text = meal.calories > 0 ? meal.calories.toString() : '';
-    mealProteinController.text = meal.proteinG > 0 ? meal.proteinG.toString() : '';
+    mealCaloriesController.text = meal.calories > 0
+        ? meal.calories.toString()
+        : '';
+    mealProteinController.text = meal.proteinG > 0
+        ? meal.proteinG.toString()
+        : '';
     mealCarbsController.text = meal.carbsG > 0 ? meal.carbsG.toString() : '';
     mealFatController.text = meal.fatG > 0 ? meal.fatG.toString() : '';
     mealFiberController.text = meal.fiberG > 0 ? meal.fiberG.toString() : '';
     mealInstructionsController.text = meal.recipeInstructions ?? '';
-    mealPrepTimeController.text =
-        meal.prepTimeMinutes != null ? meal.prepTimeMinutes.toString() : '';
+    mealPrepTimeController.text = meal.prepTimeMinutes != null
+        ? meal.prepTimeMinutes.toString()
+        : '';
     mealType.value = meal.mealType;
     mealIngredients.value = List.from(meal.ingredients);
   }
@@ -458,11 +490,13 @@ class AdminRecipeController extends BaseController {
 
   void addIngredient(String name, String? quantity, String? unit) {
     if (name.trim().isEmpty) return;
-    mealIngredients.add(IngredientModel(
-      name: name.trim(),
-      quantity: quantity?.trim(),
-      unit: unit?.trim(),
-    ));
+    mealIngredients.add(
+      IngredientModel(
+        name: name.trim(),
+        quantity: quantity?.trim(),
+        unit: unit?.trim(),
+      ),
+    );
   }
 
   void removeIngredient(int index) {
@@ -490,15 +524,13 @@ class AdminRecipeController extends BaseController {
         'carbs_g': double.tryParse(mealCarbsController.text) ?? 0,
         'fat_g': double.tryParse(mealFatController.text) ?? 0,
         'fiber_g': double.tryParse(mealFiberController.text) ?? 0,
-        'recipe_instructions':
-            mealInstructionsController.text.trim().isNotEmpty
-                ? mealInstructionsController.text.trim()
-                : null,
+        'recipe_instructions': mealInstructionsController.text.trim().isNotEmpty
+            ? mealInstructionsController.text.trim()
+            : null,
         'prep_time_minutes': mealPrepTimeController.text.isNotEmpty
             ? int.tryParse(mealPrepTimeController.text)
             : null,
-        'ingredients':
-            mealIngredients.map((e) => e.toJson()).toList(),
+        'ingredients': mealIngredients.map((e) => e.toJson()).toList(),
         'sort_order': kMealTypes.indexOf(mealType.value),
       };
 
@@ -518,8 +550,11 @@ class AdminRecipeController extends BaseController {
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to save meal',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to save meal',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
     isSavingMeal.value = false;
   }
@@ -531,12 +566,14 @@ class AdminRecipeController extends BaseController {
         content: Text('Delete "${meal.title}"?'),
         actions: [
           TextButton(
-              onPressed: () => Get.back(result: false),
-              child: const Text('Cancel')),
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-              onPressed: () => Get.back(result: true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Delete')),
+            onPressed: () => Get.back(result: true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -547,8 +584,11 @@ class AdminRecipeController extends BaseController {
       await _repository.recalculateDayTotals(meal.dayId);
       await refreshDays();
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete meal',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to delete meal',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -565,8 +605,11 @@ class AdminRecipeController extends BaseController {
     }
 
     if (daysWithMeals.isEmpty) {
-      Get.snackbar('Info', 'No other days have meals to copy from',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Info',
+        'No other days have meals to copy from',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
 
@@ -583,7 +626,9 @@ class AdminRecipeController extends BaseController {
               final day = planDays[dayIdx];
               return ListTile(
                 title: Text('Day ${day.dayNumber}'),
-                subtitle: Text('${day.mealCount} meals - ${day.computedCalories} cal'),
+                subtitle: Text(
+                  '${day.mealCount} meals - ${day.computedCalories} cal',
+                ),
                 onTap: () {
                   Get.back();
                   copyFromDay(dayIdx, targetDayIndex);
@@ -593,8 +638,7 @@ class AdminRecipeController extends BaseController {
           ),
         ),
         actions: [
-          TextButton(
-              onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
         ],
       ),
     );

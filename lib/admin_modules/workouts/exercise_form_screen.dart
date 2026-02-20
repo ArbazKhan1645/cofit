@@ -56,8 +56,9 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
     );
     _repsC = TextEditingController(text: _existingEx?.reps?.toString() ?? '');
     _setsC = TextEditingController(text: _existingEx?.sets?.toString() ?? '');
-    _restC =
-        TextEditingController(text: _existingEx?.restSeconds?.toString() ?? '');
+    _restC = TextEditingController(
+      text: _existingEx?.restSeconds?.toString() ?? '',
+    );
     _exerciseType = _existingEx?.exerciseType ?? 'timed';
 
     // If editing and has a video URL, check if it's an uploaded URL
@@ -70,20 +71,23 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
 
   @override
   void dispose() {
-    _nameC.dispose();
-    _descC.dispose();
-    _videoUrlC.dispose();
-    _durationC.dispose();
-    _repsC.dispose();
-    _setsC.dispose();
-    _restC.dispose();
+    // _nameC.dispose();
+    // _descC.dispose();
+    // _videoUrlC.dispose();
+    // _durationC.dispose();
+    // _repsC.dispose();
+    // _setsC.dispose();
+    // _restC.dispose();
     super.dispose();
   }
 
   void _save() {
     if (_nameC.text.trim().isEmpty) {
-      Get.snackbar('Error', 'Exercise name is required',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Exercise name is required',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
 
@@ -104,8 +108,7 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
       id: _existingEx?.id ?? 'temp_${_uuid.v4()}',
       workoutId: _controller.editingWorkout.value?.id ?? '',
       name: _nameC.text.trim(),
-      description:
-          _descC.text.trim().isNotEmpty ? _descC.text.trim() : null,
+      description: _descC.text.trim().isNotEmpty ? _descC.text.trim() : null,
       videoUrl: videoUrl,
       orderIndex: _isEdit
           ? _existingEx!.orderIndex
@@ -113,8 +116,7 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
       durationSeconds: int.tryParse(_durationC.text) ?? 30,
       reps: _repsC.text.isNotEmpty ? int.tryParse(_repsC.text) : null,
       sets: _setsC.text.isNotEmpty ? int.tryParse(_setsC.text) : null,
-      restSeconds:
-          _restC.text.isNotEmpty ? int.tryParse(_restC.text) : null,
+      restSeconds: _restC.text.isNotEmpty ? int.tryParse(_restC.text) : null,
       exerciseType: _exerciseType,
       variantId: _isEdit
           ? _existingEx!.variantId
@@ -144,8 +146,11 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
       });
     } catch (e) {
       setState(() => _isUploadingVideo = false);
-      Get.snackbar('Error', 'Failed to upload video',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to upload video',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -162,7 +167,8 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2))
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Text('Save'),
           ),
         ],
@@ -198,11 +204,12 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Basic Info',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            'Basic Info',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _nameC,
@@ -245,11 +252,12 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
             children: [
               const Icon(Iconsax.video, size: 20, color: AppColors.textMuted),
               const SizedBox(width: 8),
-              Text('Video',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w500)),
+              Text(
+                'Video',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+              ),
               const Spacer(),
               SegmentedButton<String>(
                 segments: const [
@@ -262,7 +270,8 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
                 style: ButtonStyle(
                   visualDensity: VisualDensity.compact,
                   textStyle: WidgetStatePropertyAll(
-                      Theme.of(context).textTheme.labelSmall),
+                    Theme.of(context).textTheme.labelSmall,
+                  ),
                 ),
               ),
             ],
@@ -294,9 +303,10 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
                 child: const Column(
                   children: [
                     SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2.5)),
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    ),
                     SizedBox(height: 8),
                     Text('Uploading video...'),
                   ],
@@ -312,21 +322,27 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Iconsax.tick_circle,
-                        color: AppColors.success, size: 20),
+                    const Icon(
+                      Iconsax.tick_circle,
+                      color: AppColors.success,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text('Video uploaded',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(color: AppColors.success)),
+                      child: Text(
+                        'Video uploaded',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.success,
+                        ),
+                      ),
                     ),
                     GestureDetector(
-                      onTap: () =>
-                          setState(() => _uploadedVideoUrl = ''),
-                      child: const Icon(Icons.close,
-                          size: 18, color: AppColors.textMuted),
+                      onTap: () => setState(() => _uploadedVideoUrl = ''),
+                      child: const Icon(
+                        Icons.close,
+                        size: 18,
+                        color: AppColors.textMuted,
+                      ),
                     ),
                   ],
                 ),
@@ -341,18 +357,23 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
                     color: AppColors.bgBlush,
                     borderRadius: AppRadius.medium,
                     border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.3)),
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Column(
                     children: [
-                      Icon(Iconsax.video_add,
-                          color: AppColors.primary, size: 32),
+                      Icon(
+                        Iconsax.video_add,
+                        color: AppColors.primary,
+                        size: 32,
+                      ),
                       const SizedBox(height: 8),
-                      Text('Pick Video',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(color: AppColors.primary)),
+                      Text(
+                        'Pick Video',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -377,11 +398,12 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Type & Settings',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            'Type & Settings',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 16),
 
           // Exercise type toggle

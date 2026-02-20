@@ -95,7 +95,6 @@ class WorkoutsController extends BaseController {
 
   @override
   void onClose() {
-    searchController.dispose();
     super.onClose();
   }
 

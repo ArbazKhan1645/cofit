@@ -24,7 +24,6 @@ class SupportController extends BaseController {
 
   @override
   void onClose() {
-    messageController.dispose();
     scrollController.dispose();
     super.onClose();
   }
@@ -39,13 +38,16 @@ class SupportController extends BaseController {
       final userId = _supabase.userId!;
       final response = await _supabase
           .from('support_tickets')
-          .select('*, ticket_messages(id, ticket_id, sender_id, message, is_admin, created_at)')
+          .select(
+            '*, ticket_messages(id, ticket_id, sender_id, message, is_admin, created_at)',
+          )
           .eq('user_id', userId)
           .order('updated_at', ascending: false);
 
       tickets.value = (response as List)
-          .map((json) =>
-              SupportTicketModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => SupportTicketModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
       setSuccess();
     } catch (e) {
@@ -69,14 +71,18 @@ class SupportController extends BaseController {
           .order('created_at', ascending: true);
 
       messages.value = (response as List)
-          .map((json) =>
-              TicketMessageModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => TicketMessageModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
 
       _scrollToBottom();
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load messages',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to load messages',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -107,8 +113,11 @@ class SupportController extends BaseController {
       messageController.clear();
       await loadMessages(ticketId);
     } catch (e) {
-      Get.snackbar('Error', 'Failed to send message',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to send message',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
     isSending.value = false;
   }

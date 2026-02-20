@@ -135,17 +135,21 @@ class _FeaturedChallengeCarouselState extends State<FeaturedChallengeCarousel> {
                               children: [
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color:
-                                        Colors.white.withValues(alpha: 0.25),
+                                    color: Colors.white.withValues(alpha: 0.25),
                                     borderRadius: AppRadius.pill,
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Iconsax.star5,
-                                          size: 12, color: Colors.white),
+                                      const Icon(
+                                        Iconsax.star5,
+                                        size: 12,
+                                        color: Colors.white,
+                                      ),
                                       const SizedBox(width: 4),
                                       Text(
                                         'Featured',
@@ -165,12 +169,11 @@ class _FeaturedChallengeCarouselState extends State<FeaturedChallengeCarousel> {
                                   challenge.hasEnded
                                       ? 'Ended'
                                       : '${challenge.daysRemaining}d left',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
+                                  style: Theme.of(context).textTheme.labelMedium
                                       ?.copyWith(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.9),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
                                         fontWeight: FontWeight.w600,
                                       ),
                                 ),
@@ -180,9 +183,7 @@ class _FeaturedChallengeCarouselState extends State<FeaturedChallengeCarousel> {
                             // Title
                             Text(
                               challenge.title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall
+                              style: Theme.of(context).textTheme.headlineSmall
                                   ?.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w700,
@@ -194,31 +195,35 @@ class _FeaturedChallengeCarouselState extends State<FeaturedChallengeCarousel> {
                             // Participants + target
                             Row(
                               children: [
-                                const Icon(Iconsax.people,
-                                    size: 14, color: Colors.white70),
+                                const Icon(
+                                  Iconsax.people,
+                                  size: 14,
+                                  color: Colors.white70,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '${challenge.participantCount} joined',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
+                                  style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.85),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.85,
+                                        ),
                                       ),
                                 ),
                                 const SizedBox(width: 16),
-                                const Icon(Iconsax.chart,
-                                    size: 14, color: Colors.white70),
+                                const Icon(
+                                  Iconsax.chart,
+                                  size: 14,
+                                  color: Colors.white70,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '${challenge.targetValue} ${challenge.targetUnit}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
+                                  style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.85),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.85,
+                                        ),
                                       ),
                                 ),
                               ],
@@ -231,11 +236,13 @@ class _FeaturedChallengeCarouselState extends State<FeaturedChallengeCarousel> {
                                 child: LinearProgressIndicator(
                                   value: challenge.progressPercentage,
                                   minHeight: 4,
-                                  backgroundColor:
-                                      Colors.white.withValues(alpha: 0.3),
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: 0.3,
+                                  ),
                                   valueColor:
                                       const AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
+                                        Colors.white,
+                                      ),
                                 ),
                               ),
                             ],

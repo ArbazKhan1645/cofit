@@ -71,6 +71,14 @@ class HomeController extends BaseController {
     _setupReactiveListeners();
   }
 
+  /// Public refresh - called when returning from admin mode to reload all data
+  Future<void> refreshAllData() async {
+    loadUserData();
+    loadWorkoutStats();
+    _isLoadingData = false; // reset guard so _loadAllData can run
+    await _loadAllData();
+  }
+
   /// Load all home data in parallel - called once during init
   Future<void> _loadAllData() async {
     if (_isLoadingData) return;

@@ -51,7 +51,6 @@ class WeeklyScheduleController extends BaseController {
 
   @override
   void onClose() {
-    titleController.dispose();
     super.onClose();
   }
 

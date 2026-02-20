@@ -45,10 +45,12 @@ class EditProfileController extends GetxController {
     fullNameController.text = user.fullName ?? '';
     usernameController.text = user.username ?? '';
     bioController.text = user.bio ?? '';
-    heightController.text =
-        user.heightCm != null ? user.heightCm!.toStringAsFixed(0) : '';
-    weightController.text =
-        user.weightKg != null ? user.weightKg!.toStringAsFixed(0) : '';
+    heightController.text = user.heightCm != null
+        ? user.heightCm!.toStringAsFixed(0)
+        : '';
+    weightController.text = user.weightKg != null
+        ? user.weightKg!.toStringAsFixed(0)
+        : '';
 
     dateOfBirth.value = user.dateOfBirth;
     if (user.dateOfBirth != null) {
@@ -122,30 +124,31 @@ class EditProfileController extends GetxController {
       weightKg: double.tryParse(weightController.text),
       fitnessLevel: fitnessLevel.value.isNotEmpty ? fitnessLevel.value : null,
       workoutDaysPerWeek: workoutDaysPerWeek.value,
-      preferredWorkoutTime:
-          preferredWorkoutTime.value.isNotEmpty ? preferredWorkoutTime.value : null,
+      preferredWorkoutTime: preferredWorkoutTime.value.isNotEmpty
+          ? preferredWorkoutTime.value
+          : null,
     );
 
     isSaving.value = false;
 
     if (success) {
       Get.back();
-      Get.snackbar('Success', 'Profile updated',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Success',
+        'Profile updated',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } else {
-      Get.snackbar('Error', 'Failed to update profile',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to update profile',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
   @override
   void onClose() {
-    fullNameController.dispose();
-    usernameController.dispose();
-    bioController.dispose();
-    heightController.dispose();
-    weightController.dispose();
-    dobController.dispose();
     super.onClose();
   }
 }

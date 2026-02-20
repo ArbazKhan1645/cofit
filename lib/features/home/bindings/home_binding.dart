@@ -11,9 +11,12 @@ class MainBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<NavigationController>(() => NavigationController());
-    // HomeController may already be pre-loaded from splash/auth flow
+    // HomeController is permanent (set in splash) — refresh data on re-entry
     if (!Get.isRegistered<HomeController>()) {
       Get.put<HomeController>(HomeController());
+    } else {
+      // Already exists (permanent) — refresh all data so admin changes are visible
+      Get.find<HomeController>().refreshAllData();
     }
     Get.lazyPut<WorkoutsController>(() => WorkoutsController());
     Get.lazyPut<ProgressController>(() => ProgressController());
