@@ -34,9 +34,9 @@ class JournalPromptsScreen extends GetView<JournalController> {
             onPressed: controller.skipOnboarding,
             child: Text(
               'Skip',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppColors.textMuted,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(color: AppColors.textMuted),
             ),
           ),
         ],
@@ -264,7 +264,9 @@ class JournalPromptsScreen extends GetView<JournalController> {
                 context: context,
                 initialDate: selectedDate ?? DateTime(2000, 1, 1),
                 firstDate: DateTime(1940),
-                lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)),
+                lastDate: DateTime.now().subtract(
+                  const Duration(days: 365 * 13),
+                ),
                 builder: (context, child) {
                   return Theme(
                     data: Theme.of(context).copyWith(
@@ -284,6 +286,7 @@ class JournalPromptsScreen extends GetView<JournalController> {
               }
             },
             child: Container(
+              width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -311,11 +314,11 @@ class JournalPromptsScreen extends GetView<JournalController> {
                         ? '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'
                         : 'Tap to select date',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: selectedDate != null
-                              ? AppColors.textPrimary
-                              : AppColors.textMuted,
-                        ),
+                      fontWeight: FontWeight.w600,
+                      color: selectedDate != null
+                          ? AppColors.textPrimary
+                          : AppColors.textMuted,
+                    ),
                   ),
                   if (age != null) ...[
                     const SizedBox(height: 8),
@@ -330,7 +333,8 @@ class JournalPromptsScreen extends GetView<JournalController> {
                       ),
                       child: Text(
                         '$age years old',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
                             ),
@@ -370,15 +374,15 @@ class JournalPromptsScreen extends GetView<JournalController> {
                   Text(
                     '${heightCm.round()}',
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
                   Text(
                     'cm',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
                   ),
                 ],
               ),
@@ -387,9 +391,9 @@ class JournalPromptsScreen extends GetView<JournalController> {
           const SizedBox(height: 12),
           Text(
             '$feet\' $inches"',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.textMuted,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: AppColors.textMuted),
           ),
           const SizedBox(height: 32),
           SliderTheme(
@@ -447,15 +451,15 @@ class JournalPromptsScreen extends GetView<JournalController> {
                   Text(
                     '${weightKg.round()}',
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
                   Text(
                     'kg',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
                   ),
                 ],
               ),
@@ -464,9 +468,9 @@ class JournalPromptsScreen extends GetView<JournalController> {
           const SizedBox(height: 12),
           Text(
             '$weightLbs lbs',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.textMuted,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: AppColors.textMuted),
           ),
           const SizedBox(height: 32),
           SliderTheme(
@@ -589,9 +593,7 @@ class JournalPromptsScreen extends GetView<JournalController> {
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: selectedList.isEmpty
-                    ? AppColors.primary
-                    : Colors.white,
+                color: selectedList.isEmpty ? AppColors.primary : Colors.white,
                 borderRadius: AppRadius.large,
                 border: Border.all(
                   color: selectedList.isEmpty
@@ -617,11 +619,11 @@ class JournalPromptsScreen extends GetView<JournalController> {
                   Text(
                     'None - I\'m good to go!',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: selectedList.isEmpty
-                              ? Colors.white
-                              : AppColors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: selectedList.isEmpty
+                          ? Colors.white
+                          : AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -646,26 +648,30 @@ class JournalPromptsScreen extends GetView<JournalController> {
                 ),
               ),
               child: Theme(
-                data: Theme.of(context)
-                    .copyWith(dividerColor: Colors.transparent),
+                data: Theme.of(
+                  context,
+                ).copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
                   initiallyExpanded: hasSelection,
-                  tilePadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                  tilePadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 0,
+                  ),
                   title: Row(
                     children: [
                       Text(
                         title,
-                        style:
-                            Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       if (hasSelection) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: AppRadius.pill,
@@ -693,12 +699,14 @@ class JournalPromptsScreen extends GetView<JournalController> {
                           final label = option['label'] as String;
                           final isSelected = selectedList.contains(tag);
                           return GestureDetector(
-                            onTap: () => controller.toggleMultiSelect(
-                                index, tag),
+                            onTap: () =>
+                                controller.toggleMultiSelect(index, tag),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? AppColors.primary
@@ -712,9 +720,7 @@ class JournalPromptsScreen extends GetView<JournalController> {
                               ),
                               child: Text(
                                 label,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelMedium
+                                style: Theme.of(context).textTheme.labelMedium
                                     ?.copyWith(
                                       color: isSelected
                                           ? Colors.white
@@ -1009,6 +1015,4 @@ class JournalPromptsScreen extends GetView<JournalController> {
       ],
     );
   }
-
 }
-

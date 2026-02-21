@@ -221,6 +221,9 @@ class AuthService extends GetxService {
       );
 
       if (response.user != null) {
+        // Ensure public.users row exists (trigger may not fire on re-signup)
+        await _ensureUserRow(response.user!);
+
         // Update users table with full_name and auto-generated username
         if (fullName != null && fullName.isNotEmpty) {
           final username = _generateUsername(fullName);
@@ -318,6 +321,11 @@ class AuthService extends GetxService {
       final response = await _supabase.signInWithGoogle();
 
       if (response.user != null) {
+        // Ensure public.users row exists (re-signup after account deletion)
+        await _ensureUserRow(response.user!);
+        // Sync Google profile name to users table if missing
+        await _syncGoogleProfile(response.user!);
+
         await _fetchCurrentUser();
 
         // Ban check — block banned users immediately
@@ -353,6 +361,12 @@ class AuthService extends GetxService {
       final success = await _supabase.signInWithApple();
 
       if (success) {
+        // Ensure public.users row exists (re-signup after account deletion)
+        final currentUser = _supabase.client.auth.currentUser;
+        if (currentUser != null) {
+          await _ensureUserRow(currentUser);
+        }
+
         await _fetchCurrentUser();
 
         // Ban check — block banned users immediately
@@ -372,6 +386,92 @@ class AuthService extends GetxService {
       _isLoading.value = false;
       _error.value = e.toString();
       return AuthResult.failure('Apple sign in failed');
+    }
+  }
+
+  /// Ensure public.users row exists for this auth user.
+  /// Needed when user deletes account (removes public.users) then re-signs up
+  /// — the handle_new_user trigger won't fire since auth.users already exists.
+  Future<void> _ensureUserRow(User user) async {
+    try {
+      final existing = await _supabase.client
+          .from('users')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (existing != null) return; // Row exists, nothing to do
+
+      // Row missing — recreate it
+      final meta = user.userMetadata;
+      final fullName = meta?['full_name'] as String? ?? meta?['name'] as String?;
+      final avatar = meta?['avatar_url'] as String? ?? meta?['picture'] as String?;
+      final username = fullName != null && fullName.isNotEmpty
+          ? _generateUsername(fullName)
+          : _generateUsername(user.email?.split('@').first ?? 'user');
+
+      await _supabase.client.from('users').insert({
+        'id': user.id,
+        'email': user.email ?? '',
+        'full_name': fullName,
+        'username': username,
+        'avatar_url': avatar,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
+      // Also recreate default notification settings
+      await _supabase.client.from('user_notification_settings').insert({
+        'user_id': user.id,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Failed to ensure user row: $e');
+    }
+  }
+
+  /// Sync Google profile (full_name, avatar, username) to users table if missing
+  Future<void> _syncGoogleProfile(User user) async {
+    try {
+      final meta = user.userMetadata;
+      if (meta == null) return;
+
+      final googleName = meta['full_name'] as String? ?? meta['name'] as String?;
+      if (googleName == null || googleName.isEmpty) return;
+
+      // Check if user row already has full_name
+      final row = await _supabase.client
+          .from('users')
+          .select('full_name, username, avatar_url')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (row == null) return;
+
+      final updates = <String, dynamic>{};
+
+      if (row['full_name'] == null || (row['full_name'] as String).isEmpty) {
+        updates['full_name'] = googleName;
+      }
+      if (row['username'] == null || (row['username'] as String).isEmpty) {
+        updates['username'] = _generateUsername(googleName);
+      }
+      final googleAvatar = meta['avatar_url'] as String? ?? meta['picture'] as String?;
+      if (googleAvatar != null &&
+          (row['avatar_url'] == null || (row['avatar_url'] as String).isEmpty)) {
+        updates['avatar_url'] = googleAvatar;
+      }
+
+      if (updates.isNotEmpty) {
+        updates['updated_at'] = DateTime.now().toIso8601String();
+        await _supabase.client
+            .from('users')
+            .update(updates)
+            .eq('id', user.id);
+      }
+    } catch (e) {
+      debugPrint('Failed to sync Google profile: $e');
     }
   }
 

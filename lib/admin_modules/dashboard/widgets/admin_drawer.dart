@@ -83,13 +83,13 @@ class AdminDrawer extends StatelessWidget {
                     color: AppColors.mintFresh,
                     route: AppRoutes.adminWeeklySchedule,
                   ),
-                  _buildDrawerItem(
-                    context,
-                    title: 'Daily Plan',
-                    icon: Iconsax.task_square,
-                    color: AppColors.skyBlue,
-                    route: AppRoutes.adminDailyPlan,
-                  ),
+                  // _buildDrawerItem(
+                  //   context,
+                  //   title: 'Daily Plan',
+                  //   icon: Iconsax.task_square,
+                  //   color: AppColors.skyBlue,
+                  //   route: AppRoutes.adminDailyPlan,
+                  // ),
                   _buildDrawerItem(
                     context,
                     title: 'Diet Plans',
@@ -214,7 +214,11 @@ class AdminDrawer extends StatelessWidget {
                     color: AppColors.textMuted.withValues(alpha: 0.12),
                     borderRadius: AppRadius.medium,
                   ),
-                  child: const Icon(Iconsax.home_2, color: AppColors.textMuted, size: 20),
+                  child: const Icon(
+                    Iconsax.home_2,
+                    color: AppColors.textMuted,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

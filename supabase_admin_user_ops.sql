@@ -126,7 +126,202 @@ BEGIN
 END;
 $$;
 
--- 5. Admin: delete user account entirely
+-- ============================================
+-- FIX: handle_new_user — extract full_name from
+-- Google/Apple auth metadata on signup
+-- ============================================
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.users (id, email, full_name, username, avatar_url, created_at, updated_at)
+    VALUES (
+        NEW.id,
+        NEW.email,
+        COALESCE(
+            NEW.raw_user_meta_data->>'full_name',
+            NEW.raw_user_meta_data->>'name'
+        ),
+        COALESCE(
+            NEW.raw_user_meta_data->>'preferred_username',
+            LOWER(REPLACE(
+                COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', SPLIT_PART(NEW.email, '@', 1)),
+                ' ', '_'
+            )) || '_' || SUBSTRING(NEW.id::TEXT FROM 1 FOR 4)
+        ),
+        COALESCE(
+            NEW.raw_user_meta_data->>'avatar_url',
+            NEW.raw_user_meta_data->>'picture'
+        ),
+        NOW(),
+        NOW()
+    );
+
+    -- Create default notification settings
+    INSERT INTO public.user_notification_settings (user_id, created_at, updated_at)
+    VALUES (NEW.id, NOW(), NOW());
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- FIX: Null full_name causing PostgresException
+-- in notification triggers (body NOT NULL violation)
+-- ============================================
+
+-- 5. Fix: handle_like_insert — null full_name
+CREATE OR REPLACE FUNCTION public.handle_like_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.like_type = 'post' THEN
+        UPDATE public.posts
+        SET likes_count = likes_count + 1
+        WHERE id = NEW.post_id;
+
+        INSERT INTO public.notifications (
+            user_id,
+            title,
+            body,
+            notification_type,
+            action_type,
+            screen_reference,
+            priority,
+            scheduled_for
+        )
+        SELECT
+            posts.user_id,
+            'New Like',
+            COALESCE(users.full_name, users.username, 'Someone') || ' liked your post',
+            'post_liked',
+            'navigate',
+            jsonb_build_object('route', '/post-detail', 'resource_id', NEW.post_id),
+            'low',
+            NOW()
+        FROM public.posts
+        JOIN public.users ON users.id = NEW.user_id
+        WHERE posts.id = NEW.post_id
+        AND posts.user_id != NEW.user_id;
+
+    ELSIF NEW.like_type = 'comment' THEN
+        UPDATE public.comments
+        SET likes_count = likes_count + 1
+        WHERE id = NEW.comment_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 6. Fix: handle_comment_insert — null full_name
+CREATE OR REPLACE FUNCTION public.handle_comment_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.posts
+    SET comments_count = comments_count + 1
+    WHERE id = NEW.post_id;
+
+    IF NEW.parent_comment_id IS NOT NULL THEN
+        UPDATE public.comments
+        SET replies_count = replies_count + 1
+        WHERE id = NEW.parent_comment_id;
+    END IF;
+
+    INSERT INTO public.notifications (
+        user_id,
+        title,
+        body,
+        notification_type,
+        action_type,
+        screen_reference,
+        priority,
+        scheduled_for
+    )
+    SELECT
+        posts.user_id,
+        'New Comment',
+        COALESCE(users.full_name, users.username, 'Someone') || ' commented on your post',
+        'post_commented',
+        'navigate',
+        jsonb_build_object('route', '/post-detail', 'resource_id', NEW.post_id),
+        'normal',
+        NOW()
+    FROM public.posts
+    JOIN public.users ON users.id = NEW.user_id
+    WHERE posts.id = NEW.post_id
+    AND posts.user_id != NEW.user_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 7. Fix: handle_share_insert — null full_name
+CREATE OR REPLACE FUNCTION public.handle_share_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.posts
+    SET shares_count = shares_count + 1
+    WHERE id = NEW.post_id;
+
+    INSERT INTO public.notifications (
+        user_id,
+        title,
+        body,
+        notification_type,
+        action_type,
+        screen_reference,
+        priority,
+        scheduled_for
+    )
+    SELECT
+        posts.user_id,
+        'Post Shared',
+        COALESCE(users.full_name, users.username, 'Someone') || ' shared your post',
+        'post_shared',
+        'navigate',
+        jsonb_build_object('route', '/post-detail', 'resource_id', NEW.post_id),
+        'normal',
+        NOW()
+    FROM public.posts
+    JOIN public.users ON users.id = NEW.user_id
+    WHERE posts.id = NEW.post_id
+    AND posts.user_id != NEW.user_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 8. Fix: handle_follow_insert — null full_name
+CREATE OR REPLACE FUNCTION public.handle_follow_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.notifications (
+        user_id,
+        title,
+        body,
+        notification_type,
+        action_type,
+        screen_reference,
+        priority,
+        scheduled_for
+    )
+    SELECT
+        NEW.following_id,
+        'New Follower',
+        COALESCE(users.full_name, users.username, 'Someone') || ' started following you',
+        'new_follower',
+        'navigate',
+        jsonb_build_object('route', '/profile', 'resource_id', NEW.follower_id),
+        'normal',
+        NOW()
+    FROM public.users
+    WHERE users.id = NEW.follower_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 9. Admin: delete user account entirely
 CREATE OR REPLACE FUNCTION public.admin_delete_user(
   p_user_id UUID
 )

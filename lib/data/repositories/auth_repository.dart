@@ -185,7 +185,8 @@ class AuthRepository extends BaseRepository {
             RepositoryException(message: 'Not authenticated'));
       }
 
-      final updateData = <String, dynamic>{
+      // 1. Update users table (only columns that exist in users)
+      final userData = <String, dynamic>{
         'fitness_level': fitnessLevel,
         'fitness_goals': fitnessGoals,
         'workout_days_per_week': workoutDaysPerWeek,
@@ -194,31 +195,44 @@ class AuthRepository extends BaseRepository {
         'preferred_workout_types': preferredWorkoutTypes,
         'physical_limitations': physicalLimitations,
         'available_equipment': availableEquipment,
-        'biggest_challenge': biggestChallenge,
-        'current_feeling': currentFeeling,
-        'timeline': timeline,
-        'motivation': motivation,
         'onboarding_completed': true,
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      // Add body measurements if provided
-      if (gender != null) updateData['gender'] = gender;
+      if (gender != null) userData['gender'] = gender;
       if (dateOfBirth != null) {
-        updateData['date_of_birth'] = dateOfBirth.toIso8601String().split('T')[0];
+        userData['date_of_birth'] = dateOfBirth.toIso8601String().split('T')[0];
       }
-      if (heightCm != null) updateData['height_cm'] = heightCm;
-      if (weightKg != null) updateData['weight_kg'] = weightKg;
+      if (heightCm != null) userData['height_cm'] = heightCm;
+      if (weightKg != null) userData['weight_kg'] = weightKg;
       if (medicalConditions != null) {
-        updateData['medical_conditions'] = medicalConditions;
+        userData['medical_conditions'] = medicalConditions;
       }
 
       final response = await client
           .from('users')
-          .update(updateData)
+          .update(userData)
           .eq('id', userId!)
           .select()
           .single();
+
+      // 2. Save onboarding responses (journal-specific fields)
+      await client.from('onboarding_responses').upsert({
+        'user_id': userId!,
+        'fitness_level': fitnessLevel,
+        'fitness_goals': fitnessGoals,
+        'workout_days_per_week': workoutDaysPerWeek,
+        'preferred_time': preferredWorkoutTime,
+        'session_duration': preferredSessionDuration,
+        'preferred_workout_types': preferredWorkoutTypes,
+        'physical_limitations': physicalLimitations,
+        'available_equipment': availableEquipment,
+        'biggest_challenge': biggestChallenge,
+        'current_feeling': currentFeeling,
+        'timeline': timeline,
+        'motivation': motivation,
+        'completed_at': DateTime.now().toIso8601String(),
+      });
 
       return Result.success(UserModel.fromJson(response));
     } catch (e) {
